@@ -8,6 +8,7 @@ import { DISPATCHERS } from '../../lib/roles';
 import { Plus, Wrench, Box, Route, Check, AlertTriangle, ArrowRight, ShieldCheck, RefreshCw } from 'lucide-react';
 import { CommitmentGraph } from '../../components/commitment-graph';
 import { PlanRanking } from '../../components/plan-ranking';
+import { RiskRadar } from '../../components/risk-radar';
 import { ReconciliationTable } from '../../components/reconciliation-table';
 import { Button } from '../../components/ui/button';
 import { AdapterPanel } from './components/adapter-panel';
@@ -82,6 +83,7 @@ export default function ControlRoom() {
   const [online, setOnline] = useState(false);
   const [filter, setFilter] = useState('all');
   const [tab, setTab] = useState('impact');
+  const [lens, setLens] = useState<'risk' | 'recovery'>('risk');
   const [tech, setTech] = useState('ravi');
   const [request, setRequest] = useState<ServiceRequest | null>(null);
   const [candidate, setCandidate] = useState('');
@@ -91,7 +93,7 @@ export default function ControlRoom() {
     try {
       const [j, r] = await Promise.all([api<any>('/jobs'), api<any[]>('/exceptions/risk')]);
       setJobs(Array.isArray(j) ? j : j.items || j.jobs || []);
-      setRisk(r);
+      setRisk(r.map(row => ({ ...row, tier: row.tier ?? (row.score >= 60 ? 'high' : row.score > 0 ? 'watch' : 'ok') })));
       setError('');
     } catch (e) {
       setError((e as Error).message);
@@ -156,12 +158,14 @@ export default function ControlRoom() {
     if (requested) void openJob(requested);
   }, [jobs, session]);
 
-  async function inspect() {
+  async function inspect(id = tech, to = 'impact') {
+    setTech(id);
+    setLens('recovery');
     setBusy(true);
     try {
-      const data = await api(`/exceptions/plans/${tech}`);
+      const data = await api(`/exceptions/plans/${id}`);
       setRecovery(data);
-      setTab('impact');
+      setTab(to);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -180,6 +184,7 @@ export default function ControlRoom() {
     );
     if (result) {
       setRecovery(result);
+      setLens('recovery');
       setTab('plans');
     }
   }
@@ -214,56 +219,31 @@ export default function ControlRoom() {
     }
   }
 
+  const riskOf = new Map(risk.map(r => [r.job_id, r]));
   const visible = jobs.filter(
     j =>
       filter === 'all' ||
-      (filter === 'risk' ? risk.some(r => r.job_id === j.id && r.score > 0) : j.priority === filter)
+      (filter === 'risk' ? (riskOf.get(j.id)?.tier ?? 'ok') !== 'ok' : j.priority === filter)
   );
   const active = jobs.filter(j => !['closed', 'cancelled', 'completed'].includes(j.state));
-  const atRisk = risk.filter(r => r.score > 0);
+  const atRisk = risk.filter(r => r.tier !== 'ok');
   const graph = recovery?.impact;
+  const focus = lens === 'recovery' && !!recovery;
 
   return (
     <div className={s.shell}>
-      {/* Top Telemetry Header */}
-      <div className={s.eyebrow}>
-        <span className={s.dot} />
-        <span>DISPATCH & SERVICE NETWORK CONTROL</span>
-        <span className={`${s.live} ${online ? s.connected : ''}`}>
-          {online ? 'LIVE WEBSOCKET STREAM' : 'AUTO-POLLING REFRESH'}
-        </span>
-      </div>
-
-      <header className={s.heading}>
-        <div className={s.headingText}>
+      <header className={s.top}>
+        <div className={s.titleblock}>
           <h1>
             Service <span>Control</span>
           </h1>
-          <p>
-            Field technicians in place. Spare parts reserved.<br />
-            Maintain operational flow across all customer sites.
-          </p>
+          <span className={`${s.live} ${online ? s.connected : ''}`}>
+            {online ? 'LIVE STREAM' : 'AUTO-REFRESH'}
+          </span>
         </div>
-
-        <div className={s.schematic} aria-hidden="true">
-          <svg viewBox="0 0 240 130" fill="none">
-            <path d="M15 100h210M35 100V27h155v73M50 27v16h125V27M88 43v32h48V43M74 82h76v18M112 10v17M82 12h60M20 113h195" stroke="currentColor" strokeWidth="1" />
-            <circle cx="190" cy="58" r="17" stroke="currentColor" />
-            <path d="m190 58 8-9M190 75v25M104 59h16M112 51v16" stroke="currentColor" />
-            <path className={s.flowLine} d="M13 58h22V27h155v14" stroke="currentColor" strokeWidth="1.5" />
-            <path d="M53 105v14m118-14v14M53 116h118" stroke="currentColor" />
-            <text x="88" y="128" fill="currentColor" fontSize="6" fontFamily="monospace">
-              HYDRAULIC CIRCUIT / 01
-            </text>
-          </svg>
-        </div>
-
-        <div className={s.headingActions}>
-          <span className={s.sheetCode}>OPERATIONAL SPEC · RIVET-01</span>
-          <button disabled={busy || !canAct} onClick={create} className={s.primary} title={canAct ? undefined : 'Your role can view requests but not create them'}>
-            <Plus size={15} aria-hidden="true" /> New M-104 Request
-          </button>
-        </div>
+        <button disabled={busy || !canAct} onClick={create} className={s.primary} title={canAct ? undefined : 'Your role can view requests but not create them'}>
+          <Plus size={15} aria-hidden="true" /> New M-104 Request
+        </button>
       </header>
 
       {!session && (
@@ -280,7 +260,6 @@ export default function ControlRoom() {
       {error && <div role="alert" className={s.error}>{error}</div>}
       {notice && <div role="status" className={s.notice}>{notice}</div>}
 
-      {/* 4 Telemetry KPI Cards */}
       <section className={s.metrics} aria-label="Operational Key Performance Indicators">
         <div>
           <label>OPEN ACTIVE JOBS</label>
@@ -290,24 +269,24 @@ export default function ControlRoom() {
         <div>
           <label>AT RISK JOBS</label>
           <strong className={s.orange}>{atRisk.length.toString().padStart(2, '0')}</strong>
-          <small>Jobs requiring immediate intervention</small>
+          <small>{atRisk.filter(r => r.tier === 'critical').length} critical</small>
         </div>
         <div>
           <label>DISRUPTION IMPACT</label>
           <strong>{graph ? graph.affected_jobs.length : '—'}</strong>
-          <small>{graph ? `${graph.commitments_walked} commitments traced` : 'Inspect a technician to trace propagation'}</small>
+          <small>{graph ? `${graph.commitments_walked} commitments traced` : 'Trace a technician to see it'}</small>
         </div>
         <div>
           <label>RECOVERY PLANS</label>
           <strong>{recovery ? (recovery.plans?.length || recovery.partial_plans?.length || 0) : '—'}</strong>
-          <small>{recovery ? `${recovery.combinations_examined} candidate options simulated` : 'Simulate before applying schedule change'}</small>
+          <small>{recovery ? `${recovery.combinations_examined} options simulated` : 'Simulate before applying'}</small>
         </div>
       </section>
 
-      {/* 3-Column Operational Workspace */}
-      <div className={s.workspace}>
-        {/* Dispatch board: the full width, so every row reads on one line */}
-        <section className={`${s.panel} ${s.wide}`}>
+      {/* One screen: the board stays put on the left; the right-hand lens switches between risk and recovery.
+          While a recovery is open the board narrows to a rail and the lens takes the room. */}
+      <div className={`${s.cockpit} ${focus ? s.focus : ''}`}>
+        <section className={`${s.panel} ${s.col}`}>
           <div className={s.panelhead}>
             <div>
               <span className={s.kicker}>DISPATCH SCHEDULE</span>
@@ -326,50 +305,55 @@ export default function ControlRoom() {
             </div>
           </div>
 
-          <div className={s.tablewrap}>
-            <table>
+          <div className={`${s.tablewrap} ${s.fill}`}>
+            <table className={focus ? s.rail : ''}>
               <thead>
                 <tr>
                   <th>Equipment / Job</th>
                   <th>Priority</th>
                   <th>Assigned Tech</th>
-                  <th>Start → Deadline</th>
+                  <th>Start → Deadline (IST)</th>
                   <th>Status</th>
                 </tr>
               </thead>
               <tbody>
-                {visible.map(j => (
-                  <tr
-                    key={j.id}
-                    onClick={() => openJob(j)}
-                    tabIndex={0}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') openJob(j);
-                    }}
-                  >
-                    <td>
-                      <b>{j.machine_id}</b>
-                      <small>
-                        {j.id} · {j.site_id.replace('site-', 'Site ').toUpperCase()}
-                      </small>
-                    </td>
-                    <td>
-                      <span className={j.priority === 'P1' ? s.priority : s.neutral}>{j.priority}</span>
-                    </td>
-                    <td>
-                      <span className={s.avatar}>{(j.technician_id || '?')[0].toUpperCase()}</span>
-                      {j.technician_id || 'Unassigned'}
-                    </td>
-                    <td className={s.timecell}>
-                      {clock(j.planned_start)} <span className={s.muted}>→</span> {clock(j.deadline)}
-                      <small>IST · {j.duration_minutes}m duration</small>
-                    </td>
-                    <td>
-                      <span className={s.state}>{j.state.replaceAll('_', ' ')}</span>
-                      {risk.find(r => r.job_id === j.id)?.score > 0 && <span className={s.riskmark}> ●</span>}
-                    </td>
-                  </tr>
-                ))}
+                {visible.map(j => {
+                  const tier = riskOf.get(j.id)?.tier;
+                  return (
+                    <tr
+                      key={j.id}
+                      onClick={() => openJob(j)}
+                      tabIndex={0}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') openJob(j);
+                      }}
+                    >
+                      <td>
+                        <b>
+                          {tier && tier !== 'ok' && <i className={`${s.tierdot} ${s[tier]}`} title={`${tier} risk`} aria-label={`${tier} risk`} />}
+                          {j.machine_id}
+                        </b>
+                        <small>
+                          {j.id} · {j.site_id.replace('site-', 'Site ').toUpperCase()}
+                        </small>
+                      </td>
+                      <td>
+                        <span className={j.priority === 'P1' ? s.priority : s.neutral}>{j.priority}</span>
+                      </td>
+                      <td>
+                        <span className={s.avatar}>{(j.technician_id || '?')[0].toUpperCase()}</span>
+                        {j.technician_id || 'Unassigned'}
+                      </td>
+                      <td className={s.timecell}>
+                        {clock(j.planned_start)} <span className={s.muted}>→</span> {clock(j.deadline)}
+                        <small>{j.duration_minutes}m</small>
+                      </td>
+                      <td>
+                        <span className={s.state}>{j.state.replaceAll('_', ' ')}</span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
             {!visible.length && (
@@ -380,135 +364,101 @@ export default function ControlRoom() {
           </div>
         </section>
 
-        {/* Column 2: Disruption Recovery */}
-        <section className={s.panel}>
-          <div className={s.panelhead}>
-            <div>
-              <span className={s.kicker}>PROPAGATION & RECOVERY</span>
-              <h2>Schedule Solver</h2>
+        <section className={`${s.panel} ${s.col}`}>
+          <div className={s.lenstabs} role="tablist" aria-label="Risk and recovery">
+            <button role="tab" aria-selected={lens === 'risk'} className={lens === 'risk' ? s.activetab : ''} onClick={() => setLens('risk')}>
+              Risk Radar {atRisk.length > 0 && <span className={s.orangecount}>{atRisk.length}</span>}
+            </button>
+            <button role="tab" aria-selected={lens === 'recovery'} className={lens === 'recovery' ? s.activetab : ''} onClick={() => setLens('recovery')}>
+              Schedule Solver {recovery && <span>{recovery.plans?.length || recovery.partial_plans?.length || 0}</span>}
+            </button>
+          </div>
+
+          {lens === 'risk' ? (
+            <div className={s.fill}>
+              <RiskRadar
+                risk={risk}
+                canAct={canAct}
+                onOpenJob={id => {
+                  const job = jobs.find(j => j.id === id);
+                  if (job) openJob(job);
+                }}
+                onTrace={(id, to) => inspect(id, to)}
+              />
             </div>
-            <span className={s.outlinebadge}>48-HR HORIZON</span>
-          </div>
-
-          <div className={s.toolbar}>
-            <label>
-              Technician
-              <select value={tech} onChange={e => setTech(e.target.value)}>
-                <option value="ravi">Ravi Shankar</option>
-                <option value="priya">Priya Nair</option>
-                <option value="karthik">Karthik Raja</option>
-                <option value="dev">Dev Verma</option>
-              </select>
-            </label>
-            <button disabled={busy || !session} onClick={inspect} className={s.secondaryBtn}>
-              Inspect Impact
-            </button>
-            <button className={s.danger} disabled={busy || !canAct} onClick={drop}>
-              Report Dropout
-            </button>
-          </div>
-
-          {recovery ? (
+          ) : (
             <>
-              <div className={s.tabs}>
-                <button
-                  onClick={() => setTab('impact')}
-                  className={tab === 'impact' ? s.activetab : ''}
-                >
-                  Impact Graph <span>{graph.affected_jobs.length}</span>
+              <div className={s.toolbar}>
+                <label>
+                  Technician
+                  <select value={tech} onChange={e => setTech(e.target.value)}>
+                    <option value="ravi">Ravi Shankar</option>
+                    <option value="priya">Priya Nair</option>
+                    <option value="karthik">Karthik Raja</option>
+                    <option value="dev">Dev Verma</option>
+                  </select>
+                </label>
+                <button disabled={busy || !session} onClick={() => inspect()} className={s.secondaryBtn}>
+                  Inspect Impact
                 </button>
-                <button
-                  onClick={() => setTab('plans')}
-                  className={tab === 'plans' ? s.activetab : ''}
-                >
-                  Recovery Plans <span>{recovery.plans.length || recovery.partial_plans?.length || 0}</span>
+                <button className={s.danger} disabled={busy || !canAct} onClick={drop}>
+                  Report Dropout
                 </button>
               </div>
-              {tab === 'impact' && (
-                <CommitmentGraph
-                  impact={graph}
-                  jobs={jobs}
-                  risk={risk}
-                  technicianName={tech.charAt(0).toUpperCase() + tech.slice(1)}
-                  onOpenJob={id => {
-                    const job = jobs.find(j => j.id === id);
-                    if (job) openJob(job);
-                  }}
-                />
-              )}
-              {tab === 'plans' && (
-                <PlanRanking recovery={recovery} busy={busy} role={session?.role || ''} onApprove={approve} />
+
+              {recovery ? (
+                <>
+                  <div className={s.tabs}>
+                    <button
+                      onClick={() => setTab('impact')}
+                      className={tab === 'impact' ? s.activetab : ''}
+                    >
+                      Impact Graph <span>{graph.affected_jobs.length}</span>
+                    </button>
+                    <button
+                      onClick={() => setTab('plans')}
+                      className={tab === 'plans' ? s.activetab : ''}
+                    >
+                      Recovery Plans <span>{recovery.plans.length || recovery.partial_plans?.length || 0}</span>
+                    </button>
+                  </div>
+                  <div className={s.fill}>
+                    {tab === 'impact' && (
+                      <CommitmentGraph
+                        impact={graph}
+                        jobs={jobs}
+                        risk={risk}
+                        technicianName={tech.charAt(0).toUpperCase() + tech.slice(1)}
+                        onOpenJob={id => {
+                          const job = jobs.find(j => j.id === id);
+                          if (job) openJob(job);
+                        }}
+                      />
+                    )}
+                    {tab === 'plans' && (
+                      <PlanRanking recovery={recovery} busy={busy} role={session?.role || ''} onApprove={approve} />
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className={`${s.graphplaceholder} ${s.fill}`}>
+                  <div aria-hidden="true">
+                    <Wrench size={22} strokeWidth={1.5} />
+                    <i />
+                    <Route size={24} strokeWidth={1.5} />
+                    <i />
+                    <Box size={22} strokeWidth={1.5} />
+                  </div>
+                  <h3>Trace Cascading Schedule Impacts</h3>
+                  <p>
+                    When a technician becomes unavailable or a part is delayed, see exactly how commitments propagate through downstream jobs before executing a recovery.
+                  </p>
+                  <span>SELECT A TECHNICIAN, OR PICK ONE FROM THE RISK RADAR</span>
+                </div>
               )}
             </>
-          ) : (
-            <div className={s.graphplaceholder}>
-              <div aria-hidden="true">
-                <Wrench size={22} strokeWidth={1.5} />
-                <i />
-                <Route size={24} strokeWidth={1.5} />
-                <i />
-                <Box size={22} strokeWidth={1.5} />
-              </div>
-              <h3>Trace Cascading Schedule Impacts</h3>
-              <p>
-                When a technician becomes unavailable or a part is delayed, see exactly how commitments propagate through downstream jobs before executing a recovery.
-              </p>
-              <span>SELECT TECHNICIAN ABOVE TO TRACE COMMITMENT GRAPH</span>
-            </div>
           )}
         </section>
-
-        {/* Column 3: Early Warning Risk Lane */}
-        <aside className={s.panel}>
-          <div className={s.panelhead}>
-            <div>
-              <span className={s.kicker}>EARLY WARNING</span>
-              <h2>Risk Radar</h2>
-            </div>
-            <span className={s.orangecount}>{atRisk.length} active</span>
-          </div>
-
-          <p className={s.asidenote}>
-            Risk scores synthesize travel delays, SLA margins, and part availability.
-          </p>
-
-          <div className={s.radarlist}>
-          {risk.map(r => (
-            <button
-              key={r.job_id}
-              className={s.riskcard}
-              onClick={() => {
-                const job = jobs.find(j => j.id === r.job_id);
-                if (job) openJob(job);
-              }}
-            >
-              <div>
-                <b>{r.machine_id}</b>
-                <span className={r.score > 0 ? s.orange : s.muted}>
-                  {r.score}<small>/100</small>
-                </span>
-              </div>
-              <p>
-                {r.job_id} · {r.priority}
-              </p>
-              <div className={s.riskbar}>
-                <i style={{ width: `${r.score}%` }} />
-              </div>
-              {r.signals.length ? (
-                <div className={s.signals}>
-                  {r.signals.map((signal: any) => (
-                    <small key={signal.signal}>
-                      {signal.signal} · +{signal.points}
-                    </small>
-                  ))}
-                </div>
-              ) : (
-                <small>No risk signals · {r.sla_margin_minutes}m SLA margin</small>
-              )}
-            </button>
-          ))}
-          </div>
-        </aside>
       </div>
 
       <MapView />

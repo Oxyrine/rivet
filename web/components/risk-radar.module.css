@@ -1,0 +1,38 @@
+.radar{padding:16px 18px;display:grid;gap:14px;align-content:start}
+.critical{--tier:var(--critical)}
+.high{--tier:var(--brand-accent)}
+.watch{--tier:var(--warning)}
+.ok{--tier:var(--positive)}
+
+/* One bar for the whole picture: how many jobs sit in each tier */
+.tiers{display:grid;gap:8px}
+.bar{display:flex;gap:3px;height:10px}
+.bar i{background:var(--tier);border-radius:2px;min-width:8px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;list-style:none;margin:0;padding:0;font-size:12px;color:var(--ink-2)}
+.legend li{display:flex;align-items:center;gap:6px}
+.legend i{width:8px;height:8px;border-radius:50%;background:var(--tier)}
+.legend b{color:var(--ink);font-family:var(--font-mono)}
+
+.cause{border:1px solid var(--tier);background:color-mix(in srgb,var(--tier) 7%,var(--surface));border-radius:var(--radius-card);padding:12px 14px;display:grid;gap:10px}
+.cause header{display:grid;gap:2px}
+.cause header b{font-size:14px}
+.cause header span{font:11px var(--font-mono);color:var(--ink-2)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;background:var(--surface);border:1px solid var(--tier);color:var(--ink);font:600 11px var(--font-mono);cursor:pointer}
+.chip small{color:var(--tier);font-weight:700}
+.cause footer{display:flex;gap:8px;flex-wrap:wrap}
+.cause footer button{font-size:12.5px;padding:6px 12px;border-radius:var(--radius-button);border:1px solid var(--line-control);background:var(--surface);color:var(--ink);cursor:pointer;font-weight:600}
+.cause footer .go{background:var(--brand);border-color:var(--brand);color:#fff;margin-left:auto}
+.cause footer button:hover{filter:brightness(.96)}
+
+.watch{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:var(--radius-card);overflow:hidden}
+.watch li+li{border-top:1px solid var(--line)}
+.watch button{width:100%;display:grid;grid-template-columns:10px auto 1fr auto;align-items:center;gap:10px;padding:9px 12px;background:var(--surface);border:0;text-align:left;cursor:pointer;font:inherit;color:var(--ink)}
+.watch button:hover{background:var(--surface-sunken)}
+.watch b{font:600 13px var(--font-mono)}
+.watch small{font:11px var(--font-mono);color:var(--ink-2)}
+.watch span{font-size:12px;color:var(--ink-2);text-align:right}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--tier)}
+.more{justify-self:start;background:none;border:0;color:var(--action-blue);font-size:12.5px;font-weight:600;cursor:pointer;padding:0}
+.clear,.healthy{margin:0;font-size:12.5px;color:var(--ink-2)}
+.healthy::before{content:'✓ ';color:var(--positive);font-weight:700}

@@ -1016,3 +1016,216 @@
     max-height: 480px;
   }
 }
+
+/* ==========================================================================
+   Cockpit: the working area fits one screen. The board stays on the left; the right-hand lens switches between
+   risk and recovery, and while a recovery is open the board narrows to a rail so the lens gets the room.
+   ========================================================================== */
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  margin: 0 0 14px;
+  flex-wrap: wrap;
+}
+
+.titleblock {
+  display: flex;
+  align-items: center;
+  gap: 6px 14px;
+  flex-wrap: wrap;
+}
+
+.top h1 {
+  white-space: nowrap;
+}
+
+.top h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 28px;
+  line-height: 1.1;
+  letter-spacing: var(--tracking-hero);
+  margin: 0;
+}
+
+.top h1 span {
+  color: var(--brand-accent);
+}
+
+.titleblock .live {
+  margin-left: 0;
+  font-family: var(--font-mono);
+}
+
+.metrics {
+  margin-bottom: 16px;
+}
+
+.metrics > div {
+  padding: 12px 18px;
+}
+
+.metrics label {
+  margin-bottom: 4px;
+}
+
+.metrics strong {
+  font-size: 28px;
+}
+
+.metrics small {
+  margin-top: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cockpit {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 18px;
+  height: clamp(520px, calc(100dvh - 275px), 900px);
+  transition: grid-template-columns 0.25s ease;
+}
+
+.cockpit.focus {
+  grid-template-columns: minmax(320px, 0.5fr) minmax(0, 1.5fr);
+}
+
+.focus .filters {
+  display: none;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.fill {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.cockpit .tablewrap td {
+  padding: 8px 14px;
+}
+
+.cockpit .tablewrap th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.cockpit .tablewrap small {
+  display: inline;
+  margin: 0 0 0 8px;
+}
+
+.cockpit .tablewrap td {
+  padding: 6px 10px;
+}
+
+.cockpit .tablewrap th {
+  padding: 8px 10px;
+}
+
+.rail th:nth-child(n + 3),
+.rail td:nth-child(n + 3) {
+  display: none;
+}
+
+
+.critical { --tier: var(--critical); }
+.high { --tier: var(--brand-accent); }
+.watch { --tier: var(--warning); }
+
+.tierdot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 8px;
+  background: var(--tier);
+}
+
+.lenstabs {
+  display: flex;
+  gap: 8px;
+  padding: 10px 18px 0;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-sunken);
+}
+
+.shell .lenstabs button {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  color: var(--ink-2);
+  padding: 8px 12px 12px;
+  position: relative;
+}
+
+.lenstabs .activetab {
+  color: var(--ink);
+}
+
+.lenstabs .activetab::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--brand-accent);
+}
+
+.lenstabs span {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  padding: 2px 6px;
+  border-radius: var(--radius-badge);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.lenstabs .orangecount {
+  color: var(--brand-accent);
+  background: var(--brand-accent-light);
+  border-color: var(--brand-accent-border);
+}
+
+@media (max-width: 1100px) {
+  .cockpit,
+  .cockpit.focus {
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+  }
+  .fill {
+    overflow: visible;
+  }
+  .tablewrap.fill {
+    overflow-x: auto;
+  }
+  .rail th:nth-child(n + 3),
+  .rail td:nth-child(n + 3) {
+    display: table-cell;
+  }
+}
+
+/* Tighter chrome inside the cockpit so the plan, its reasons and the Approve button share one view. */
+.cockpit .toolbar {
+  padding: 8px 16px;
+}
+
+.cockpit .tabs {
+  padding: 6px 16px 0;
+}
+
+.cockpit .tabs button {
+  padding: 6px 12px 10px;
+}

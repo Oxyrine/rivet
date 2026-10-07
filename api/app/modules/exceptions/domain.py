@@ -349,6 +349,19 @@ def approve_plan(state, plan_id, role, actor):
     return new, new.events[before:], {'approved': True, 'plan_id': plan_id, 'assignments': plan['assignments'], 'unplaced': plan.get('unplaced', [])}
 
 
+HARD_SIGNALS = {'Technician dropout', 'Unassigned', 'Projected SLA miss', 'Broken commitment'}
+TIERS = ('critical', 'high', 'watch', 'ok')
+
+
+def risk_tier(priority, signals):
+    """A score adds up points, so a dropout makes every job look the same. The tier says how bad it is for this job:
+    critical = a promise will be broken (SLA miss) or a P1 job has any hard signal; high = another hard signal; watch = thin margin only."""
+    names = {s['signal'] for s in signals}
+    if 'Projected SLA miss' in names or (priority == 'P1' and names & HARD_SIGNALS): return 'critical'
+    if names & HARD_SIGNALS: return 'high'
+    return 'watch' if names else 'ok'
+
+
 def risk(state):
     rows = []
     for job in state.jobs.values():
@@ -362,5 +375,6 @@ def risk(state):
         if margin < 0: signals.append({'signal': 'Projected SLA miss', 'points': 35, 'detail': f'{-margin} minutes beyond deadline'})
         elif margin < 30: signals.append({'signal': 'Low SLA margin', 'points': 15, 'detail': f'{margin} minutes of margin'})
         if any(c.get('state') == 'BREACHED' for c in state.commitments.values() if c.get('job_id') == job['id']): signals.append({'signal': 'Broken commitment', 'points': 20, 'detail': 'A required promise is breached'})
-        rows.append({'job_id': job['id'], 'machine_id': job['machine_id'], 'site_id': job['site_id'], 'priority': job.get('priority'), 'score': min(100, sum(s['points'] for s in signals)), 'sla_margin_minutes': margin, 'signals': signals})
-    return sorted(rows, key=lambda r: (-r['score'], r['sla_margin_minutes'], r['job_id']))
+        rows.append({'job_id': job['id'], 'machine_id': job['machine_id'], 'site_id': job['site_id'], 'priority': job.get('priority'), 'technician_id': job.get('technician_id'),
+                     'deadline': job['deadline'], 'tier': risk_tier(job.get('priority'), signals), 'score': min(100, sum(s['points'] for s in signals)), 'sla_margin_minutes': margin, 'signals': signals})
+    return sorted(rows, key=lambda r: (TIERS.index(r['tier']), r['priority'] or 'P9', r['sla_margin_minutes'], r['job_id']))

@@ -1,4 +1,4 @@
-.wrap{padding:18px}
+.wrap{padding:14px 16px}
 .none{border:1px solid var(--critical);background:var(--surface-sunken);color:var(--critical);padding:14px 16px;border-radius:3px;display:grid;gap:4px;margin-bottom:16px}
 .scroller{overflow-x:auto}
 .table{min-width:620px}
@@ -61,3 +61,17 @@
 .ruledout li{font-size:12.5px;color:var(--ink-2);display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
 .ruledout li b{font-weight:500;color:var(--ink)}
 .ruledout small{font:11px var(--font-ibm-plex-mono),monospace}
+
+/* Wide enough, the plans and their reasoning sit beside what to do about the jobs nobody could take. */
+.wrap{container-type:inline-size}
+.cols{display:grid;gap:16px;align-items:start;margin-top:12px}
+.side>*+*{margin-top:14px}
+.decision{border:1px solid var(--line);background:var(--surface);border-radius:3px;padding:16px 18px}
+.decision .plain{margin-top:0}
+.cols .why{margin-top:0;padding:16px 18px}
+.cols .why h3{font-size:22px;margin-bottom:10px}
+.cols .followup{margin-top:0}
+.main,.side{min-width:0}
+@container (min-width: 640px){
+ .two{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px}
+}

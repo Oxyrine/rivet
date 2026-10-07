@@ -9,3 +9,14 @@ When a technician drops out, the solver looks at every job that depended on them
 **For every job the solver cannot place**, the response lists who was ruled out and why (dropped out, certificate expired, skill level, travel limit, contractor not approved) and what a person can do: offer the customer a later slot (P2 and P3 only), wait for an unavailable technician, check certifications, or ask the service manager to authorise an approved contractor or overtime for a P1 job. Escalation is one option, not the only output.
 
 API: `GET /exceptions/plans/{technician_id}` returns `plans`, `partial_plans`, `jobs` (the per-job diagnostics), `rejected`, `no_feasible_path` (true when there is no complete plan) and `message`.
+
+## Risk radar
+
+`GET /exceptions/risk` returns one row per open job with its `signals`, a `tier` and the assigned `technician_id`. A points total hits the ceiling for every job a dropout touches, so the tier is what separates them:
+
+- **critical**: a projected SLA miss, or any hard signal on a P1 job
+- **high**: another hard signal (technician dropout, unassigned, broken commitment)
+- **watch**: only a thin SLA margin
+- **ok**: no signals
+
+Rows are ordered worst tier first, then priority, then SLA margin. The control room groups the jobs a dropout caused into one card for that technician, with a shortcut into that technician's impact and recovery plans, and lists only the remaining at-risk jobs individually.

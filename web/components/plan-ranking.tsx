@@ -72,7 +72,7 @@ export function PlanRanking({recovery,busy,role,onApprove}:{recovery:any;busy:bo
  return <div className={s.wrap}>
   {recovery.no_feasible_path&&<div className={`${s.notice} ${plans.length?'':s.alert}`} role="alert" data-testid="recovery-notice">
    <b>{plans.length?'No plan places every job':'No technician can take these jobs right now'}</b><span>{recovery.message}</span></div>}
-  {!!plans.length&&<div className={s.scroller}><table className={s.table}>
+ {!!plans.length&&<div className={s.scroller}><table className={s.table}>
    <thead><tr><th>Plan</th><th>SLA misses</th><th>Penalty exposure</th><th>Changes</th><th>Added travel</th></tr></thead>
    <tbody>
     {plans.map((p,i)=><tr key={p.id} className={`${s.row} ${i===pick?s.picked:''}`} onClick={()=>setPicked(i)} tabIndex={0} aria-selected={i===pick} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setPicked(i)}}}>
@@ -83,9 +83,13 @@ export function PlanRanking({recovery,busy,role,onApprove}:{recovery:any;busy:bo
      <td>{p.added_travel_minutes} min</td>
     </tr>)}
    </tbody></table></div>}
-  {chosen&&<section className={s.why} aria-live="polite">
+  <div className={`${s.cols} ${chosen?s.two:''}`}><div className={s.main}>
+  {chosen&&<section className={s.why}>
    <h3>Why Plan {letter(pick)}?</h3>
    <ul>{checks.map((c,i)=><li key={i} className={c.ok?s.ok:s.no}><span aria-hidden="true">{c.ok?'✓':'✕'}</span>{c.text}{c.decisive&&<em>decides the order</em>}</li>)}</ul>
+  </section>}
+  </div><div className={s.side}>
+  {chosen&&<section className={s.decision} aria-live="polite">
    <p className={s.plain}><span>IN PLAIN WORDS</span>{sentence(chosen,total)} {chosen.assignments.length>0&&`First job starts ${clock(chosen.assignments[0].planned_start)}.`}</p>
    <p className={s.note}>{chosen.confidence}{recovery.truncated?' Search time budget reached; best feasible plans so far are shown.':''}</p>
    <div className={s.actions}>
@@ -102,5 +106,6 @@ export function PlanRanking({recovery,busy,role,onApprove}:{recovery:any;busy:bo
    <summary>Who was ruled out ({refused.length})</summary>
    <ul>{refused.map((r,i)=>{const jobs=[...new Set(r.jobs.filter(Boolean))];return <li key={i}><span className={s.cross}>✕</span><b>{r.candidate}</b><small>{r.reason}{jobs.length?` · ${jobs.join(', ')}`:''}</small></li>})}</ul>
   </details>}
+  </div></div>
  </div>;
 }
