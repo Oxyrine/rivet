@@ -2,17 +2,19 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, ClipboardCheck, Fingerprint, ScanLine, BadgeCheck, UsersRound, Wrench } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useSession } from '../lib/api';
+import { destinationsFor } from '../lib/roles';
 import s from './shell.module.css';
 
-const destinations = [
-  { href: '/control', label: 'Control room', Icon: LayoutDashboard },
-  { href: '/portal', label: 'Customer approvals', Icon: ClipboardCheck },
-  { href: '/passport', label: 'Machine passports', Icon: BadgeCheck },
-  { href: '/verify', label: 'Service records', Icon: Fingerprint },
-  { href: '/gate', label: 'Site arrival', Icon: ScanLine },
-  { href: '/tech', label: 'Field app', Icon: Wrench },
-];
+const icons: Record<string, LucideIcon> = {
+  '/control': LayoutDashboard,
+  '/portal': ClipboardCheck,
+  '/passport': BadgeCheck,
+  '/verify': Fingerprint,
+  '/gate': ScanLine,
+  '/tech': Wrench,
+};
 
 const adminOnly = [
   { href: '/team', label: 'Team access', Icon: UsersRound }
@@ -21,6 +23,7 @@ const adminOnly = [
 export function Navigation() {
   const pathname = usePathname();
   const { session } = useSession();
+  const destinations = destinationsFor(session?.role).map(d => ({ ...d, Icon: icons[d.href] }));
   
   return (
     <nav aria-label="Workspace" className={s.nav}>

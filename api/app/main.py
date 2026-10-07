@@ -73,6 +73,7 @@ def health_db():
 async def websocket(ws:WebSocket):
     from api.app.core.auth import identify
     from api.app.core.runtime import store
+    from api.app.core.views import may_see_events
     try:principal=await asyncio.to_thread(identify,ws.query_params.get('token',''))
     except Exception:await ws.close(code=4401);return
     await ws.accept();cursor=0
@@ -80,7 +81,7 @@ async def websocket(ws:WebSocket):
         while True:
             state=store.read()
             assigned={j['id'] for j in state.jobs.values() if j.get('technician_id')==principal.get('technician_id')}
-            events=[e for e in state.events[cursor:] if e['machine'] and state.machines[e['machine']]['site_id'] in principal['sites'] and (principal['role']!='technician' or e['payload'].get('job_id') in assigned)]
+            events=[] if not may_see_events(principal['role']) else [e for e in state.events[cursor:] if e['machine'] and state.machines[e['machine']]['site_id'] in principal['sites'] and (principal['role']!='technician' or e['payload'].get('job_id') in assigned)]
             if events:await ws.send_json({'events':events,'cursor':len(state.events)})
             cursor=len(state.events);await asyncio.sleep(1)
     except WebSocketDisconnect:pass

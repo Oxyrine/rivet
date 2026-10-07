@@ -10,6 +10,7 @@ from contract.state import emit
 from api.app.core.runtime import store
 from api.app.core.auth import require_roles, scoped_job, scoped_machine, tokens, hosted, SECRET
 from api.app.core.clock import now, iso, demo_controls
+from api.app.core.views import job_view, summary_view, commitments_view
 from .domain import create_request, approve, assign, hold, release, candidates, move
 from .sync import replay, command
 from .uploads import record_upload,uploaded_content
@@ -188,12 +189,13 @@ def jobs(state:str|None=None,cursor:int=0,p=Depends(read)):
     for job in s.jobs.values():
         try:scoped_job(s,job['id'],p)
         except DomainError:continue
-        if not state or job['state']==state:items.append(job)
+        if not state or job['state']==state:items.append(job_view(job,p['role']))
     return {'items':items[cursor:cursor+100],'next_cursor':cursor+100 if len(items)>cursor+100 else None}
 
 @router.get('/jobs/{ident}')
 def get_job(ident:str,p=Depends(read)):
-    s=store.read();job=scoped_job(s,ident,p);return {**job,'commitments':[c for c in s.commitments.values() if c.get('job_id')==ident],'candidates':candidates(s,job)}
+    s=store.read();job=scoped_job(s,ident,p)
+    return job_view({**job,'commitments':[c for c in s.commitments.values() if c.get('job_id')==ident],'candidates':candidates(s,job)},p['role'])
 
 @router.post('/jobs/{ident}/assign')
 def assign_job(ident:str,body:AssignJob,p=Depends(ops),idempotency_key:str|None=Header(None)):
@@ -273,7 +275,7 @@ def device_scope(s,ident,p):
 def shift(ident:str,p=Depends(require_roles('technician'))):
     s=store.read();device_scope(s,ident,p)
     assigned=[j for j in s.jobs.values() if j.get('technician_id')==p.get('technician_id')];ids={j['id'] for j in assigned}
-    return {'cached_at':s.now,'jobs':assigned,'commitments':[c for c in s.commitments.values() if c.get('job_id') in ids],'last_seq':s.devices[ident]['last_seq']}
+    return {'cached_at':s.now,'jobs':[job_view(j,p['role']) for j in assigned],'commitments':[c for c in s.commitments.values() if c.get('job_id') in ids],'last_seq':s.devices[ident]['last_seq']}
 
 @router.post('/devices/{ident}/commands')
 def commands(ident:str,body:DeviceBatch,p=Depends(require_roles('technician'))):
@@ -304,7 +306,7 @@ def gate_key(ident:str,body:dict,p=Depends(require_roles('supervisor'))):
 def dashboard(p=Depends(read)):
     s=store.read();visible=[j for j in s.jobs.values() if j['site_id'] in p['sites'] and (p['role']!='technician' or j.get('technician_id')==p.get('technician_id'))]
     ids={j['id'] for j in visible}
-    return {'now':s.now,'jobs':visible,'machines':[m for m in s.machines.values() if m['site_id'] in p['sites']],'sites':[v for k,v in s.sites.items() if k in p['sites']],'technicians':list(s.technicians.values()) if p['role'] in ('coordinator','manager','admin') else [],'breaches':[b for b in s.breaches.values() if not b.get('job_id') or b['job_id'] in ids],'commitments':[c for c in s.commitments.values() if c.get('job_id') in ids],'event_cursor':len(s.events)}
+    return summary_view({'now':s.now,'jobs':visible,'machines':[m for m in s.machines.values() if m['site_id'] in p['sites']],'sites':[v for k,v in s.sites.items() if k in p['sites']],'technicians':list(s.technicians.values()) if p['role'] in ('coordinator','manager','admin') else [],'breaches':[b for b in s.breaches.values() if not b.get('job_id') or b['job_id'] in ids],'commitments':[c for c in s.commitments.values() if c.get('job_id') in ids],'event_cursor':len(s.events)},p['role'])
 
 @router.get('/adapters')
 def adapters(p=Depends(read)):return store.read().adapters

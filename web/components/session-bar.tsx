@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { ownsPage, homeFor } from '@/lib/roles';
 import { api, useSession } from '@/lib/api';
 import { hostedAuth, supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
@@ -114,6 +116,12 @@ function HostedSignIn({ adopt, onDone }: { adopt: (token: string) => Promise<unk
 
 export function SessionBar() {
   const { session, login, logout, adopt } = useSession();
+  const router = useRouter();
+  const pathname = usePathname();
+  // After signing in, land on the role's own workspace unless the page already open belongs to it.
+  const land = (next?: { role: string }) => {
+    if (next && !ownsPage(next.role, pathname)) router.replace(homeFor(next.role));
+  };
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState('coordinator');
   const [otp, setOtp] = useState('');
@@ -134,11 +142,11 @@ export function SessionBar() {
   return (
     <div style={{position: 'relative'}}>
       <Button variant="secondary" onClick={() => setOpen(!open)}>Sign in</Button>
-      {open && hostedAuth && <HostedSignIn adopt={adopt} onDone={() => setOpen(false)} />}
+      {open && hostedAuth && <HostedSignIn adopt={async token => { const next = await adopt(token); land(next); return next; }} onDone={() => setOpen(false)} />}
       {open && !hostedAuth && (
         <form className="login-popover panel" style={{position: 'absolute', right: 0, top: '48px', width: '344px', zIndex: 50, background: 'var(--surface)', padding: '24px', borderRadius: '8px', boxShadow: '0 12px 35px rgba(32,40,36,0.15)', border: '1px solid var(--line)'}} onSubmit={async e => {
           e.preventDefault(); setBusy(true); setError('');
-          try { await login(user, otp); setOpen(false); }
+          try { land(await login(user, otp)); setOpen(false); }
           catch (err) { setError((err as Error).message); }
           finally { setBusy(false); }
         }}>
@@ -148,7 +156,7 @@ export function SessionBar() {
             busy={entering}
             onEnter={async userId => {
               setEntering(userId); setError('');
-              try { await login(userId, '246810'); setOpen(false); }
+              try { land(await login(userId, '246810')); setOpen(false); }
               catch (err) { setError((err as Error).message); }
               finally { setEntering(''); }
             }}

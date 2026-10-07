@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { api, useSession } from '../../lib/api';
 import { subscribeEvents } from '../../lib/ws';
 import s from './control.module.css';
+import { DISPATCHERS } from '../../lib/roles';
 import { Plus, Wrench, Box, Route, Check, AlertTriangle, ArrowRight, ShieldCheck, RefreshCw } from 'lucide-react';
 import { CommitmentGraph } from '../../components/commitment-graph';
 import { PlanRanking } from '../../components/plan-ranking';
@@ -66,6 +67,8 @@ const clock = (v?: string) =>
 
 export default function ControlRoom() {
   const { session } = useSession();
+  // Dispatchers change things; the auditor and any other role only look.
+  const canAct = DISPATCHERS.includes(session?.role ?? '');
   const selectedId = useRef<string | null>(null);
   const requestedJobOpened = useRef(false);
 
@@ -257,7 +260,7 @@ export default function ControlRoom() {
 
         <div className={s.headingActions}>
           <span className={s.sheetCode}>OPERATIONAL SPEC · RIVET-01</span>
-          <button disabled={busy || !session} onClick={create} className={s.primary}>
+          <button disabled={busy || !canAct} onClick={create} className={s.primary} title={canAct ? undefined : 'Your role can view requests but not create them'}>
             <Plus size={15} aria-hidden="true" /> New M-104 Request
           </button>
         </div>
@@ -269,6 +272,11 @@ export default function ControlRoom() {
         </div>
       )}
 
+      {session && !canAct && (
+        <div role="status" data-testid="read-only-banner" className={s.notice}>
+          Read-only view. You can inspect jobs, evidence and the audit history, but not create, approve or assign.
+        </div>
+      )}
       {error && <div role="alert" className={s.error}>{error}</div>}
       {notice && <div role="status" className={s.notice}>{notice}</div>}
 
@@ -395,7 +403,7 @@ export default function ControlRoom() {
             <button disabled={busy || !session} onClick={inspect} className={s.secondaryBtn}>
               Inspect Impact
             </button>
-            <button className={s.danger} disabled={busy || !session} onClick={drop}>
+            <button className={s.danger} disabled={busy || !canAct} onClick={drop}>
               Report Dropout
             </button>
           </div>
@@ -612,7 +620,7 @@ export default function ControlRoom() {
               </div>
             ))}
 
-            {['pending_approval', 'approved'].includes(selected.state) && (
+            {canAct && ['pending_approval', 'approved'].includes(selected.state) && (
               <div className={s.dispatch}>
                 <h3>Dispatch Execution</h3>
                 {selected.state === 'pending_approval' ? (

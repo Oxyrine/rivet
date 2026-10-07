@@ -44,7 +44,7 @@ export function PlanRanking({recovery,busy,role,onApprove}:{recovery:any;busy:bo
   (m[k]=m[k]||{candidate:r.candidate,reason:r.reason,jobs:[]}).jobs.push(r.job_id);
   return m;
  },{})) as any[];
- const chosen=plans[pick],checks=chosen?reasons(plans,pick):[],canApprove=!chosen?.needs_manager||['manager','admin'].includes(role);
+ const chosen=plans[pick],checks=chosen?reasons(plans,pick):[],canApprove=['coordinator','manager','admin'].includes(role)&&(!chosen?.needs_manager||['manager','admin'].includes(role));
  return <div className={s.wrap}>
   {recovery.no_feasible_path&&<div className={s.none} role="alert"><b>No plan meets every SLA</b><span>{recovery.message}</span></div>}
   {!!plans.length&&<div className={s.scroller}><table className={s.table}>

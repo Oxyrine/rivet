@@ -8,11 +8,30 @@ import { SessionBar } from '@/components/session-bar';
 import { Navigation } from '@/components/navigation';
 import { Logo } from '@/components/logo';
 import { useSummary } from '@/lib/use-summary';
+import { useSession } from '@/lib/api';
+import { canOpen, destinationsFor, homeFor, roleLabel } from '@/lib/roles';
 import s from './shell.module.css';
+
+/** Shown when a signed-in role opens a page that is not part of its workspace. The API refuses the data as well. */
+function NoAccess({ role }: { role: string }) {
+  const own = destinationsFor(role);
+  return (
+    <div className="panel" role="status" data-testid="no-access" style={{ maxWidth: 560 }}>
+      <h2>This page is not part of the {roleLabel(role)} workspace</h2>
+      <p className="muted" style={{ margin: '8px 0 16px' }}>
+        You are signed in as {roleLabel(role)}, which works in: {own.map(d => d.label).join(', ') || 'no workspace pages'}.
+        Sign in with a different role to see the rest.
+      </p>
+      <Link className="primary-button" href={homeFor(role)}>Go to {own[0]?.label ?? 'service records'}</Link>
+    </div>
+  );
+}
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { summary } = useSummary();
+  const { session } = useSession();
+  const blocked = !!session && !canOpen(session.role, pathname);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   if (pathname === '/') {
@@ -77,7 +96,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </header>
 
         <main className="workspace-main" id="main-content">
-          {children}
+          {blocked && session ? <NoAccess role={session.role} /> : children}
         </main>
       </div>
     </div>
