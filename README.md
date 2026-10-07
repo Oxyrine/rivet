@@ -6,7 +6,7 @@
 
 Rivet manages the commitments behind every industrial service job. When a technician, a part or a permit falls through, it shows everything that breaks, recovers it in one click, and closes the job only on evidence the customer can verify.
 
-*DATAQUEST 3.0 · Round 1 · Team Burbn.*
+*DATAQUEST 3.0 · Round 1 · Track DQBH · Team Burbn.*
 
 [Live demo](https://rivet-lyart.vercel.app) · [API docs](https://rivet-1.onrender.com/docs) · [Submission deck](docs/submission/DATAQUEST_3.0_Rivet.pptx) · [Run it locally](#run-it-locally)
 
@@ -435,7 +435,6 @@ Rivet is a hackathon build. This section says plainly what is and is not done, i
 | `make thesis` runs the oracle, the concurrency, the replay and the tamper checks. | `make thesis` runs the HTTP lifecycle and the tamper attack. The oracle, concurrency and replay checks run under `make test-exceptions`, `test-ledger` and `test-sync`. |
 | An optional LLM writes one cached explanation per breach. | There is no LLM in this build. The "Why Plan A?" text comes from the solver's own ranking rules. |
 | The stack runs in three containers on one VM. | A `docker-compose.yml` is supplied but unverified. The deployed version uses Render, Vercel and Supabase free tiers. |
-| The deck's TRACK field. | It is still the template placeholder. |
 
 Other open items:
 
@@ -480,6 +479,13 @@ Indicative economics from the deck: one 2 vCPU / 4 GB VM (about ₹2,000 to ₹3
 
 ## Team
 
-**Burbn.**: Aakash A, Abdul Haashir, Lakshita V and Shyam Ganesh.
+**Burbn.** · DATAQUEST 3.0, Round 1 · Track **DQBH**
+
+| Member |
+| --- |
+| Aakash A |
+| Abdul Haashir |
+| Lakshita V |
+| Shyam Ganesh |
 
 Aakash owned the contract, the backend engines, the control room, the customer portal, the verifier and hosting. Abdul Haashir owned the technician app, the billing adapter, the seed history and the demo runner.
