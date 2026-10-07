@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Space_Grotesk, Inter, IBM_Plex_Mono, Barlow_Condensed } from 'next/font/google';
+import { Space_Grotesk, Inter, IBM_Plex_Mono, Barlow_Condensed, Caveat } from 'next/font/google';
 import './tokens.css';
 import './globals.css';
 import { AppShell } from '@/components/app-shell';
@@ -32,6 +32,13 @@ const barlowCondensed = Barlow_Condensed({
   display: 'swap',
 });
 
+const caveat = Caveat({
+  subsets: ['latin'],
+  weight: ['700'],
+  variable: '--font-cursive',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
   title: 'Rivet — Industrial Service & Operations Platform',
   description: 'Coordinate heavy industrial equipment servicing, dispatch qualified technicians, resolve schedule disruptions in real time, and maintain complete verified service records.',
@@ -44,7 +51,7 @@ export const viewport: Viewport = {
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${inter.variable} ${ibmPlexMono.variable} ${barlowCondensed.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${spaceGrotesk.variable} ${inter.variable} ${ibmPlexMono.variable} ${barlowCondensed.variable} ${caveat.variable}`} suppressHydrationWarning>
       <body>
         <a href="#main-content" className="skip-link">Skip to main content</a>
         <AppShell>{children}</AppShell>
