@@ -18,6 +18,11 @@ class FakeSupabase:
 
     def handle(self, request):
         self.calls.append((request.method, request.url.path, request.headers.get('authorization')))
+        if request.url.path.endswith('/generate_link'):
+            email = json.loads(request.content)['email']
+            if not any(u['email'] == email for u in self.users.values()):
+                return httpx.Response(404, json={'msg': 'User not found'})
+            return httpx.Response(200, json={'hashed_token': 'hash-for-' + email, 'verification_type': 'magiclink', 'email': email})
         path = request.url.path.removeprefix('/auth/v1/admin/users')
         if request.method == 'POST':
             body = json.loads(request.content)
@@ -154,3 +159,72 @@ def test_removing_the_demo_accounts_deletes_them_and_unlinks_their_users(hosted,
     assert supabase.users == {}
     users = store.read().users
     assert 'email' not in users['ravi'] and users['coordinator']['email'] == 'ops@example.com'
+
+
+# --- one-click entry from the sign-in screen (no password, no session needed) ---
+
+
+@pytest.fixture
+def ready(hosted, admin, supabase):
+    """Demo logins already created, then the caller is signed out: entry is for people who have no session."""
+    assert create(hosted, admin).status_code == 200
+    from api.app.modules.ledger import routes
+    routes._entry_hits.clear()
+    return hosted
+
+
+def enter(client, user_id, **headers):
+    return client.post('/auth/demo-entry', json={'user_id': user_id}, headers=headers)
+
+
+def test_the_sign_in_screen_is_offered_only_the_roles_that_have_demo_logins(hosted, admin, supabase):
+    assert hosted.get('/auth/demo-entry').json() == {'enabled': False, 'roles': []}  # nothing created yet
+    create(hosted, admin)
+    offered = hosted.get('/auth/demo-entry').json()
+    assert offered['enabled'] is True
+    assert {r['user_id'] for r in offered['roles']} == set(demo_accounts.ENTRY_USERS)
+    assert {r['user_id']: r['role'] for r in offered['roles']}['priya'] == 'technician'
+    assert 'admin' not in {r['user_id'] for r in offered['roles']}
+
+
+def test_entry_hands_back_a_one_time_token_for_the_demo_account_without_any_sign_in(ready):
+    response = enter(ready, 'ravi')
+    assert response.status_code == 200 and response.headers['cache-control'] == 'no-store'
+    assert response.json() == {'token_hash': 'hash-for-boss+rivet-ravi@example.com', 'verification_type': 'magiclink'}
+
+
+def test_entry_is_closed_when_demo_controls_are_off_or_the_server_is_local(ready, monkeypatch):
+    monkeypatch.delenv('DEMO_CONTROLS')
+    assert enter(ready, 'ravi').status_code == 403
+    assert ready.get('/auth/demo-entry').json()['enabled'] is False
+
+
+def test_admin_entry_needs_its_own_switch(ready, monkeypatch):
+    assert enter(ready, 'admin').status_code == 403
+    monkeypatch.setenv('DEMO_ENTER_ADMIN', '1')
+    assert enter(ready, 'admin').status_code == 200
+    assert 'admin' in {r['user_id'] for r in ready.get('/auth/demo-entry').json()['roles']}
+
+
+def test_entry_never_opens_a_real_persons_account(ready):
+    link('priya', email='priya.real@example.com')  # a real sign-in, not a demo one
+    assert enter(ready, 'priya').status_code == 409
+    assert 'priya' not in {r['user_id'] for r in ready.get('/auth/demo-entry').json()['roles']}
+
+
+def test_entry_rejects_unknown_roles_and_missing_demo_logins(hosted, admin, supabase):
+    assert enter(hosted, 'ravi').status_code == 409  # logins were never created
+    assert enter(hosted, 'nobody').status_code == 403
+    assert enter(hosted, '').status_code == 403
+
+
+def test_one_visitor_cannot_hammer_the_entry(ready):
+    codes = [enter(ready, 'ravi', **{'X-Forwarded-For': '203.0.113.9'}).status_code for _ in range(22)]
+    assert codes[:20] == [200] * 20 and codes[20:] == [429, 429]
+    assert enter(ready, 'ravi', **{'X-Forwarded-For': '203.0.113.10'}).status_code == 200  # someone else is unaffected
+
+
+def test_a_failed_link_is_reported_not_leaked(ready, supabase):
+    supabase.users.clear()  # the account vanished from Supabase
+    response = enter(ready, 'ravi')
+    assert response.status_code == 502 and response.json()['code'] == 'ENTRY_UNAVAILABLE'

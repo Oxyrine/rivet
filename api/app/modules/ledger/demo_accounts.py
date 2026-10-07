@@ -11,7 +11,14 @@ import httpx
 from contract.errors import DomainError
 
 # One account per role the demo walks through, plus the two technicians whose shifts are shown.
-DEMO_USERS = ('coordinator', 'manager', 'supervisor', 'requester', 'storekeeper', 'auditor', 'ravi', 'priya')
+# The admin account is separate from the operator's own sign-in and is only offered for one-click entry when DEMO_ENTER_ADMIN=1.
+DEMO_USERS = ('coordinator', 'manager', 'supervisor', 'requester', 'storekeeper', 'auditor', 'ravi', 'priya', 'admin')
+ENTRY_USERS = DEMO_USERS[:-1]
+
+
+def entry_users():
+    """Who a visitor may enter as with one click. An admin can reset data and create accounts, so it needs its own switch."""
+    return ENTRY_USERS + (('admin',) if os.getenv('DEMO_ENTER_ADMIN') == '1' else ())
 TAG = '+rivet-'
 
 _client = None
@@ -86,6 +93,17 @@ def provision(emails, client=None):
         except Exception as error:  # a network failure on one account must not hide the others
             results.append({'user_id': user_id, 'email': email, 'error': str(error) or error.__class__.__name__})
     return results
+
+
+def entry_link(email, client=None):
+    """A one-time Supabase login token for a demo account, so the browser can sign in without a password."""
+    client = client or admin_client()
+    base, headers = _admin()
+    response = client.post(f'{base}/generate_link', json={'type': 'magiclink', 'email': email}, headers=headers)
+    body = response.json() if response.status_code == 200 else {}
+    if not body.get('hashed_token'):
+        raise DomainError('ENTRY_UNAVAILABLE', 'The demo sign-in could not be prepared. Ask an administrator to create the demo logins again.', status=502)
+    return {'token_hash': body['hashed_token'], 'verification_type': body.get('verification_type', 'magiclink')}
 
 
 def remove(emails, client=None):

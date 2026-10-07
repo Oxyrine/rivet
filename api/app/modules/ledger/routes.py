@@ -2,7 +2,7 @@ import os
 import base64
 import hashlib
 from datetime import timedelta
-from fastapi import APIRouter, Depends, Header, Query
+from fastapi import APIRouter, Depends, Header, Query, Request
 from fastapi.responses import JSONResponse
 from contract.commands import CreateRequest, AssignJob, Hold, DeviceBatch
 from contract.errors import DomainError
@@ -118,6 +118,41 @@ def delete_demo_accounts(body:dict={},p=Depends(require_roles('admin'))):
         return {'removed':gone}
     store.mutate(fn)
     return {'removed':gone,'kept':sorted(set(emails)-set(gone))}
+
+_entry_hits={}
+
+def _throttle_entry(request,limit=20,window=60):
+    """One visitor cannot hammer the unauthenticated demo entry: {limit} tries a minute per address."""
+    import time
+    who=(request.headers.get('x-forwarded-for','').split(',')[0].strip() or (request.client.host if request.client else 'unknown'))
+    stamp=time.monotonic();hits=[t for t in _entry_hits.get(who,[]) if stamp-t<window]
+    if len(hits)>=limit:raise DomainError('RATE_LIMITED','Too many demo sign-in attempts. Wait a minute and try again.',status=429)
+    hits.append(stamp);_entry_hits[who]=hits
+    if len(_entry_hits)>1000:_entry_hits.clear()
+
+def _entry_open():return hosted() and demo_controls()
+
+@router.get('/auth/demo-entry')
+def demo_entry_options():
+    """Which demo roles the sign-in screen may offer as one-click buttons. Names only, nothing secret."""
+    if not _entry_open():return {'enabled':False,'roles':[]}
+    from . import demo_accounts
+    s=store.read()
+    roles=[{'user_id':u,'role':s.users[u]['role']} for u in demo_accounts.entry_users() if u in s.users and demo_accounts.is_demo_email(s.users[u].get('email'))]
+    return {'enabled':bool(roles),'roles':roles}
+
+@router.post('/auth/demo-entry')
+def demo_entry(body:dict,request:Request):
+    """One-click sign-in for a demo account: a one-time Supabase token, only while demo controls are on. A real person's account is never offered."""
+    if not _entry_open():raise DomainError('FORBIDDEN','Demo entry is off on this server',status=403)
+    _throttle_entry(request)
+    from . import demo_accounts
+    user_id=str(body.get('user_id') or '')
+    if user_id not in demo_accounts.entry_users():raise DomainError('FORBIDDEN','That role is not available for demo entry',status=403)
+    user=store.read().users.get(user_id)
+    if not user or not demo_accounts.is_demo_email(user.get('email')):
+        raise DomainError('NOT_READY','Demo logins are not set up yet. An administrator can create them on the Team access page.',status=409)
+    return JSONResponse(demo_accounts.entry_link(user['email']),headers={'Cache-Control':'no-store'})
 
 @router.post('/auth/refresh')
 def refresh(body:dict):
