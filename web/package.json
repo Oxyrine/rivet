@@ -9,11 +9,13 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@types/leaflet": "^1.9.22",
     "@zxing/browser": "^0.2.1",
     "@zxing/library": "^0.23.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "idb": "^8.0.4",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.468.0",
     "next": "^16.0.0",
     "openapi-fetch": "^0.17.0",
