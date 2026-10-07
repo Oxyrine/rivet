@@ -41,8 +41,8 @@ const stages = [
   },
   {
     label: 'Close with evidence',
-    title: 'Make every sign-off tamper-proof.',
-    description: 'Reconcile issued parts with field logs, review photo proof, and capture cryptographic customer PIN acceptance into an immutable ledger.',
+    title: 'Make every sign-off easy to verify.',
+    description: 'Reconcile issued parts with field logs, review photo proof, and capture customer PIN acceptance into a permanent service history.',
     Icon: ShieldCheck,
   },
 ];
@@ -345,8 +345,8 @@ function WorkflowPreview({ step }: { step: number }) {
             <div className={s.previewItem}>
               <ShieldCheck size={28} className={s.shieldIcon} />
               <div>
-                <b>Cryptographic Sign-off Ready</b>
-                <p>All materials and telemetry verified</p>
+                <b>Sign-off Ready</b>
+                <p>All materials and evidence reconciled</p>
               </div>
             </div>
             <div className={s.checkRow}>
@@ -355,18 +355,18 @@ function WorkflowPreview({ step }: { step: number }) {
             </div>
             <div className={s.checkRow}>
               <Check size={16} className={s.goodIcon} />
-              <span>Field service inspection photos cryptographically hashed</span>
+              <span>Field service inspection photos attached to record</span>
             </div>
             <div className={s.checkRow}>
               <Check size={16} className={s.goodIcon} />
-              <span>Supervisor PIN validation anchored to customer-held audit trail</span>
+              <span>Customer supervisor PIN acceptance confirmed</span>
             </div>
           </>
         )}
       </div>
 
       <div className={s.previewFoot}>
-        <span className="mono">VERIFIED AUDITABLE WORKFLOW</span>
+        <span className="mono">SERVICE WORKFLOW</span>
         <b>{stages[step].label}</b>
       </div>
     </div>
@@ -409,19 +409,14 @@ export default function Landing() {
         {/* Approved Industrial Hero Section */}
         <section className={s.hero}>
           <div className={s.heroImage} aria-hidden="true" />
-          <div className={s.heroOverlay} aria-hidden="true" />
           
           <div className={s.heroContent}>
-            <div className={s.heroEyebrow}>
-              <span className={s.heroPulse} />
-              <span>BUILT FOR INDUSTRIAL EQUIPMENT TEAMS</span>
-            </div>
             <h1>
               Good machines.<br />
               <em>Keep them running.</em>
             </h1>
             <p>
-              Get the right people and parts to the job. Handle the disruptions. Keep a tamper-proof cryptographic record of every repair.
+              Get the right people and parts to the job. Handle the changes. Keep a record of the work.
             </p>
             <div className={s.heroActions}>
               <Link href="/control" passHref>
@@ -434,17 +429,6 @@ export default function Landing() {
               </a>
             </div>
           </div>
-
-          <div className={s.heroFoot}>
-            <div>
-              <span className="mono">NETWORK STATUS</span>
-              <strong>04 ACTIVE SITES · 12 QUALIFIED TECHNICIANS</strong>
-            </div>
-            <div className={s.heroFootRight}>
-              <span className="mono">AUDIT TRAIL</span>
-              <strong>100% CRYPTOGRAPHICALLY VERIFIED</strong>
-            </div>
-          </div>
         </section>
 
         <div className={s.content}>
@@ -454,7 +438,7 @@ export default function Landing() {
           <section id="how-it-works" className={s.workflow}>
             <SectionHeader
               title="How Rivet coordinates a service job"
-              description="End-to-end industrial service workflow — from dispatch reservation to cryptographic customer sign-off."
+              description="End-to-end industrial service workflow — from dispatch reservation to customer sign-off."
             />
             <div className={s.workflowGrid}>
               <div className={s.workflowText}>
@@ -525,7 +509,7 @@ export default function Landing() {
         </div>
         <div className={s.footerBottom}>
           <span>Rivet Industrial Service Operations Platform</span>
-          <small>Precision equipment telemetry & tamper-proof custody records</small>
+          <small>Equipment coordination & verified maintenance records</small>
         </div>
       </footer>
     </div>

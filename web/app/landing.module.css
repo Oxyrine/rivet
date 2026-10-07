@@ -80,19 +80,19 @@
 }
 
 /* --------------------------------------------------------------------------
-   Approved Hero Section
+   Approved Hero Section — Clean & Grounded
    -------------------------------------------------------------------------- */
 
 .hero {
   position: relative;
-  min-height: 540px;
+  min-height: 520px;
   background: var(--hero-bg);
   color: #ffffff;
   overflow: hidden;
-  padding: 72px 5% 32px;
+  padding: 96px 5% 80px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;
 }
 
 .heroImage {
@@ -100,9 +100,9 @@
   inset: 0;
   background-image: linear-gradient(
       90deg,
-      rgba(10, 14, 12, 0.96) 0%,
+      rgba(10, 14, 12, 0.95) 0%,
       rgba(14, 19, 17, 0.88) 45%,
-      rgba(14, 19, 17, 0.25) 85%
+      rgba(14, 19, 17, 0.15) 85%
     ),
     url('/images/industrial-press.png');
   background-size: cover;
@@ -110,48 +110,10 @@
   pointer-events: none;
 }
 
-.heroOverlay {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 20% 50%, rgba(200, 76, 28, 0.08) 0%, transparent 60%);
-  pointer-events: none;
-}
-
-.heroContent,
-.heroFoot {
+.heroContent {
   position: relative;
   z-index: 2;
-}
-
-.heroEyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--hero-accent);
-  background: rgba(232, 99, 48, 0.12);
-  border: 1px solid rgba(232, 99, 48, 0.3);
-  padding: 4px 10px;
-  border-radius: var(--radius-badge);
-  margin-bottom: 20px;
-}
-
-.heroPulse {
-  width: 6px;
-  height: 6px;
-  background: var(--hero-accent);
-  border-radius: 50%;
-  box-shadow: 0 0 8px var(--hero-accent);
-  animation: heroBlink 2s infinite ease-in-out;
-}
-
-@keyframes heroBlink {
-  0%, 100% { opacity: 0.6; transform: scale(0.9); }
-  50% { opacity: 1; transform: scale(1.2); }
+  max-width: 620px;
 }
 
 .hero h1 {
@@ -160,21 +122,21 @@
   font-size: clamp(40px, 4.8vw, 68px);
   line-height: 1.05;
   letter-spacing: var(--tracking-hero);
-  margin: 0 0 18px;
-  color: var(--hero-title-color);
+  margin: 0 0 20px;
+  color: #ffffff;
 }
 
 .hero h1 em {
   font-style: normal;
-  color: var(--hero-accent);
-  text-shadow: 0 0 24px rgba(232, 99, 48, 0.35);
+  color: var(--hero-accent, #e86330);
+  /* Solid, crisp color — no artificial text-shadow glow */
 }
 
 .hero p {
-  color: #c5d4cb;
+  color: #c8d5ce;
   line-height: 1.6;
-  font-size: 15.5px;
-  margin-bottom: 32px;
+  font-size: 16px;
+  margin-bottom: 36px;
   max-width: 520px;
 }
 
@@ -186,19 +148,19 @@
 }
 
 .heroActions .orangeButton {
-  background: var(--hero-cta-bg);
-  border: 1px solid var(--hero-cta-bg);
+  background: var(--hero-cta-bg, #c84c1c);
+  border: 1px solid var(--hero-cta-bg, #c84c1c);
   color: #ffffff;
   padding: 12px 24px;
   font-size: 14px;
   font-weight: 600;
   border-radius: var(--radius-button);
-  box-shadow: 0 4px 20px rgba(200, 76, 28, 0.4);
+  transition: all 0.15s ease;
 }
 
 .heroActions .orangeButton:hover {
-  background: var(--brand-accent-hover);
-  border-color: var(--brand-accent-hover);
+  background: var(--brand-accent-hover, #b03e12);
+  border-color: var(--brand-accent-hover, #b03e12);
   transform: translateY(-1px);
 }
 
@@ -222,37 +184,6 @@
   color: #ffffff;
 }
 
-.heroFoot {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  margin-top: 48px;
-  padding-top: 18px;
-  font-size: 12px;
-}
-
-.heroFoot span {
-  display: block;
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  letter-spacing: var(--tracking-mono);
-  color: #8fa096;
-  margin-bottom: 2px;
-}
-
-.heroFoot strong {
-  font-family: var(--font-mono);
-  font-size: 11.5px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: #e5eee8;
-}
-
-.heroFootRight {
-  text-align: right;
-}
-
 /* --------------------------------------------------------------------------
    Content Container
    -------------------------------------------------------------------------- */
@@ -268,7 +199,7 @@
    -------------------------------------------------------------------------- */
 
 .desk {
-  padding: 44px 0 56px;
+  padding: 48px 0 56px;
   scroll-margin-top: 30px;
 }
 
@@ -939,18 +870,10 @@
     gap: 32px;
   }
   .hero {
-    padding-top: 56px;
-    min-height: 480px;
+    padding: 72px 5% 60px;
+    min-height: 440px;
   }
   .hero h1 {
     font-size: 46px;
-  }
-  .heroFoot {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-  .heroFootRight {
-    text-align: left;
   }
 }
