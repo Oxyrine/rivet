@@ -1,5 +1,5 @@
 # Render blueprint for the Rivet API. The database, login and evidence photos live on Supabase.
-# Run exactly one instance: the 60-second scheduler and the websocket both run inside the process.
+# Run exactly one instance: the 60-second scheduler runs inside the process (free plans cannot scale out anyway).
 services:
   - type: web
     name: rivet-api
@@ -7,10 +7,10 @@ services:
     dockerfilePath: ./api/Dockerfile
     dockerContext: .
     region: singapore
-    # Smallest always-on paid size. The free plan sleeps when idle, which would drop the websocket and the scheduler.
-    plan: 0.5c-512mb
+    # Free: sleeps after 15 minutes idle (first request then takes about a minute) and the 60-second scheduler
+    # pauses while asleep, catching up on the next tick. For an always-on service switch to a paid size, e.g. 0.5c-512mb.
+    plan: free
     healthCheckPath: /health
-    numInstances: 1
     envVars:
       # Anything other than demo/test turns off the demo login; only Supabase sign-ins are accepted.
       - key: ENV

@@ -7,7 +7,7 @@ Supabase runs only TypeScript on Deno for compute, so it cannot run this Python 
 | Postgres (events, ledger, snapshot) | Supabase | Managed Postgres with backups |
 | Evidence photos | Supabase Storage, private bucket `evidence` | Survive redeploys; bytes are checked against the ledger hash on every read |
 | OTP login | Supabase Auth (email code) | The API verifies Supabase's signed token; phone OTP needs an SMS provider enabled in Supabase |
-| FastAPI API | Render (Docker, one instance) | Runs the scheduler and websocket in-process |
+| FastAPI API | Render (Docker, one instance, free plan works) | Runs the scheduler in-process |
 | Web app | Vercel or Render | Needs `API_URL` set to the API origin at build time |
 
 ## What is ready
@@ -35,6 +35,14 @@ With `ENV=production` the demo login is off. The web app emails a one-time code 
 2. Sign in as that admin, then link everyone else: `POST /admin/users/{user_id}/link` with `{"email": "..."}`. One address maps to one user. The audit trail stores only a hash of the address.
 3. In the Supabase dashboard turn off **Allow new users to sign up** once the admin account exists, and invite people from there. Without that, anyone can create a Supabase account (they still get no access in Rivet).
 4. Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` where the web app is built. Both are public. See `web/.env.example`.
+
+## Running on free plans
+
+Everything here has a free tier: Render, Supabase and Vercel.
+
+- **Render free sleeps** after 15 minutes without traffic. The next request takes about a minute while it wakes. The 60-second scheduler pauses while asleep (hold expiry, missed check-ins, deemed acceptance), then catches up on the first tick after it wakes. Open `/health` shortly before a demo, or ping it every 10 minutes with a free uptime monitor. Free instance hours (about 750 a month) are shared across a Render workspace.
+- **Supabase free pauses** a project after about a week of inactivity, which stops the database. Use the app or open the project before a demo, and restore it from the dashboard if it paused.
+- **Supabase's built-in email sender** is rate-limited and only reaches members of your Supabase organization. Add custom SMTP before anyone else signs in.
 
 ## Not done yet
 
