@@ -57,6 +57,18 @@ for module in ('exceptions','proof'):
 @app.get('/health')
 def health():return {'status':'ok','environment':os.getenv('ENV','demo')}
 
+@app.get('/health/db')
+def health_db():
+    """Touches the database. Pinged by the keep-warm job, which also stops a free Supabase project from pausing for inactivity."""
+    from sqlalchemy import text
+    from api.app.core.runtime import store
+    try:
+        with store.engine.connect() as connection:connection.execute(text('SELECT 1'))
+    except Exception:
+        logging.getLogger('rivet.health').exception('Database health check failed')
+        return JSONResponse(status_code=503,content={'status':'unavailable','database':'unreachable'})
+    return {'status':'ok','database':'reachable'}
+
 @app.websocket('/ws')
 async def websocket(ws:WebSocket):
     from api.app.core.auth import identify

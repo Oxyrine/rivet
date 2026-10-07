@@ -1,0 +1,21 @@
+# Free Render instances sleep after 15 minutes idle and take about a minute to wake.
+# This pings the API and the web app every 5 minutes so a demo never meets a cold start,
+# and touches the database so a free Supabase project does not pause for inactivity.
+# GitHub's scheduler can run late, so also point a free uptime monitor at the API (docs/hosting.md).
+name: keep-warm
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+permissions: {}
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: API (wakes Render)
+        run: curl -fsS -m 120 --retry 3 --retry-delay 10 https://rivet-6met.onrender.com/health
+      - name: Database (keeps Supabase active)
+        run: curl -fsS -m 60 --retry 2 https://rivet-6met.onrender.com/health/db
+      - name: Web app
+        run: curl -fsS -m 60 -o /dev/null https://rivet-lyart.vercel.app/

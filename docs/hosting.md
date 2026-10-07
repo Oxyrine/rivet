@@ -41,6 +41,7 @@ With `ENV=production` the demo login is off. The web app emails a one-time code 
 Everything here has a free tier: Render, Supabase and Vercel.
 
 - **Render free sleeps** after 15 minutes without traffic. The next request takes about a minute while it wakes. The 60-second scheduler pauses while asleep (hold expiry, missed check-ins, deemed acceptance), then catches up on the first tick after it wakes. Open `/health` shortly before a demo, or ping it every 10 minutes with a free uptime monitor. Free instance hours (about 750 a month) are shared across a Render workspace.
+- **Keep it warm.** `.github/workflows/keep-warm.yml` pings the API, the database (`/health/db`) and the web app every 5 minutes. GitHub's scheduler can run late, so also add a free monitor, for example UptimeRobot: an HTTP(s) monitor on `https://<your-api>.onrender.com/health/db` with a 5-minute interval. Together they keep Render awake (it sleeps after 15 minutes idle) and Supabase active.
 - **Supabase free pauses** a project after about a week of inactivity, which stops the database. Use the app or open the project before a demo, and restore it from the dashboard if it paused.
 - **Supabase's built-in email sender** is rate-limited and only reaches members of your Supabase organization. Add custom SMTP before anyone else signs in.
 

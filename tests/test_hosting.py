@@ -93,3 +93,12 @@ def test_evidence_store_selection_follows_the_environment(monkeypatch, tmp_path)
     monkeypatch.setenv('SUPABASE_URL', 'https://proj.supabase.co/')
     monkeypatch.setenv('SUPABASE_SERVICE_KEY', 'secret')
     assert isinstance(storage.evidence_store(), storage.SupabaseStorage)
+
+
+def test_database_health_check_reports_reachable_and_does_not_need_a_login():
+    from fastapi.testclient import TestClient
+    from api.app.main import app
+    with TestClient(app) as client:
+        response = client.get('/health/db')
+        assert response.status_code == 200 and response.json() == {'status': 'ok', 'database': 'reachable'}
+        assert client.get('/health').json()['status'] == 'ok'  # the cheap check Render polls stays independent of the database
