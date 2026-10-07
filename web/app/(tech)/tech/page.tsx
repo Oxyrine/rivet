@@ -4,6 +4,7 @@ import { useSession } from '@/lib/api';
 import apiClient from '@/lib/client';
 import { MOCK_SHIFTS, ShiftJob, ShiftCommitment, ShiftCacheResponse } from '@/lib/mock-shifts';
 import { JobCard } from './components/job-card';
+import { SyncScreen } from './components/sync-screen';
 import { registerServiceWorker } from '@/lib/offline/sw-register';
 import { storeShiftCache, getCachedShift, checkStaleStatus, StaleStatus } from '@/lib/offline/cache';
 import { getQueuedCommands, QueuedCommand, getQueueLimits, QueueLimits } from '@/lib/offline/queue';
@@ -53,6 +54,8 @@ export default function TechnicianFieldPage() {
   const [isIOS, setIsIOS] = useState<boolean>(false);
   const [limits, setLimits] = useState<QueueLimits>({ commandsCount: 0, maxCommands: 500, isWarning: false, isFull: false });
   const [syncResult, setSyncResult] = useState<SyncResultSummary | null>(null);
+  const [activeTab, setActiveTab] = useState<'jobs' | 'sync'>('jobs');
+  const [syncScreenMode, setSyncScreenMode] = useState<'offline' | 'complete' | 'conflict'>('offline');
 
   // Register Service Worker & Replay Listeners
   useEffect(() => {
@@ -393,56 +396,148 @@ export default function TechnicianFieldPage() {
         )}
       </div>
 
-      {/* Shift Overview Metrics */}
-      <div className="stats-grid" style={{ marginBottom: '24px' }}>
-        <div className="stat-card">
-          <small>ASSIGNED COMMITMENTS</small>
-          <h2>{currentJobs.length}</h2>
-          <span>{currentJobs.length === 1 ? '1 scheduled job' : `${currentJobs.length} scheduled jobs`}</span>
-        </div>
-        <div className="stat-card">
-          <small>CRITICALITY BREAKDOWN</small>
-          <h2>{p1Jobs.length} <span style={{ fontSize: '18px', color: 'var(--muted)' }}>P1</span> / {p2Jobs.length} <span style={{ fontSize: '18px', color: 'var(--muted)' }}>P2</span></h2>
-          <span>{p1Jobs.length > 0 ? 'Urgent response window active' : 'All jobs within standard SLAs'}</span>
-        </div>
-        <div className="stat-card">
-          <small>QUEUED OFFLINE ACTIONS</small>
-          <h2>{queuedCmds.length}</h2>
-          <span>Stored in IndexedDB commands store</span>
-        </div>
+      {/* View Mode Navigation Tabs */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
+        <button
+          type="button"
+          data-testid="tab-jobs"
+          className={activeTab === 'jobs' ? 'primary-button' : 'secondary-button'}
+          onClick={() => setActiveTab('jobs')}
+        >
+          Shift Jobs ({currentJobs.length})
+        </button>
+        <button
+          type="button"
+          data-testid="tab-sync"
+          className={activeTab === 'sync' ? 'primary-button' : 'secondary-button'}
+          onClick={() => setActiveTab('sync')}
+        >
+          Sync Status Screen (Spec p.15)
+        </button>
       </div>
 
-      {/* Main Shift Jobs List */}
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-          <h2 style={{ margin: 0, fontSize: '17px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <ListTodo size={18} /> Shift Job Queue ({currentJobs.length})
-          </h2>
-          <span style={{ fontSize: '12px', color: 'var(--muted)', fontFamily: 'var(--mono)' }}>
-            CLICK JOB TO TEST OFFLINE ACTIONS
-          </span>
-        </div>
-
-        {loading ? (
-          <div className="panel loading">Loading shift cache...</div>
-        ) : currentJobs.length === 0 ? (
-          <div className="panel" style={{ textAlign: 'center', padding: '40px', color: 'var(--muted)' }}>
-            No jobs assigned for this shift.
+      {activeTab === 'jobs' ? (
+        <>
+          {/* Shift Overview Metrics */}
+          <div className="stats-grid" style={{ marginBottom: '24px' }}>
+            <div className="stat-card">
+              <small>ASSIGNED COMMITMENTS</small>
+              <h2>{currentJobs.length}</h2>
+              <span>{currentJobs.length === 1 ? '1 scheduled job' : `${currentJobs.length} scheduled jobs`}</span>
+            </div>
+            <div className="stat-card">
+              <small>CRITICALITY BREAKDOWN</small>
+              <h2>{p1Jobs.length} <span style={{ fontSize: '18px', color: 'var(--muted)' }}>P1</span> / {p2Jobs.length} <span style={{ fontSize: '18px', color: 'var(--muted)' }}>P2</span></h2>
+              <span>{p1Jobs.length > 0 ? 'Urgent response window active' : 'All jobs within standard SLAs'}</span>
+            </div>
+            <div className="stat-card">
+              <small>QUEUED OFFLINE ACTIONS</small>
+              <h2>{queuedCmds.length}</h2>
+              <span>Stored in IndexedDB commands store</span>
+            </div>
           </div>
-        ) : (
-          <div data-testid="job-list">
-            {currentJobs.map((job) => (
-              <div key={job.id} data-testid={`job-${job.id}`}>
-                <JobCard
-                  job={job}
-                  commitments={currentCommitments}
-                  onSelect={(j) => setSelectedJob(j)}
-                />
+
+          {/* Main Shift Jobs List */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <h2 style={{ margin: 0, fontSize: '17px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <ListTodo size={18} /> Shift Job Queue ({currentJobs.length})
+              </h2>
+              <span style={{ fontSize: '12px', color: 'var(--muted)', fontFamily: 'var(--mono)' }}>
+                CLICK JOB TO TEST OFFLINE ACTIONS
+              </span>
+            </div>
+
+            {loading ? (
+              <div className="panel loading">Loading shift cache...</div>
+            ) : currentJobs.length === 0 ? (
+              <div className="panel" style={{ textAlign: 'center', padding: '40px', color: 'var(--muted)' }}>
+                No jobs assigned for this shift.
               </div>
-            ))}
+            ) : (
+              <div data-testid="job-list">
+                {currentJobs.map((job) => (
+                  <div key={job.id} data-testid={`job-${job.id}`}>
+                    <JobCard
+                      job={job}
+                      commitments={currentCommitments}
+                      onSelect={(j) => setSelectedJob(j)}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </>
+      ) : (
+        /* Sync Screen Tab (Spec p.15) */
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <div>
+              <span className="section-title">SPECIFICATION P.15 VERIFICATION DISPLAY</span>
+              <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--muted)' }}>
+                Select mock/live state to verify matching typography and metrics
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <button
+                type="button"
+                data-testid="sync-mode-offline"
+                className={syncScreenMode === 'offline' ? 'primary-button' : 'secondary-button'}
+                style={{ padding: '6px 12px', fontSize: '11px' }}
+                onClick={() => setSyncScreenMode('offline')}
+              >
+                OFFLINE Spec
+              </button>
+              <button
+                type="button"
+                data-testid="sync-mode-complete"
+                className={syncScreenMode === 'complete' ? 'primary-button' : 'secondary-button'}
+                style={{ padding: '6px 12px', fontSize: '11px' }}
+                onClick={() => setSyncScreenMode('complete')}
+              >
+                SYNC COMPLETE Spec
+              </button>
+              <button
+                type="button"
+                data-testid="sync-mode-conflict"
+                className={syncScreenMode === 'conflict' ? 'primary-button' : 'secondary-button'}
+                style={{ padding: '6px 12px', fontSize: '11px' }}
+                onClick={() => setSyncScreenMode('conflict')}
+              >
+                CONFLICT Spec
+              </button>
+            </div>
+          </div>
+
+          <SyncScreen
+            mode={syncScreenMode}
+            lastSyncTime="10:02"
+            actionsQueued={queuedCmds.length > 0 && syncScreenMode === 'offline' ? queuedCmds.length : 7}
+            photosPending={3}
+            commandsAccepted={syncResult ? syncResult.accepted : 7}
+            commandsTotal={syncResult ? syncResult.total : 7}
+            photosUploaded={3}
+            photosTotal={3}
+            duplicatesIgnored={syncResult ? syncResult.duplicates : 0}
+            sequenceGapsDetected={syncResult ? syncResult.sequenceGaps : 0}
+            conflictDetails={{
+              jobId: 'J-2236',
+              newTechnician: 'Karthik',
+              movedAt: '10:15',
+              taskLogsCount: 4,
+              photosCount: 3,
+              partScansCount: 2,
+              rejectedMessage: 'completion status update',
+            }}
+            onViewEvidence={() => alert('Preserved evidence: 4 task logs, 3 photos, 2 part scans attached to job J-2236.')}
+            onSyncNow={async () => {
+              const res = await replayPendingCommands(`device-${selectedTech}`, session?.token);
+              setSyncScreenMode('complete');
+            }}
+          />
+        </div>
+      )}
 
       {/* Job Details Drawer & Offline Action Controls */}
       {selectedJob && (
