@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Global Reset & Claude Gradient Design System Foundations
+   Rivet Industrial Global Styles & Engineering Foundations
    ========================================================================== */
 
 *,
@@ -19,15 +19,14 @@ body {
   background-color: var(--canvas);
   color: var(--ink);
   font-family: var(--font-body);
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 /* --------------------------------------------------------------------------
-   Typography Scale (Claude Gradient Spec)
+   Typography Scale
    -------------------------------------------------------------------------- */
 
 h1,
@@ -40,26 +39,25 @@ h6 {
   font-weight: var(--weight-heading);
   color: var(--ink);
   line-height: 1.15;
-  transition: font-family 0.15s ease, letter-spacing 0.15s ease;
+  letter-spacing: var(--tracking-heading);
 }
 
 h1 {
-  font-size: clamp(32px, 3.5vw, 48px);
+  font-size: clamp(28px, 3.2vw, 42px);
   font-weight: var(--weight-display);
-  letter-spacing: var(--tracking-heading);
+  letter-spacing: var(--tracking-hero);
   margin-bottom: 8px;
 }
 
 h2 {
-  font-size: clamp(20px, 2.2vw, 26px);
+  font-size: clamp(20px, 2vw, 24px);
   font-weight: var(--weight-heading);
-  letter-spacing: var(--tracking-heading);
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 h3 {
-  font-size: 18px;
-  letter-spacing: var(--tracking-body);
+  font-size: 16px;
+  font-weight: 600;
   margin-bottom: 8px;
 }
 
@@ -78,7 +76,7 @@ code,
 pre,
 .mono {
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 12.5px;
   letter-spacing: var(--tracking-mono);
 }
 
@@ -91,24 +89,26 @@ code {
 }
 
 pre {
-  background: var(--surface-sunken);
-  border: 1px solid var(--line);
+  background: var(--graphite-900);
+  color: #e5ede8;
+  border: 1px solid var(--graphite-700);
   padding: 16px;
   border-radius: var(--radius-sm);
   overflow-x: auto;
-  color: var(--ink);
-  font-size: 12.5px;
+  font-size: 12px;
 }
 
 .eyebrow {
   font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 500;
-  letter-spacing: var(--tracking-mono);
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--brand-accent);
   margin-bottom: 8px;
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .muted {
@@ -129,28 +129,28 @@ button,
   justify-content: center;
   gap: 8px;
   font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: var(--weight-button);
+  font-size: 13.5px;
+  font-weight: 600;
   line-height: 1.4;
-  padding: 10px 22px;
+  padding: 9px 18px;
   border-radius: var(--radius-button);
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all 0.16s ease-in-out;
+  transition: all 0.15s ease;
   text-decoration: none;
   white-space: nowrap;
 }
 
 /* Primary Button */
 .primary-button,
-.button:not(.secondary) {
-  background: var(--primary);
-  color: var(--on-primary);
-  border-color: var(--primary);
+.button:not(.secondary):not(.quiet) {
+  background: var(--brand);
+  color: #ffffff;
+  border-color: var(--brand);
 }
 
 .primary-button:hover,
-.button:not(.secondary):hover {
+.button:not(.secondary):not(.quiet):hover {
   background: var(--brand-hover);
   border-color: var(--brand-hover);
   transform: translateY(-1px);
@@ -185,27 +185,26 @@ input,
 select,
 textarea {
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 13.5px;
   color: var(--ink);
   background: var(--surface);
   border: 1px solid var(--line-control);
   border-radius: var(--radius-input);
-  padding: 10px 14px;
+  padding: 9px 12px;
   outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, border-radius 0.2s ease;
-  width: auto;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: var(--focus-blue);
-  box-shadow: 0 0 0 3px rgba(76, 110, 230, 0.15);
+  border-color: var(--brand-accent);
+  box-shadow: 0 0 0 3px var(--brand-accent-glow);
 }
 
 textarea {
   width: 100%;
-  min-height: 90px;
+  min-height: 80px;
   resize: vertical;
 }
 
@@ -217,12 +216,12 @@ input[type="checkbox"] {
 }
 
 :focus-visible {
-  outline: 2px solid var(--focus-blue);
+  outline: 2px solid var(--brand-accent);
   outline-offset: 2px;
 }
 
 /* --------------------------------------------------------------------------
-   App Shell Layout
+   App Shell Layout (Desktop 240px Dark Sidebar + Workspace)
    -------------------------------------------------------------------------- */
 
 .app-shell {
@@ -234,15 +233,15 @@ input[type="checkbox"] {
 .sidebar {
   width: 240px;
   min-width: 240px;
-  background: var(--cohere-black);
+  background: var(--graphite-900);
   color: #f1f3f0;
-  padding: 28px 18px;
+  padding: 24px 16px;
   display: flex;
   flex-direction: column;
   position: fixed;
   inset: 0 auto 0 0;
   z-index: 40;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  border-right: 1px solid var(--line-dark);
 }
 
 .workspace-shell {
@@ -255,10 +254,10 @@ input[type="checkbox"] {
 }
 
 .topbar {
-  height: 64px;
+  height: 60px;
   background: var(--surface);
   border-bottom: 1px solid var(--line);
-  padding: 0 36px;
+  padding: 0 32px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -266,14 +265,13 @@ input[type="checkbox"] {
   position: sticky;
   top: 0;
   z-index: 30;
-  backdrop-filter: blur(8px);
 }
 
 .workspace-main {
   flex: 1;
   min-width: 0;
-  padding: 36px 40px 60px;
-  max-width: 1400px;
+  padding: 32px 36px 60px;
+  max-width: 1440px;
   width: 100%;
   margin: 0 auto;
 }
@@ -283,12 +281,12 @@ main.workspace,
 .page,
 .shell {
   width: 100%;
-  max-width: 1320px;
+  max-width: 1360px;
   margin: 0 auto;
 }
 
 /* --------------------------------------------------------------------------
-   Common Component Classes (Panels, Toolbars, Grids, Cards)
+   Shared Component Styles (Panels, Tables, Badges, Metrics)
    -------------------------------------------------------------------------- */
 
 .page-heading {
@@ -296,8 +294,8 @@ main.workspace,
   align-items: flex-start;
   justify-content: space-between;
   gap: 24px;
-  margin-bottom: 28px;
-  padding-bottom: 20px;
+  margin-bottom: 24px;
+  padding-bottom: 18px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -305,10 +303,9 @@ main.workspace,
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
-  padding: 24px 28px;
-  margin-bottom: 24px;
+  padding: 22px 24px;
+  margin-bottom: 20px;
   box-shadow: var(--shadow-sm);
-  transition: border-radius 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
 }
 
 .toolbar {
@@ -316,31 +313,47 @@ main.workspace,
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-  margin: 16px 0;
+  margin: 14px 0;
 }
 
 .toolbar select,
 .toolbar input:not([type="checkbox"]) {
-  min-width: 220px;
+  min-width: 200px;
 }
 
-/* Stats & Metrics */
+/* Stats & Metrics Grid */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .stat-card {
-  background: var(--soft-stone);
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
-  padding: 20px 22px;
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  transition: all 0.2s ease;
+  gap: 4px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--border);
+}
+
+.stat-card.accent::before {
+  background: var(--brand-accent);
 }
 
 .stat-card small {
@@ -352,77 +365,77 @@ main.workspace,
 }
 
 .stat-card h2 {
+  font-family: var(--font-display);
   font-size: 26px;
-  font-weight: 600;
-  margin: 0;
+  font-weight: 700;
+  margin: 4px 0 0;
   color: var(--ink);
 }
 
 .stat-card span {
-  font-size: 13px;
+  font-size: 12.5px;
   color: var(--ink-2);
 }
 
-/* Badges & Chips */
+/* Badges & Status Chips */
 .badge,
 .chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 500;
-  letter-spacing: var(--tracking-mono);
+  font-weight: 600;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  padding: 4px 10px;
-  border-radius: var(--radius-button);
+  padding: 3px 8px;
+  border-radius: var(--radius-badge);
   background: var(--surface-sunken);
   color: var(--ink);
   border: 1px solid var(--line);
-  transition: border-radius 0.2s ease;
 }
 
 .badge.success {
   background: var(--positive-surface);
   color: var(--positive);
-  border-color: rgba(0, 135, 90, 0.2);
+  border-color: var(--positive-border);
 }
 
 .badge.danger {
   background: var(--critical-surface);
   color: var(--critical);
-  border-color: rgba(179, 0, 0, 0.2);
+  border-color: var(--critical-border);
 }
 
 .badge.warn {
   background: var(--warning-surface);
   color: var(--warning);
-  border-color: rgba(183, 110, 0, 0.2);
+  border-color: var(--warning-border);
 }
 
 /* Tables */
 table {
   width: 100%;
   border-collapse: collapse;
-  margin: 16px 0;
-  font-size: 14px;
+  margin: 14px 0;
+  font-size: 13.5px;
 }
 
 th {
   font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: var(--tracking-mono);
   text-transform: uppercase;
   color: var(--ink-2);
   text-align: left;
-  padding: 12px 16px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--line);
   background: var(--surface-sunken);
 }
 
 td {
-  padding: 14px 16px;
+  padding: 12px 14px;
   border-bottom: 1px solid var(--line);
   color: var(--ink);
   vertical-align: middle;
@@ -435,22 +448,22 @@ tbody tr:hover {
 /* Alerts and Notices */
 .notice {
   background: var(--pale-blue);
-  border: 1px solid var(--line);
+  border: 1px solid rgba(26, 98, 191, 0.2);
   color: var(--action-blue);
-  padding: 14px 18px;
+  padding: 12px 16px;
   border-radius: var(--radius-sm);
-  margin: 16px 0;
-  font-size: 14px;
+  margin: 14px 0;
+  font-size: 13.5px;
 }
 
 .error-banner {
   background: var(--critical-surface);
-  border: 1px solid rgba(179, 0, 0, 0.25);
+  border: 1px solid var(--critical-border);
   color: var(--critical);
-  padding: 14px 18px;
+  padding: 12px 16px;
   border-radius: var(--radius-sm);
-  margin: 16px 0;
-  font-size: 14px;
+  margin: 14px 0;
+  font-size: 13.5px;
 }
 
 /* Skip link */
@@ -458,8 +471,8 @@ tbody tr:hover {
   position: absolute;
   top: -60px;
   left: 16px;
-  background: var(--primary);
-  color: var(--on-primary);
+  background: var(--brand);
+  color: #ffffff;
   padding: 10px 18px;
   border-radius: var(--radius-button);
   z-index: 1000;
@@ -484,16 +497,16 @@ tbody tr:hover {
   }
 
   .topbar {
-    padding: 0 18px;
+    padding: 0 16px;
   }
 
   .workspace-main {
-    padding: 24px 18px 48px;
+    padding: 20px 16px 40px;
   }
 
   .page-heading {
     flex-direction: column;
     align-items: flex-start;
-    gap: 16px;
+    gap: 12px;
   }
 }

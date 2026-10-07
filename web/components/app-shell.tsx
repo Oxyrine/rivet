@@ -3,11 +3,10 @@
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Radio } from 'lucide-react';
 import { SessionBar } from '@/components/session-bar';
 import { Navigation } from '@/components/navigation';
 import { Logo } from '@/components/logo';
-import { ThemeBar } from '@/components/theme-bar';
 import { useSummary } from '@/lib/use-summary';
 import s from './shell.module.css';
 
@@ -28,7 +27,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="app-shell">
-      {/* Desktop Persistent Sidebar */}
+      {/* Desktop Persistent Dark Sidebar */}
       <aside className="sidebar">
         <Link href="/" className={s.brandLink} aria-label="Rivet home">
           <Logo variant="dark" />
@@ -64,12 +63,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Menu size={20} />
             </button>
             <span className={s.sitesScope}>
-              Sites: <strong>{siteScope}</strong>
+              Active Site Scope: <strong>{siteScope}</strong>
             </span>
           </div>
 
           <div className={s.topbarRight}>
-            <ThemeBar />
+            <div className={s.liveIndicator}>
+              <span className={s.liveDot} />
+              <span>LIVE TELEMETRY</span>
+            </div>
             <SessionBar />
           </div>
         </header>

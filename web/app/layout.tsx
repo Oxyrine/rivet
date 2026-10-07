@@ -20,21 +20,21 @@ const inter = Inter({
 
 const ibmPlexMono = IBM_Plex_Mono({
   subsets: ['latin'],
-  weight: ['400', '500'],
+  weight: ['400', '500', '600'],
   variable: '--font-ibm-plex-mono',
   display: 'swap',
 });
 
 const barlowCondensed = Barlow_Condensed({
   subsets: ['latin'],
-  weight: ['600'],
+  weight: ['600', '700'],
   variable: '--font-barlow-condensed',
   display: 'swap',
 });
 
 export const metadata: Metadata = {
   title: 'Rivet — Keep good machines running.',
-  description: 'Coordinate field service, recover disrupted schedules and verify the work. Built for industrial equipment teams.',
+  description: 'Coordinate heavy industrial equipment servicing, dispatch qualified technicians, track disruption impact, and verify tamper-proof records.',
 };
 
 export const viewport: Viewport = {
@@ -44,21 +44,7 @@ export const viewport: Viewport = {
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${inter.variable} ${ibmPlexMono.variable} ${barlowCondensed.variable}`} data-theme="gradient-alpha" suppressHydrationWarning>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              try {
-                const savedTheme = localStorage.getItem('rivet-theme');
-                if (savedTheme) {
-                  document.documentElement.setAttribute('data-theme', savedTheme);
-                }
-              } catch (e) {}
-            `,
-          }}
-        />
-      </head>
+    <html lang="en" className={`${spaceGrotesk.variable} ${inter.variable} ${ibmPlexMono.variable} ${barlowCondensed.variable}`} suppressHydrationWarning>
       <body>
         <a href="#main-content" className="skip-link">Skip to main content</a>
         <AppShell>{children}</AppShell>

@@ -1,194 +1,116 @@
 /* ==========================================================================
-   Claude Gradient Design Systems
-   System 1: Gradient Alpha (Enterprise Command · Space Grotesk · Pill CTAs · Coral 59)
-   System 2: Gradient Beta (Inter Editorial · Inter Display · 12px Rounded · Oxide Coral 00)
+   Rivet Industrial Design System — Core Design Tokens
+   Engineered for heavy equipment service, telemetry, and high-precision audit.
    ========================================================================== */
 
-:root,
-[data-theme="gradient-alpha"],
-[data-theme="gradient"] {
-  --theme-id: "alpha";
-  --theme-name: "System 1 · Command";
+:root {
+  /* Brand Core */
+  --brand: #111614;
+  --brand-hover: #080c0a;
+  --brand-accent: #c84c1c; /* Signature Burnt Orange */
+  --brand-accent-hover: #b03e12;
+  --brand-accent-light: #fef0eb;
+  --brand-accent-border: rgba(200, 76, 28, 0.25);
+  --brand-accent-glow: rgba(200, 76, 28, 0.15);
+  --brand-on-dark: #f0f4f1;
 
-  /* Colors */
-  --primary: #17171c;
-  --primary-hover: #000000;
-  --brand: #17171c;
-  --brand-hover: #000000;
-  --brand-accent: #ff7759;
-  --brand-on-dark: #ffad9b;
-  --accent: #ff7759;
-  
-  --ink: #212121;
-  --text: #212121;
-  --ink-2: #616161;
-  --ink-3: #93939f;
-  --muted: #93939f;
-  --subtle: #75758a;
-  
-  --canvas: #ffffff;
-  --bg: #ffffff;
-  --surface: #ffffff;
-  --surface-sunken: #f8f8f6;
-  --soft-stone: #eeece7;
-  --panel: #ffffff;
-  --panel-alt: #eeece7;
-  
-  --pale-green: #edfce9;
-  --pale-blue: #f1f5ff;
-  
-  --line: #e5e7eb;
-  --border: #e5e7eb;
-  --line-subtle: #f2f2f2;
-  --line-control: #d9d9dd;
-  
-  --positive: #00875a;
-  --green: #00875a;
-  --positive-surface: #edfce9;
-  
-  --warning: #b76e00;
-  --warning-surface: #fff8e6;
-  
-  --critical: #b30000;
-  --red: #b30000;
-  --critical-surface: #ffebe6;
-  
-  --action-blue: #1863dc;
-  --focus-blue: #4c6ee6;
+  /* Machinery Dark Graphite Palette */
+  --graphite-950: #0a0e0c;
+  --graphite-900: #0e1311;
+  --graphite-850: #121815;
+  --graphite-800: #171f1b;
+  --graphite-700: #212c26;
+  --graphite-600: #303e37;
+  --graphite-500: #46574f;
 
-  /* Hero Theme */
-  --hero-bg: #111815;
+  /* Primary Light Workspace Palette */
+  --canvas: #f4f5f2; /* Technical light warm concrete */
+  --bg: #f4f5f2;
+  --surface: #ffffff; /* Crisp white cards and panels */
+  --surface-sunken: #edf0ec; /* Sunken trays, table headers */
+  --surface-elevated: #ffffff;
+  --soft-stone: #e8ece7;
+
+  /* Ink & Typography Hierarchy */
+  --ink: #111814; /* Deep industrial ink */
+  --ink-primary: #111814;
+  --ink-2: #52635a; /* Technical slate secondary */
+  --ink-3: #7c8e84; /* Telemetry label muted */
+  --ink-muted: #52635a;
+  --subtle: #7c8e84;
+  --text: #111814;
+  --muted: #52635a;
+
+  /* Hairlines & Structural Borders */
+  --line: #d6ded8;
+  --line-subtle: #e6ece8;
+  --line-control: #c8d2cb;
+  --line-dark: rgba(255, 255, 255, 0.09);
+  --border: #d6ded8;
+  --border-light: #e6ece8;
+
+  /* Signal & Operational Status Tokens */
+  --positive: #187942;
+  --positive-surface: #ebf7ee;
+  --positive-border: rgba(24, 121, 66, 0.25);
+  --green: #187942;
+
+  --warning: #b25e00;
+  --warning-surface: #fef5e7;
+  --warning-border: rgba(178, 94, 0, 0.25);
+
+  --critical: #b82626;
+  --critical-surface: #faebeb;
+  --critical-border: rgba(184, 38, 38, 0.25);
+  --red: #b82626;
+
+  --action-blue: #1a62bf;
+  --focus-blue: #3275db;
+  --pale-blue: #eef5fc;
+
+  /* Hero Display Tokens */
+  --hero-bg: #0e1311;
   --hero-title-color: #ffffff;
-  --hero-accent: #ffad9b;
-  --hero-cta-bg: #ff7759;
+  --hero-accent: #e86330;
+  --hero-cta-bg: #c84c1c;
   --hero-cta-color: #ffffff;
 
-  /* Typography */
-  --font-display: var(--font-space-grotesk), sans-serif;
-  --display: var(--font-space-grotesk), sans-serif;
-  --font-body: var(--font-inter), sans-serif;
-  --body: var(--font-inter), sans-serif;
-  --font-mono: var(--font-ibm-plex-mono), monospace;
-  --mono: var(--font-ibm-plex-mono), monospace;
+  /* Typography Scales */
+  --font-display: var(--font-space-grotesk), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-heading-condensed: var(--font-barlow-condensed), sans-serif;
+  --font-body: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), "SF Mono", Consolas, monospace;
+  
+  --display: var(--font-display);
+  --body: var(--font-body);
+  --mono: var(--font-mono);
 
-  --tracking-hero: -1.92px;
-  --tracking-heading: -0.8px;
-  --tracking-body: 0px;
-  --tracking-mono: 0.28px;
+  --tracking-hero: -0.03em;
+  --tracking-heading: -0.02em;
+  --tracking-body: 0;
+  --tracking-mono: 0.04em;
 
-  --weight-display: 600;
+  --weight-display: 700;
   --weight-heading: 600;
   --weight-body: 400;
-  --weight-button: 500;
+  --weight-button: 600;
 
-  /* Radius Scale */
-  --radius-xs: 4px;
-  --radius-sm: 8px;
-  --radius-md: 16px;
-  --radius-lg: 22px;
-  --radius-pill: 32px;
-  --radius-full: 9999px;
-
-  --radius-button: 32px; /* PILL BUTTONS */
-  --radius-card: 16px;
-  --radius-input: 4px;
-  --radius-badge: 32px;
-
-  /* Elevation */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.08);
-}
-
-[data-theme="gradient-beta"],
-[data-theme="editorial"] {
-  --theme-id: "beta";
-  --theme-name: "System 2 · Editorial";
-
-  /* Colors from Spec 2 */
-  --primary: #181d26;
-  --primary-hover: #0d1218;
-  --brand: #181d26;
-  --brand-hover: #0d1218;
-  --brand-accent: #aa2d00; /* Signature Oxide Coral */
-  --brand-on-dark: #fcab79;
-  --accent: #aa2d00;
-  
-  --ink: #181d26;
-  --text: #181d26;
-  --ink-2: #333840;
-  --ink-3: #41454d;
-  --muted: #41454d;
-  --subtle: #5e6470;
-  
-  --canvas: #ffffff;
-  --bg: #ffffff;
-  --surface: #ffffff;
-  --surface-sunken: #f8fafc;
-  --soft-stone: #f5e9d4; /* Signature Cream */
-  --panel: #ffffff;
-  --panel-alt: #f8fafc;
-  
-  --pale-green: #eef8f2;
-  --pale-blue: #f0f4fa;
-  
-  --line: #dddddd;
-  --border: #dddddd;
-  --line-subtle: #f8fafc;
-  --line-control: #dddddd;
-  
-  --positive: #006400;
-  --green: #006400;
-  --positive-surface: #eef8f2;
-  
-  --warning: #aa2d00;
-  --warning-surface: #fdf2ed;
-  
-  --critical: #b30000;
-  --red: #b30000;
-  --critical-surface: #faebeb;
-  
-  --action-blue: #1b61c9;
-  --focus-blue: #458fff;
-
-  /* Hero Theme */
-  --hero-bg: #181d26;
-  --hero-title-color: #ffffff;
-  --hero-accent: #fcab79;
-  --hero-cta-bg: #aa2d00;
-  --hero-cta-color: #ffffff;
-
-  /* Typography */
-  --font-display: var(--font-inter), sans-serif;
-  --display: var(--font-inter), sans-serif;
-  --font-body: var(--font-inter), sans-serif;
-  --body: var(--font-inter), sans-serif;
-  --font-mono: var(--font-inter), monospace;
-  --mono: var(--font-inter), monospace;
-
-  --tracking-hero: 0px;
-  --tracking-heading: 0px;
-  --tracking-body: 0px;
-  --tracking-mono: 0px;
-
-  --weight-display: 400;
-  --weight-heading: 475;
-  --weight-body: 400;
-  --weight-button: 500;
-
-  /* Radius Scale */
-  --radius-xs: 2px;
+  /* Radii */
+  --radius-xs: 3px;
   --radius-sm: 6px;
   --radius-md: 10px;
-  --radius-lg: 12px;
+  --radius-lg: 14px;
   --radius-pill: 9999px;
   --radius-full: 9999px;
 
-  --radius-button: 12px; /* 12px ROUNDED RECTANGULAR BUTTONS */
-  --radius-card: 12px;
+  --radius-button: 8px; /* High-craft architectural rounded button */
+  --radius-card: 10px;
   --radius-input: 6px;
-  --radius-badge: 6px;
+  --radius-badge: 9999px;
 
-  /* Elevation */
-  --shadow-sm: none;
-  --shadow-md: none;
+  /* Elevation Shadows */
+  --shadow-sm: 0 1px 3px rgba(17, 24, 20, 0.05), 0 1px 2px rgba(17, 24, 20, 0.03);
+  --shadow-md: 0 4px 16px rgba(17, 24, 20, 0.08), 0 1px 4px rgba(17, 24, 20, 0.04);
+  --shadow-lg: 0 12px 36px rgba(17, 24, 20, 0.12), 0 2px 8px rgba(17, 24, 20, 0.06);
+  --shadow-glow: 0 0 20px rgba(200, 76, 28, 0.25);
 }
