@@ -11,6 +11,11 @@ import { storeShiftCache, getCachedShift, checkStaleStatus, StaleStatus } from '
 import { getQueuedCommands, QueuedCommand, getQueueLimits, QueueLimits } from '@/lib/offline/queue';
 import { executeTechnicianAction } from '@/lib/offline/actions';
 import { initReplayListeners, replayPendingCommands, isIOSDevice, SyncResultSummary } from '@/lib/offline/replay';
+import { BarcodeScannerModal } from './components/barcode-scanner-modal';
+import { SupervisorPermitModal } from './components/supervisor-permit-modal';
+import { validatePhotoFile, captureAndStorePhoto, getPendingPhotosCount } from '@/lib/offline/photos';
+import { captureGpsLocation } from '@/lib/offline/gps';
+import { ParsedScanResult } from '@/lib/offline/scanner';
 import {
   User,
   Smartphone,
@@ -31,7 +36,9 @@ import {
   ClipboardList,
   LogOut,
   LogIn,
-  AlertTriangle
+  AlertTriangle,
+  QrCode,
+  KeyRound
 } from 'lucide-react';
 
 export default function TechnicianFieldPage() {
@@ -58,6 +65,13 @@ export default function TechnicianFieldPage() {
   const [activeTab, setActiveTab] = useState<'jobs' | 'sync' | 'conflicts'>('jobs');
   const [syncScreenMode, setSyncScreenMode] = useState<'offline' | 'complete' | 'conflict'>('offline');
   const [activeConflictCode, setActiveConflictCode] = useState<ConflictCode>('JOB_REASSIGNED');
+
+  // Scanner & Photos & Permit State
+  const [isScannerOpen, setIsScannerOpen] = useState<boolean>(false);
+  const [isSupervisorModalOpen, setIsSupervisorModalOpen] = useState<boolean>(false);
+  const [scannedArrivalCode, setScannedArrivalCode] = useState<any | null>(null);
+  const [scannedMachineQr, setScannedMachineQr] = useState<string>('');
+  const [pendingPhotosCount, setPendingPhotosCount] = useState<number>(0);
 
   // Register Service Worker & Replay Listeners
   useEffect(() => {
@@ -181,6 +195,80 @@ export default function TechnicianFieldPage() {
     }
   };
 
+  // Photo count tracking
+  const refreshPhotoCount = useCallback(async () => {
+    const count = await getPendingPhotosCount();
+    setPendingPhotosCount(count);
+  }, []);
+
+  useEffect(() => {
+    refreshPhotoCount();
+    window.addEventListener('rivet:photos-updated', refreshPhotoCount);
+    return () => window.removeEventListener('rivet:photos-updated', refreshPhotoCount);
+  }, [refreshPhotoCount]);
+
+  // Handle scanned barcodes & QR codes
+  const handleScanSuccess = async (result: ParsedScanResult) => {
+    if (result.type === 'gate_arrival' && result.arrivalCode) {
+      setScannedArrivalCode(result.arrivalCode);
+      setActionNotice(`Scanned Gate Code (Window: ${result.arrivalCode.window})`);
+      setTimeout(() => setActionNotice(''), 4000);
+    } else if (result.type === 'machine' && result.machineId) {
+      setScannedMachineQr(result.machineId);
+      setActionNotice(`Scanned Machine QR: ${result.machineId}`);
+      setTimeout(() => setActionNotice(''), 4000);
+    } else if (result.type === 'part' && result.partResource) {
+      setActionNotice(`Scanned Part: ${result.partResource}`);
+      setTimeout(() => setActionNotice(''), 4000);
+      const jobId = selectedJob ? selectedJob.id : (currentJobs[0]?.id || 'GENERAL');
+      await performAction('PartScanned', {
+        resource: result.partResource,
+        quantity: 1,
+        source: `job:${jobId}:reserved`,
+      });
+    }
+  };
+
+  // Handle camera photo capture
+  const handlePhotoCapture = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: 'before_photo' | 'after_photo' | 'permit_photo' | 'delivery_note' = 'after_photo'
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validation = await validatePhotoFile(file);
+    if (!validation.valid) {
+      alert(validation.error || 'Invalid photo file');
+      return;
+    }
+
+    const jobId = selectedJob ? selectedJob.id : (currentJobs[0]?.id || 'GENERAL');
+    const deviceId = `device-${selectedTech}`;
+
+    try {
+      await captureAndStorePhoto({
+        userId: selectedTech,
+        deviceId,
+        jobId,
+        type,
+        base64Data: validation.base64,
+        mimeType: validation.mime,
+        sizeBytes: validation.sizeBytes,
+        filename: file.name,
+        notes: `Captured via camera: ${type}`,
+        authToken: session?.token,
+      });
+
+      setActionNotice(`Photo captured (${(validation.sizeBytes / 1024).toFixed(0)} KB) · EvidenceAttached queued`);
+      setTimeout(() => setActionNotice(''), 4000);
+      await refreshQueue();
+      await refreshPhotoCount();
+    } catch (err: any) {
+      alert(`Photo capture error: ${err.message}`);
+    }
+  };
+
   // Perform action using the unified offline-first action dispatcher
   const performAction = async (actionType: string, payload: Record<string, any> = {}) => {
     const jobId = selectedJob ? selectedJob.id : (currentJobs[0]?.id || 'GENERAL');
@@ -200,10 +288,40 @@ export default function TechnicianFieldPage() {
     }
   };
 
+  // CheckIn with GPS & Arrival Code
+  const handleCheckIn = async () => {
+    const siteId = selectedJob?.site_id || 'site-a';
+    const gps = await captureGpsLocation(siteId);
+
+    await performAction('CheckIn', {
+      gps,
+      arrival_code: scannedArrivalCode || null,
+      machine_qr: scannedMachineQr || selectedJob?.machine_id || 'M-104',
+    });
+  };
+
+  // CheckOut with GPS
+  const handleCheckOut = async () => {
+    const siteId = selectedJob?.site_id || 'site-a';
+    const gps = await captureGpsLocation(siteId);
+
+    await performAction('CheckOut', {
+      gps,
+      notes: 'Repair finished, site cleared',
+    });
+  };
+
   const currentJobs = shiftData?.jobs || [];
   const currentCommitments = shiftData?.commitments || [];
   const p1Jobs = currentJobs.filter((j) => j.priority === 'P1');
   const p2Jobs = currentJobs.filter((j) => j.priority === 'P2');
+
+  const isPermitPending = Boolean(
+    selectedJob &&
+    currentCommitments.some(
+      (c) => c.type === 'PERMIT_TO_WORK' && c.job_id === selectedJob.id && c.state !== 'FULFILLED'
+    )
+  );
 
   return (
     <div style={{ maxWidth: '980px', margin: '0 auto', paddingBottom: '60px' }}>
@@ -648,7 +766,65 @@ export default function TechnicianFieldPage() {
               <span className={`badge ${selectedJob.priority === 'P1' ? 'amber' : 'green'}`}>{selectedJob.priority} PRIORITY</span>
               <span className="badge">{selectedJob.state.toUpperCase()}</span>
               <span className="badge" style={{ fontFamily: 'var(--mono)' }}>SEQ: {queuedCmds.length}</span>
+              {isPermitPending && <span className="badge amber" data-testid="badge-permit-pending">PERMIT PENDING</span>}
             </div>
+
+            {/* Scanned Presence & Barcodes Status */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '14px' }}>
+              {scannedArrivalCode ? (
+                <div data-testid="scanned-arrival-indicator" style={{ padding: '6px 10px', background: '#e8f5e9', border: '1px solid #c8e6c9', color: '#2e7d32', borderRadius: '3px', fontSize: '11px', fontFamily: 'var(--mono)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <CheckCircle2 size={13} />
+                  <span>ARRIVAL CODE SCANNED · SITE {scannedArrivalCode.site_id.toUpperCase()} · WIN {scannedArrivalCode.window}</span>
+                </div>
+              ) : (
+                <div style={{ fontSize: '11px', color: 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
+                  <span>Gate arrival QR not scanned yet</span>
+                  <button type="button" className="quiet-button" data-testid="btn-open-scanner" style={{ textDecoration: 'underline', padding: 0 }} onClick={() => setIsScannerOpen(true)}>
+                    Scan Gate QR
+                  </button>
+                </div>
+              )}
+
+              {scannedMachineQr && (
+                <div data-testid="scanned-machine-indicator" style={{ padding: '6px 10px', background: '#e8f5e9', border: '1px solid #c8e6c9', color: '#2e7d32', borderRadius: '3px', fontSize: '11px', fontFamily: 'var(--mono)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <CheckCircle2 size={13} />
+                  <span>MACHINE QR SCANNED: {scannedMachineQr}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Permit Lockout Banner */}
+            {isPermitPending && (
+              <div
+                data-testid="permit-pending-banner"
+                style={{
+                  background: '#ffebee',
+                  border: '1px solid #ffcdd2',
+                  color: '#c62828',
+                  padding: '12px 14px',
+                  borderRadius: '3px',
+                  marginBottom: '16px',
+                  fontSize: '12px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, marginBottom: '4px' }}>
+                  <ShieldAlert size={16} />
+                  <span>PERMIT PENDING · Permit to work has not been issued</span>
+                </div>
+                <p style={{ margin: '0 0 10px', fontSize: '11px', color: '#b71c1c' }}>
+                  Start work is locked until permit is approved by customer portal or authorized on-site by supervisor.
+                </p>
+                <button
+                  type="button"
+                  data-testid="btn-open-supervisor-permit"
+                  className="primary-button"
+                  style={{ fontSize: '11px', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px', background: '#c62828' }}
+                  onClick={() => setIsSupervisorModalOpen(true)}
+                >
+                  <KeyRound size={13} /> In-Plant Permit Fallback (Supervisor PIN)
+                </button>
+              </div>
+            )}
 
             {/* Offline Action Buttons (Exercising the 1 Code Path) */}
             <h3 style={{ fontSize: '13px', textTransform: 'uppercase', color: 'var(--accent)', fontFamily: 'var(--mono)', borderBottom: '1px solid var(--border)', paddingBottom: '6px' }}>
@@ -660,17 +836,28 @@ export default function TechnicianFieldPage() {
                 type="button"
                 data-testid="action-checkin"
                 className="secondary-button"
-                onClick={() => performAction('CheckIn', { gps: { lat_e6: 19076000, lng_e6: 72877000 }, arrival_code: null })}
+                onClick={handleCheckIn}
               >
-                <LogIn size={14} /> 1. Check In
+                <LogIn size={14} /> 1. Check In (GPS)
               </button>
               <button
                 type="button"
                 data-testid="action-startwork"
                 className="secondary-button"
+                disabled={isPermitPending}
+                title={isPermitPending ? 'Permit to work has not been issued' : 'Start Work'}
+                style={{ opacity: isPermitPending ? 0.5 : 1, cursor: isPermitPending ? 'not-allowed' : 'pointer' }}
                 onClick={() => performAction('StartWork', {})}
               >
                 <Wrench size={14} /> 2. Start Work
+              </button>
+              <button
+                type="button"
+                data-testid="action-open-scanner"
+                className="secondary-button"
+                onClick={() => setIsScannerOpen(true)}
+              >
+                <QrCode size={14} /> Scan Barcode/QR
               </button>
               <button
                 type="button"
@@ -696,14 +883,33 @@ export default function TechnicianFieldPage() {
               >
                 <Clock size={14} /> 5. Record Reading
               </button>
-              <button
-                type="button"
-                data-testid="action-evidence"
-                className="secondary-button"
-                onClick={() => performAction('EvidenceAttached', { photo_id: `photo-${Date.now()}`, type: 'after_repair' })}
-              >
-                <Camera size={14} /> 6. Attach Photo
-              </button>
+
+              {/* Camera Photo Upload */}
+              <div>
+                <input
+                  id="camera-photo-input"
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  data-testid="camera-file-input"
+                  style={{ display: 'none' }}
+                  onChange={(e) => handlePhotoCapture(e, 'after_photo')}
+                />
+                <button
+                  type="button"
+                  data-testid="action-evidence"
+                  className="secondary-button"
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}
+                  onClick={() => {
+                    performAction('EvidenceAttached', { photo_id: `photo-${Date.now()}`, type: 'after_photo' });
+                    const fileInput = document.getElementById('camera-photo-input') as HTMLInputElement | null;
+                    if (fileInput) fileInput.click();
+                  }}
+                >
+                  <Camera size={14} /> 6. Attach Photo
+                </button>
+              </div>
+
               <button
                 type="button"
                 data-testid="action-submitreport"
@@ -716,7 +922,7 @@ export default function TechnicianFieldPage() {
                 type="button"
                 data-testid="action-checkout"
                 className="secondary-button"
-                onClick={() => performAction('CheckOut', { notes: 'Repair finished' })}
+                onClick={handleCheckOut}
               >
                 <LogOut size={14} /> 8. Check Out
               </button>
@@ -767,6 +973,28 @@ export default function TechnicianFieldPage() {
             </div>
           </aside>
         </div>
+      )}
+
+      {/* Optical Barcode / QR Scanner Modal */}
+      <BarcodeScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        onScanSuccess={handleScanSuccess}
+      />
+
+      {/* Supervisor In-Plant Permit Fallback Modal */}
+      {selectedJob && (
+        <SupervisorPermitModal
+          isOpen={isSupervisorModalOpen}
+          onClose={() => setIsSupervisorModalOpen(false)}
+          jobId={selectedJob.id}
+          technicianId={selectedTech}
+          onPermitFulfilled={async () => {
+            await loadShift(selectedTech);
+            setActionNotice('Permit to work fulfilled by supervisor PIN · Work unlocked');
+            setTimeout(() => setActionNotice(''), 4000);
+          }}
+        />
       )}
     </div>
   );

@@ -74,3 +74,29 @@ export function checkStaleStatus(cachedAt?: string): StaleStatus {
     minutesAgo,
   };
 }
+
+export async function updateCachedCommitmentState(
+  techId: string,
+  jobId: string,
+  commitmentType: string,
+  newState: string
+): Promise<void> {
+  const db = await getDB();
+  const shift = await db.get('cache', `shift:${techId}`);
+  if (shift && Array.isArray(shift.commitments)) {
+    let modified = false;
+    shift.commitments = shift.commitments.map((c: any) => {
+      if (c.job_id === jobId && c.type === commitmentType) {
+        modified = true;
+        return { ...c, state: newState };
+      }
+      return c;
+    });
+    if (modified) {
+      await db.put('cache', shift);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('rivet:cache-updated', { detail: shift }));
+      }
+    }
+  }
+}

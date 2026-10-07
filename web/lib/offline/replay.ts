@@ -54,6 +54,14 @@ export async function replayPendingCommands(
 
   const orderedCommands = [...dropouts, ...regular];
 
+  // Upload pending photos off-queue before command batch so server has bytes ready for EvidenceAttached
+  try {
+    const { uploadPendingPhotos } = await import('./photos');
+    await uploadPendingPhotos(authToken);
+  } catch (photoErr) {
+    console.warn('[RIVET] Non-blocking photo upload deferral during replay:', photoErr);
+  }
+
   let totalAccepted = 0;
   let totalDuplicates = 0;
   let totalRejected = 0;
