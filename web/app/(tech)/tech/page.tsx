@@ -6,8 +6,9 @@ import { MOCK_SHIFTS, ShiftJob, ShiftCommitment, ShiftCacheResponse } from '@/li
 import { JobCard } from './components/job-card';
 import { registerServiceWorker } from '@/lib/offline/sw-register';
 import { storeShiftCache, getCachedShift, checkStaleStatus, StaleStatus } from '@/lib/offline/cache';
-import { getQueuedCommands, QueuedCommand, getQueueLimits } from '@/lib/offline/queue';
+import { getQueuedCommands, QueuedCommand, getQueueLimits, QueueLimits } from '@/lib/offline/queue';
 import { executeTechnicianAction } from '@/lib/offline/actions';
+import { initReplayListeners, replayPendingCommands, isIOSDevice, SyncResultSummary } from '@/lib/offline/replay';
 import {
   User,
   Smartphone,
@@ -49,23 +50,39 @@ export default function TechnicianFieldPage() {
   const [queuedCmds, setQueuedCmds] = useState<QueuedCommand[]>([]);
   const [staleInfo, setStaleInfo] = useState<StaleStatus>({ isStale: false });
   const [actionNotice, setActionNotice] = useState<string>('');
+  const [isIOS, setIsIOS] = useState<boolean>(false);
+  const [limits, setLimits] = useState<QueueLimits>({ commandsCount: 0, maxCommands: 500, isWarning: false, isFull: false });
+  const [syncResult, setSyncResult] = useState<SyncResultSummary | null>(null);
 
-  // Register Service Worker
+  // Register Service Worker & Replay Listeners
   useEffect(() => {
     registerServiceWorker();
     setIsOnline(typeof navigator !== 'undefined' ? navigator.onLine : true);
+    setIsIOS(isIOSDevice());
+
+    const cleanupReplay = initReplayListeners(
+      () => `device-${selectedTech}`,
+      () => session?.token
+    );
 
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
+    const handleSyncCompleted = (e: any) => {
+      setSyncResult(e.detail);
+      setSyncStatus(`Sync Complete · ${e.detail.accepted} accepted · ${e.detail.duplicates} duplicates`);
+    };
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
+    window.addEventListener('rivet:sync-completed', handleSyncCompleted);
 
     return () => {
+      cleanupReplay();
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('rivet:sync-completed', handleSyncCompleted);
     };
-  }, []);
+  }, [selectedTech, session?.token]);
 
   // Update session based on selection
   useEffect(() => {
@@ -81,8 +98,10 @@ export default function TechnicianFieldPage() {
     try {
       const deviceId = `device-${selectedTech}`;
       const cmds = await getQueuedCommands(deviceId);
+      const lim = await getQueueLimits(deviceId);
       console.log(`[RIVET] refreshQueue for ${deviceId}: count = ${cmds.length}`);
       setQueuedCmds(cmds);
+      setLimits(lim);
     } catch (err) {
       console.error('[RIVET] refreshQueue error:', err);
     }
@@ -183,6 +202,64 @@ export default function TechnicianFieldPage() {
 
   return (
     <div style={{ maxWidth: '980px', margin: '0 auto', paddingBottom: '60px' }}>
+      {/* iOS Banner: "Open to sync" */}
+      {isIOS && (
+        <div
+          data-testid="ios-sync-banner"
+          style={{
+            background: 'var(--panel-alt)',
+            border: '1px solid var(--border)',
+            padding: '8px 16px',
+            marginBottom: '12px',
+            borderRadius: '3px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontFamily: 'var(--mono)',
+            fontSize: '11px',
+            color: 'var(--text)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Smartphone size={14} />
+            <b>iOS DETECTED:</b>
+            <span>Open to sync (Background sync is unavailable on iOS)</span>
+          </div>
+          <button
+            type="button"
+            className="quiet-button"
+            style={{ padding: '2px 8px', textDecoration: 'underline' }}
+            onClick={() => replayPendingCommands(`device-${selectedTech}`, session?.token)}
+          >
+            Sync now
+          </button>
+        </div>
+      )}
+
+      {/* 80% Queue Limits Warning Banner */}
+      {limits.isWarning && (
+        <div
+          data-testid="limits-warning-banner"
+          style={{
+            background: '#ffecb3',
+            border: '1px solid #ffe082',
+            color: '#795548',
+            padding: '10px 16px',
+            marginBottom: '14px',
+            borderRadius: '3px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontFamily: 'var(--mono)',
+            fontSize: '12px',
+          }}
+        >
+          <AlertCircle size={16} />
+          <b>QUEUE LIMIT WARNING:</b>
+          <span>{limits.commandsCount} of {limits.maxCommands} commands queued (over 80% limit). Reconnect to sync.</span>
+        </div>
+      )}
+
       {/* 2-Hour Stale Banner */}
       {staleInfo.isStale && (
         <div
@@ -289,9 +366,21 @@ export default function TechnicianFieldPage() {
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '12px', fontFamily: 'var(--mono)' }}>
-            <span style={{ color: 'var(--muted)' }}>ONE CODE PATH VIA INDEXEDDB</span>
-            <span className="badge" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              type="button"
+              data-testid="sync-now-btn"
+              className="secondary-button"
+              style={{ padding: '5px 11px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '5px' }}
+              onClick={async () => {
+                const res = await replayPendingCommands(`device-${selectedTech}`, session?.token);
+                setActionNotice(`Sync complete: ${res.accepted} accepted · ${res.duplicates} duplicates · ${res.sequenceGaps} gaps`);
+                setTimeout(() => setActionNotice(''), 4000);
+              }}
+            >
+              <RefreshCw size={12} /> Sync Now
+            </button>
+            <span className="badge" style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px' }}>
               <Database size={12} /> IDB ACTIVE
             </span>
           </div>
