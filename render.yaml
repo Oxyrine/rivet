@@ -11,7 +11,7 @@ services:
     healthCheckPath: /health
     numInstances: 1
     envVars:
-      # Anything other than demo/test makes sign-in fail closed (503) until Supabase Auth is wired in.
+      # Anything other than demo/test turns off the demo login; only Supabase sign-ins are accepted.
       - key: ENV
         value: production
       - key: JWT_SECRET
@@ -27,7 +27,11 @@ services:
       # Comma-separated web origins, for example https://rivet.example.com
       - key: CORS_ORIGINS
         sync: false
+      # Public project address; the API fetches Supabase's published signing keys from here to verify logins.
       - key: SUPABASE_URL
+        value: https://dnrbjfxpirfdtmmblzct.supabase.co
+      # The first administrator. Everyone else is linked by an admin through POST /admin/users/{id}/link.
+      - key: BOOTSTRAP_ADMIN_EMAIL
         sync: false
       # Server-side only. Never put this in the web app or a browser.
       - key: SUPABASE_SERVICE_KEY

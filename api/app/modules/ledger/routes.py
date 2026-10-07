@@ -1,5 +1,6 @@
 import os
 import base64
+import hashlib
 from datetime import timedelta
 from fastapi import APIRouter, Depends, Header, Query
 from contract.commands import CreateRequest, AssignJob, Hold, DeviceBatch
@@ -43,6 +44,28 @@ def token(body:dict):
     state=store.read();user=state.users.get(body.get('user_id'))
     if not user or body.get('otp')!=state.metadata['demo_credentials']['otp']:raise DomainError('INVALID_OTP','Invalid account or OTP',status=401)
     return tokens(user)
+
+@router.get('/auth/me')
+def me(p=Depends(read)):
+    return {k:v for k,v in p.items() if k!='pin'}
+
+@router.post('/admin/users/{ident}/link')
+def link_user(ident:str,body:dict,p=Depends(require_roles('admin'))):
+    """Connects a Supabase sign-in (email or phone) to a Rivet user, who carries the role and site scope."""
+    email=str(body.get('email') or '').strip().lower();phone=str(body.get('phone') or '').strip()
+    if not email and not phone:raise DomainError('VALIDATION_FAILED','Provide an email or phone number',status=422)
+    def fn(s):
+        user=s.users.get(ident)
+        if not user:raise DomainError('NOT_FOUND','User not found',status=404)
+        for other in s.users.values():
+            if other['user_id']!=ident and ((email and (other.get('email') or '').lower()==email) or (phone and other.get('phone')==phone)):
+                raise DomainError('ALREADY_LINKED','That sign-in is already linked to another user',status=409)
+        if email:user['email']=email
+        if phone:user['phone']=phone
+        # The audit chain keeps only a hash, so the address can be erased without breaking history.
+        emit(s,'UserLinked',None,{'user_id':ident,'identity_sha256':hashlib.sha256((email or phone).encode()).hexdigest()},p['user_id'])
+        return {'user_id':ident,'linked':True}
+    return store.mutate(fn)
 
 @router.post('/auth/refresh')
 def refresh(body:dict):

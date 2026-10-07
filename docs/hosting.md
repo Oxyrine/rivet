@@ -6,7 +6,7 @@ Supabase runs only TypeScript on Deno for compute, so it cannot run this Python 
 | --- | --- | --- |
 | Postgres (events, ledger, snapshot) | Supabase | Managed Postgres with backups |
 | Evidence photos | Supabase Storage, private bucket `evidence` | Survive redeploys; bytes are checked against the ledger hash on every read |
-| OTP login | Supabase Auth | Phone or email OTP matches the spec. **Not wired in yet, see below** |
+| OTP login | Supabase Auth (email code) | The API verifies Supabase's signed token; phone OTP needs an SMS provider enabled in Supabase |
 | FastAPI API | Render (Docker, one instance) | Runs the scheduler and websocket in-process |
 | Web app | Vercel or Render | Needs `API_URL` set to the API origin at build time |
 
@@ -27,8 +27,17 @@ Supabase runs only TypeScript on Deno for compute, so it cannot run this Python 
 4. In Render choose New, then Blueprint, point it at this repo, and fill in the variables marked `sync: false`.
 5. For the web app set `API_URL` to the Render URL when building, and add the web origin to `CORS_ORIGINS`.
 
+## Login
+
+With `ENV=production` the demo login is off. The web app emails a one-time code through Supabase, and the API checks the signed token against Supabase's published keys (no secret needed). Signing in to Supabase is not enough: the address must also be **linked to a Rivet user**, which carries the role and site scope. An unlinked address gets `NOT_PROVISIONED` (403).
+
+1. Set `BOOTSTRAP_ADMIN_EMAIL` on the API. That address maps to the `admin` user, so a fresh deployment cannot lock itself out.
+2. Sign in as that admin, then link everyone else: `POST /admin/users/{user_id}/link` with `{"email": "..."}`. One address maps to one user. The audit trail stores only a hash of the address.
+3. In the Supabase dashboard turn off **Allow new users to sign up** once the admin account exists, and invite people from there. Without that, anyone can create a Supabase account (they still get no access in Rivet).
+4. Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` where the web app is built. Both are public. See `web/.env.example`.
+
 ## Not done yet
 
-- **Login.** With `ENV=production` the sign-in endpoints return 503 on purpose. Supabase Auth has to be connected: verify its token on the API, map each Supabase user to a Rivet user, role and sites, and sign in from the web app with Supabase's OTP. Until then the only way to run a hosted demo is `ENV=demo`, which is open to anyone, including admin reset.
+- **Phone OTP.** Supabase has the phone provider off. Technicians on shared phones would need it plus an SMS provider.
 - **Live Postgres run.** The Postgres code path, the immutable-table triggers and the Storage calls have been tested against fakes only. Run `pytest` once with `DATABASE_URL` pointing at a scratch Supabase database before trusting them.
 - **Websockets through the web host.** Next.js rewrites do not proxy websockets on Vercel. The control room falls back to polling every 3 seconds. Live push needs a direct `wss://` connection to the API.

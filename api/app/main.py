@@ -29,18 +29,16 @@ app.add_middleware(CORSMiddleware,allow_origins=os.getenv('CORS_ORIGINS','http:/
 @app.middleware('http')
 async def idempotency_context(request,call_next):
     from api.app.core.idempotency import request_idempotency
-    import jwt,json
-    from api.app.core.auth import SECRET
+    import json
+    from api.app.core.auth import identify
     key=request.headers.get('idempotency-key');marker=None
     if key and request.method in ('POST','PUT','PATCH','DELETE'):
         try:
-            token=request.headers.get('authorization','').removeprefix('Bearer ')
-            claims=jwt.decode(token,SECRET,algorithms=['HS256'])
-            if claims.get('kind')!='access':raise ValueError()
+            user=await asyncio.to_thread(identify,request.headers.get('authorization','').removeprefix('Bearer '))
             raw=await request.body()
             body=json.loads(raw) if raw else {}
-            marker=request_idempotency.set({'key':claims['sub']+':'+key,'body':{'method':request.method,'path':request.url.path,'body':body}})
-        except (jwt.InvalidTokenError,ValueError):pass
+            marker=request_idempotency.set({'key':user['user_id']+':'+key,'body':{'method':request.method,'path':request.url.path,'body':body}})
+        except (DomainError,ValueError):pass
     try:return await call_next(request)
     finally:
         if marker:request_idempotency.reset(marker)
@@ -61,12 +59,9 @@ def health():return {'status':'ok','environment':os.getenv('ENV','demo')}
 
 @app.websocket('/ws')
 async def websocket(ws:WebSocket):
-    import jwt
-    from api.app.core.auth import SECRET
+    from api.app.core.auth import identify
     from api.app.core.runtime import store
-    try:
-        payload=jwt.decode(ws.query_params.get('token',''),SECRET,algorithms=['HS256']);principal=store.read().users[payload['sub']]
-        if payload['kind']!='access':raise ValueError()
+    try:principal=await asyncio.to_thread(identify,ws.query_params.get('token',''))
     except Exception:await ws.close(code=4401);return
     await ws.accept();cursor=0
     try:

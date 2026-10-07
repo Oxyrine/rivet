@@ -18,3 +18,6 @@ spec-extracted.txt
 *.tsbuildinfo
 .test-*.db
 .test-upload-http-data/
+.env.local
+.env*.local
+graphify-out/
