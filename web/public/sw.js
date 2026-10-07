@@ -9,7 +9,6 @@ const SHELL_ASSETS = [
   '/portal',
   '/gate',
   '/verify',
-  '/globals.css',
   '/manifest.json',
 ];
 

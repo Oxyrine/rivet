@@ -1,6 +1,6 @@
 import { getQueuedCommands, updateCommandStatus, setDeviceLastKnownSeq, QueuedCommand } from './queue';
 import { getDB } from './db';
-import { api } from '@/lib/api';
+import { api, getSession } from '@/lib/api';
 
 export interface SyncResultSummary {
   total: number;
@@ -9,6 +9,8 @@ export interface SyncResultSummary {
   rejected: number;
   sequenceGaps: number;
   lastSync: string;
+  /** Set when nothing was sent because the device has no signed-in session. */
+  blocked?: 'auth';
   results: Array<{
     idempotency_key: string;
     status: 'accepted' | 'duplicate' | 'rejected' | 'deferred' | 'held_gap';
@@ -43,6 +45,25 @@ export async function replayPendingCommands(
       sequenceGaps: 0,
       lastSync: nowIso,
       results: [],
+    };
+  }
+
+  // Nothing can be accepted without a signed-in user. Keep the queue on the device and
+  // tell the page, rather than posting to the server and collecting a 401 per trigger.
+  const token = authToken ?? getSession()?.token;
+  if (!token) {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('rivet:auth-required', { detail: { pending: allQueued.length } }));
+    }
+    return {
+      total: allQueued.length,
+      accepted: 0,
+      duplicates: 0,
+      rejected: 0,
+      sequenceGaps: 0,
+      lastSync: new Date().toISOString(),
+      results: [],
+      blocked: 'auth',
     };
   }
 
@@ -137,6 +158,9 @@ export async function replayPendingCommands(
       }
     } catch (err: any) {
       console.warn(`[REPLAY] Batch error for ${deviceId}:`, err.message);
+      if (err?.status === 401 && typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('rivet:auth-required', { detail: { pending: orderedCommands.length - i } }));
+      }
       // Stop further batches if network or severe failure occurs
       break;
     }

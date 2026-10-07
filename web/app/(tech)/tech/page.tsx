@@ -10,6 +10,7 @@ import { registerServiceWorker } from '@/lib/offline/sw-register';
 import { storeShiftCache, getCachedShift, checkStaleStatus, StaleStatus } from '@/lib/offline/cache';
 import { getQueuedCommands, QueuedCommand, getQueueLimits, QueueLimits } from '@/lib/offline/queue';
 import { executeTechnicianAction } from '@/lib/offline/actions';
+import { hostedAuth } from '@/lib/supabase';
 import { initReplayListeners, replayPendingCommands, isIOSDevice, SyncResultSummary } from '@/lib/offline/replay';
 import { BarcodeScannerModal } from './components/barcode-scanner-modal';
 import { SupervisorPermitModal } from './components/supervisor-permit-modal';
@@ -56,6 +57,7 @@ export default function TechnicianFieldPage() {
   const [selectedJob, setSelectedJob] = useState<ShiftJob | null>(null);
   const [syncStatus, setSyncStatus] = useState<string>('Online · Shift cached');
   const [isOnline, setIsOnline] = useState<boolean>(true);
+  const [signInPending, setSignInPending] = useState<number | null>(null);
   const [queuedCmds, setQueuedCmds] = useState<QueuedCommand[]>([]);
   const [staleInfo, setStaleInfo] = useState<StaleStatus>({ isStale: false });
   const [actionNotice, setActionNotice] = useState<string>('');
@@ -91,17 +93,25 @@ export default function TechnicianFieldPage() {
       setSyncStatus(`Sync Complete · ${e.detail.accepted} accepted · ${e.detail.duplicates} duplicates`);
     };
 
+    const handleAuthRequired = (e: any) => setSignInPending(e.detail?.pending ?? 0);
+
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
     window.addEventListener('rivet:sync-completed', handleSyncCompleted);
+    window.addEventListener('rivet:auth-required', handleAuthRequired);
 
     return () => {
       cleanupReplay();
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
       window.removeEventListener('rivet:sync-completed', handleSyncCompleted);
+      window.removeEventListener('rivet:auth-required', handleAuthRequired);
     };
   }, [selectedTech, session?.token]);
+
+  useEffect(() => {
+    if (session?.token) setSignInPending(null);
+  }, [session?.token]);
 
   // Update session based on selection
   useEffect(() => {
@@ -178,9 +188,10 @@ export default function TechnicianFieldPage() {
     setLoading(false);
   }, []);
 
+  // Reload when the person signs in, so a signed-in technician replaces the fixture shift.
   useEffect(() => {
     loadShift(selectedTech);
-  }, [selectedTech, loadShift]);
+  }, [selectedTech, loadShift, session?.token]);
 
   const handleSwitchTech = async (tech: 'priya' | 'ravi') => {
     setSelectedTech(tech);
@@ -188,10 +199,14 @@ export default function TechnicianFieldPage() {
     if (typeof window !== 'undefined') {
       localStorage.setItem('rivet.active-tech', tech);
     }
-    try {
-      await login(tech, '246810');
-    } catch {
-      // ignore
+    // Demo sign-in only exists on the local demo server; a hosted deployment keeps the
+    // person's own sign-in and only switches which technician's shift is shown.
+    if (!hostedAuth) {
+      try {
+        await login(tech, '246810');
+      } catch {
+        // ignore
+      }
     }
   };
 
@@ -356,6 +371,30 @@ export default function TechnicianFieldPage() {
           >
             Sync now
           </button>
+        </div>
+      )}
+
+      {signInPending !== null && !session && (
+        <div
+          role="status"
+          data-testid="sign-in-to-sync-banner"
+          style={{
+            background: '#ffecb3',
+            border: '1px solid #ffe082',
+            color: '#795548',
+            padding: '10px 16px',
+            marginBottom: '14px',
+            borderRadius: '3px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontFamily: 'var(--mono)',
+            fontSize: '12px',
+          }}
+        >
+          <AlertCircle size={16} />
+          <b>SIGN IN TO SYNC:</b>
+          <span>{signInPending} change(s) are saved on this device and will send once you sign in.</span>
         </div>
       )}
 

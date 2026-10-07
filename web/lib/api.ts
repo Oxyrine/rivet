@@ -21,7 +21,7 @@ function saveToken(token:string){
  localStorage.setItem(SESSION_KEY,JSON.stringify({...session,token}));
  window.dispatchEvent(new Event('rivet:session'));
 }
-async function accessToken(session:Session|null){
+export async function accessToken(session:Session|null){
  if(!session)return undefined;
  if(!hostedAuth)return session.token;
  const {data}=await supabase().auth.getSession();
