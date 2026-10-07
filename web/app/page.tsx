@@ -412,7 +412,7 @@ export default function Landing() {
           
           <div className={s.heroContent}>
             <h1>
-              Industrial service.<br />
+              <span>Industrial service.</span>
               <em>Without the downtime.</em>
             </h1>
             <p>
