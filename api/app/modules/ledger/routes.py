@@ -3,11 +3,12 @@ import base64
 import hashlib
 from datetime import timedelta
 from fastapi import APIRouter, Depends, Header, Query
+from fastapi.responses import JSONResponse
 from contract.commands import CreateRequest, AssignJob, Hold, DeviceBatch
 from contract.errors import DomainError
 from contract.state import emit
 from api.app.core.runtime import store
-from api.app.core.auth import require_roles, scoped_job, scoped_machine, tokens, SECRET
+from api.app.core.auth import require_roles, scoped_job, scoped_machine, tokens, hosted, SECRET
 from api.app.core.clock import now, iso, demo_controls
 from .domain import create_request, approve, assign, hold, release, candidates, move
 from .sync import replay, command
@@ -70,6 +71,53 @@ def link_user(ident:str,body:dict,p=Depends(require_roles('admin'))):
         emit(s,'UserLinked',None,{'user_id':ident,'identity_sha256':hashlib.sha256((email or phone).encode()).hexdigest()},p['user_id'])
         return {'user_id':ident,'linked':True}
     return store.mutate(fn)
+
+def _demo_account_emails(p,body,s):
+    base=str(body.get('base_email') or s.users.get(p['user_id'],{}).get('email') or os.getenv('BOOTSTRAP_ADMIN_EMAIL','')).strip().lower()
+    if '@' not in base:raise DomainError('VALIDATION_FAILED','Provide base_email: the inbox the demo sign-ins will be variants of',status=422)
+    from . import demo_accounts
+    wanted=[u for u in demo_accounts.DEMO_USERS if u in s.users]
+    # A user holds one email, so a real person's link is never replaced by a demo account.
+    skipped=[u for u in wanted if s.users[u].get('email') and not demo_accounts.is_demo_email(s.users[u]['email'])]
+    return {u:demo_accounts.demo_email(base,u) for u in wanted if u not in skipped},skipped
+
+def _demo_accounts_allowed():
+    if not demo_controls():raise DomainError('FORBIDDEN','Demo accounts are disabled: demo controls are off on this server',status=403)
+    if not hosted():raise DomainError('NOT_NEEDED','This server signs in with the demo code, so it needs no accounts',status=409)
+
+@router.post('/admin/demo-accounts')
+def create_demo_accounts(body:dict={},p=Depends(require_roles('admin'))):
+    """Real sign-ins for the seeded demo roles, shown once. Re-running gives every account a fresh password."""
+    _demo_accounts_allowed()
+    from . import demo_accounts
+    emails,skipped=_demo_account_emails(p,body,store.read())
+    results=demo_accounts.provision(emails)
+    ready=[r['user_id'] for r in results if r.get('password')]
+    def fn(s):
+        for user_id in ready:
+            email=emails[user_id]
+            if any(o['user_id']!=user_id and (o.get('email') or '').lower()==email for o in s.users.values()):continue
+            s.users[user_id]['email']=email
+            emit(s,'UserLinked',None,{'user_id':user_id,'identity_sha256':hashlib.sha256(email.encode()).hexdigest()},p['user_id'])
+        return {'linked':ready}
+    store.mutate(fn)  # the passwords stay out of the stored result: only who was linked is recorded
+    people={u:store.read().users[u] for u in emails}
+    accounts=[{**r,'role':people[r['user_id']]['role']} for r in results]
+    return JSONResponse({'accounts':accounts,'skipped':skipped},headers={'Cache-Control':'no-store'})
+
+@router.delete('/admin/demo-accounts')
+def delete_demo_accounts(body:dict={},p=Depends(require_roles('admin'))):
+    """Delete the demo sign-ins after the demo and unlink them from their Rivet users."""
+    _demo_accounts_allowed()
+    from . import demo_accounts
+    s=store.read()
+    emails={u['user_id']:u['email'] for u in s.users.values() if demo_accounts.is_demo_email(u.get('email'))}
+    gone=demo_accounts.remove(emails)
+    def fn(state):
+        for user_id in gone:state.users[user_id].pop('email',None)
+        return {'removed':gone}
+    store.mutate(fn)
+    return {'removed':gone,'kept':sorted(set(emails)-set(gone))}
 
 @router.post('/auth/refresh')
 def refresh(body:dict):

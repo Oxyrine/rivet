@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Users, Clock, RotateCcw, Link2 } from 'lucide-react';
+import { Users, Clock, RotateCcw, Link2, KeyRound, Copy } from 'lucide-react';
 import { api, useSession } from '@/lib/api';
 import s from './team.module.css';
 
@@ -14,6 +14,8 @@ type Person = {
   phone?: string | null;
   linked: boolean;
 };
+
+type DemoAccount = { user_id: string; role: string; email: string; password?: string; error?: string };
 
 const ist = (iso: string) =>
   new Date(iso).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'medium', timeZone: 'Asia/Kolkata' });
@@ -29,6 +31,10 @@ export default function Team() {
   const [controls, setControls] = useState<'unknown' | 'on' | 'off'>('unknown');
   const [when, setWhen] = useState('2026-10-07T09:02');
   const [armed, setArmed] = useState(false);
+  const [accounts, setAccounts] = useState<DemoAccount[]>([]);
+  const [skipped, setSkipped] = useState<string[]>([]);
+  const [showPasswords, setShowPasswords] = useState(false);
+  const [removeArmed, setRemoveArmed] = useState(false);
 
   const isAdmin = session?.role === 'admin';
 
@@ -90,6 +96,33 @@ export default function Team() {
       setControls('on');
       return 'Demo data is back to the clean seed. People stay linked.';
     });
+
+  const createLogins = () =>
+    act('accounts', async () => {
+      const r = await api<{ accounts: DemoAccount[]; skipped: string[] }>('/admin/demo-accounts', { method: 'POST', body: JSON.stringify({}) });
+      setAccounts(r.accounts);
+      setSkipped(r.skipped);
+      const failed = r.accounts.filter(a => a.error).length;
+      return failed ? `${r.accounts.length - failed} demo logins ready, ${failed} failed (see the list).` : `${r.accounts.length} demo logins ready. Copy the passwords now: they are not shown again.`;
+    });
+
+  const removeLogins = () =>
+    act('remove-accounts', async () => {
+      const r = await api<{ removed: string[]; kept: string[] }>('/admin/demo-accounts', { method: 'DELETE', body: JSON.stringify({}) });
+      setAccounts([]);
+      setSkipped([]);
+      setRemoveArmed(false);
+      return `Removed ${r.removed.length} demo logins.${r.kept.length ? ` ${r.kept.length} could not be removed.` : ''}`;
+    });
+
+  const copy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setMessage('Copied.');
+    } catch {
+      setError('Copying is blocked in this browser. Select the text and copy it by hand.');
+    }
+  };
 
   if (!session) {
     return (
@@ -193,6 +226,85 @@ export default function Team() {
         <p className="muted" style={{ fontSize: '13px' }}>
           Create the person's sign-in in Supabase first (Authentication → Users → Add user), then link the same email here.
         </p>
+      </section>
+
+      <section className="panel">
+        <h2>Demo logins</h2>
+        <p className="muted" style={{ marginBottom: '16px' }}>
+          One real sign-in for each role the demo walks through (coordinator, manager, supervisor, customer, storekeeper, auditor, and technicians ravi and priya),
+          linked to its person automatically. They use plus-addresses of your own inbox, so a password reset can only reach you.
+          Creating again gives every login a new password. Anyone already linked to a real address is left alone.
+        </p>
+        <div className="toolbar">
+          <button className="primary-button" disabled={!!busy} onClick={createLogins}>
+            <KeyRound size={15} /> {busy === 'accounts' ? 'Creating…' : accounts.length ? 'Create again (new passwords)' : 'Create demo logins'}
+          </button>
+          {accounts.length > 0 && (
+            <>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
+                <input type="checkbox" checked={showPasswords} onChange={e => setShowPasswords(e.target.checked)} /> Show passwords
+              </label>
+              <button
+                className="secondary-button"
+                onClick={() => copy(accounts.filter(a => a.password).map(a => `${a.role} (${a.user_id})\t${a.email}\t${a.password}`).join('\n'))}
+              >
+                <Copy size={14} /> Copy all
+              </button>
+            </>
+          )}
+          {!removeArmed ? (
+            <button className="secondary-button" style={{ marginLeft: 'auto' }} disabled={!!busy} onClick={() => setRemoveArmed(true)}>
+              Remove demo logins…
+            </button>
+          ) : (
+            <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px' }}>
+              Deletes the demo accounts and unlinks them.
+              <button className="primary-button" style={{ background: 'var(--critical)', borderColor: 'var(--critical)' }} disabled={!!busy} onClick={removeLogins}>
+                {busy === 'remove-accounts' ? 'Removing…' : 'Yes, remove'}
+              </button>
+              <button className="secondary-button" disabled={!!busy} onClick={() => setRemoveArmed(false)}>Cancel</button>
+            </span>
+          )}
+        </div>
+        {accounts.length > 0 && (
+          <div className={s.scroller} style={{ marginTop: '16px' }} data-testid="demo-logins">
+            <table>
+              <thead>
+                <tr>
+                  <th>Role</th>
+                  <th>Person</th>
+                  <th>Email</th>
+                  <th>Password</th>
+                  <th aria-label="Copy" />
+                </tr>
+              </thead>
+              <tbody>
+                {accounts.map(a => (
+                  <tr key={a.user_id}>
+                    <td><span className="badge">{a.role}</span></td>
+                    <td><strong>{a.user_id}</strong></td>
+                    <td style={{ fontFamily: 'var(--mono)', fontSize: '12px' }}>{a.email}</td>
+                    <td style={{ fontFamily: 'var(--mono)', fontSize: '12px' }}>
+                      {a.error ? <span style={{ color: 'var(--critical)' }}>{a.error}</span> : showPasswords ? a.password : '••••••••••••'}
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      {a.password && (
+                        <button className="secondary-button" aria-label={`Copy login for ${a.user_id}`} onClick={() => copy(`${a.email}\t${a.password}`)}>
+                          <Copy size={14} />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {skipped.length > 0 && (
+          <p className="muted" style={{ fontSize: '13px', marginTop: '12px' }}>
+            Skipped because they already have a real sign-in linked: {skipped.join(', ')}.
+          </p>
+        )}
       </section>
 
       <section className="panel">

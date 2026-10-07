@@ -44,7 +44,9 @@ Signing in and demo controls are separate switches. `ENV=production` means only 
 - **Reset** restores the clean seed after a rehearsal. Who is linked to which sign-in is kept.
 - Turn the switch off for real use. Leave it unset and the clock and reset endpoints refuse every request.
 
-The same page links each person to a Supabase sign-in. For a demo with several roles, create a Supabase user per role (Authentication, Users, Add user, Auto Confirm User), then link each email to the matching person.
+The same page links each person to a Supabase sign-in, and can create the demo sign-ins itself.
+
+**Demo logins.** With `DEMO_CONTROLS=1` and `SUPABASE_SERVICE_KEY` set on the API, the Team access page has a **Demo logins** panel. *Create demo logins* makes one real Supabase account per demo role (coordinator, manager, supervisor, requester, storekeeper, auditor, and technicians ravi and priya) and links each to its person. The accounts are plus-addresses of the administrator's own inbox (for example `you+rivet-ravi@gmail.com`), so a password reset can only reach the administrator. Passwords are random and shown once, never stored; running it again rotates them. A person who already has a real address linked is skipped. Sign in with the email and password from the top bar. After the demo, press *Remove demo logins* (or turn `DEMO_CONTROLS` off) so no shared passwords stay live.
 
 ## Local fallback
 
