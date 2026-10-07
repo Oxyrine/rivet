@@ -1,0 +1,12 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Rivet · Offline verifier</title>
+<style>body{font:16px system-ui;background:#101b23;color:#eef3f5;max-width:900px;margin:60px auto;padding:24px}button,input,textarea{padding:12px;margin:8px 0}textarea{width:100%;height:85px;background:#24343f;color:white}pre{white-space:pre-wrap}button{cursor:pointer}h1{font-size:32px}</style>
+<p>RIVET / CUSTOMER-HELD PROOF</p><h1>Verify a service record offline</h1><p>This page makes no network requests. Pin the key received at onboarding and import the records you retained.</p>
+<label>Pinned public key (Base64)<textarea id="key"></textarea></label><button id="pin">Save onboarding key</button><p>Service package <input type="file" id="package" accept=".json"></p><p>Import remembered history <input type="file" id="import" accept=".json"></p><button id="export">Export remembered history</button><button id="remember">Remember verified head</button><pre id="result">Choose a signed package.</pre>
+<script type="module">
+import {verifyPackage} from './verify.js'; let pkg,result;const field=document.querySelector('#key');field.value=localStorage.getItem('hep-pinned-key')||'';let anchors=JSON.parse(localStorage.getItem('hep-anchors')||'[]');
+document.querySelector('#pin').onclick=()=>{localStorage.setItem('hep-pinned-key',field.value.trim());document.querySelector('#result').textContent='Onboarding key pinned. Verify the fingerprint through your service contract.'};
+document.querySelector('#package').onchange=async e=>{try{pkg=JSON.parse(await e.target.files[0].text());result=await verifyPackage(pkg,field.value.trim(),anchors);document.querySelector('#result').textContent=JSON.stringify(result,null,2)}catch(err){document.querySelector('#result').textContent=err.message}};
+document.querySelector('#remember').onclick=()=>{if(!result?.valid)return;anchors.push({machine_id:pkg.body.machine_id,machine_seq:pkg.body.events.length,machine_hash:pkg.body.head});localStorage.setItem('hep-anchors',JSON.stringify(anchors));document.querySelector('#result').textContent+='\nCustomer-held head saved.'};
+document.querySelector('#import').onchange=async e=>{anchors=JSON.parse(await e.target.files[0].text());localStorage.setItem('hep-anchors',JSON.stringify(anchors));};
+document.querySelector('#export').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(anchors)],{type:'application/json'}));a.download='customer-held-history.json';a.click();};
+</script></html>

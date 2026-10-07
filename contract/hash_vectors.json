@@ -1,0 +1,56 @@
+[
+  {
+    "previous": "0000000000000000000000000000000000000000000000000000000000000000",
+    "value": {
+      "type": "RequestCreated",
+      "payload": {
+        "machine": "M-104"
+      }
+    },
+    "expected": "f4a0e24de504fb14d446652b2157f45b8a6e0568c4900a20127c931c9f4bc4df"
+  },
+  {
+    "previous": "f4a0e24de504fb14d446652b2157f45b8a6e0568c4900a20127c931c9f4bc4df",
+    "value": {
+      "type": "CommitmentHeld",
+      "payload": {
+        "quantity": 1
+      }
+    },
+    "expected": "da0c68f6412d6aa5e1d3b9ae4e0cbe5316337eed4b90260c802433a1ba5f6a9e"
+  },
+  {
+    "previous": "da0c68f6412d6aa5e1d3b9ae4e0cbe5316337eed4b90260c802433a1ba5f6a9e",
+    "value": {
+      "type": "TaskLogged",
+      "payload": {
+        "note": "café · सेवा"
+      }
+    },
+    "expected": "484c2bd24730af5b50773942f6440965e4baa13a441649d43e25b37fafd672bb"
+  },
+  {
+    "previous": "484c2bd24730af5b50773942f6440965e4baa13a441649d43e25b37fafd672bb",
+    "value": {
+      "type": "ReportSubmitted",
+      "payload": {
+        "parts": {
+          "O-RING": 2,
+          "HS-40": 1
+        }
+      }
+    },
+    "expected": "53a077cc1540599d2e3b31ca89df3c39571ffc965cd1606c445d4a42fcd57d89"
+  },
+  {
+    "previous": "53a077cc1540599d2e3b31ca89df3c39571ffc965cd1606c445d4a42fcd57d89",
+    "value": {
+      "type": "CustomerAccepted",
+      "payload": {
+        "accepted": true,
+        "optional": null
+      }
+    },
+    "expected": "e46c15edefff1e31fcdf5ee1adf9c5a13c997b842ae418db9b3e9022d028a248"
+  }
+]

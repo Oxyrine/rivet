@@ -1,0 +1,1712 @@
+{
+  "method": "next-job-only reassignment versus joint recovery of recorded dependencies",
+  "assumption": "An unrecovered job assigned to the dropped-out technician remains unserved through its SLA deadline.",
+  "seeds": 100,
+  "affected_job_count": 300,
+  "baseline_missed_job_count": 200,
+  "baseline_missed_percent": 66,
+  "baseline_unserved_sla_breaches": 200,
+  "joint_projected_sla_breaches": 0,
+  "runs": [
+    {
+      "seed": 0,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 1,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 2,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 3,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 4,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 5,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 6,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 7,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 8,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 9,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 10,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 11,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 12,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 13,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 14,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 15,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 16,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 17,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 18,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 19,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 20,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 21,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 22,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 23,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 24,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 25,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 26,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 27,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 28,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 29,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 30,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 31,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 32,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 33,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 34,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 35,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 36,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 37,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 38,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 39,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 40,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 41,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 42,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 43,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 44,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 45,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 46,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 47,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 48,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 49,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 50,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 51,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 52,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 53,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 54,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 55,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 56,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 57,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 58,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 59,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 60,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 61,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 62,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 63,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 64,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 65,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 66,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 67,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 68,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 69,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 70,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 71,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 72,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 73,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 74,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 75,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 76,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 77,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 78,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 79,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 80,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 81,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 82,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 83,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 84,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 85,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 86,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 87,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 88,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 89,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 90,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 91,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 92,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 93,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 94,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 95,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 96,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 97,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 98,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    },
+    {
+      "seed": 99,
+      "affected_jobs": [
+        "J-2231",
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_recovered_jobs": [
+        "J-2231"
+      ],
+      "baseline_missed_jobs": [
+        "J-2236",
+        "J-2239"
+      ],
+      "baseline_unserved_sla_breaches": 2,
+      "joint_projected_sla_breaches": 0
+    }
+  ]
+}

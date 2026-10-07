@@ -1,0 +1,1361 @@
+{
+  "now": "2026-10-07T03:32:00+00:00",
+  "tenant_id": "provider-demo",
+  "sites": {
+    "site-a": {
+      "id": "site-a",
+      "name": "Aster Works · Plant A",
+      "customer_id": "customer-plant",
+      "timezone": "Asia/Kolkata",
+      "lat_e6": 19076000,
+      "lng_e6": 72877000
+    },
+    "site-b": {
+      "id": "site-b",
+      "name": "Site B · Parts depot",
+      "customer_id": "customer-plant",
+      "timezone": "Asia/Kolkata",
+      "lat_e6": 19198000,
+      "lng_e6": 72987000
+    },
+    "site-c": {
+      "id": "site-c",
+      "name": "Site C · Remote plant",
+      "customer_id": "customer-other",
+      "timezone": "Asia/Kolkata",
+      "lat_e6": 20760000,
+      "lng_e6": 73150000
+    }
+  },
+  "machines": {
+    "M-104": {
+      "id": "M-104",
+      "name": "Hydraulic press",
+      "site_id": "site-a",
+      "contract_id": "P1",
+      "eligible": true,
+      "status": "Running",
+      "sensor": true
+    },
+    "M-117": {
+      "id": "M-117",
+      "name": "Industrial drive",
+      "site_id": "site-a",
+      "contract_id": "P2",
+      "eligible": true,
+      "status": "Running",
+      "sensor": false
+    },
+    "M-122": {
+      "id": "M-122",
+      "name": "Industrial drive",
+      "site_id": "site-a",
+      "contract_id": "P2",
+      "eligible": true,
+      "status": "Running",
+      "sensor": false
+    },
+    "M-133": {
+      "id": "M-133",
+      "name": "Industrial drive",
+      "site_id": "site-a",
+      "contract_id": "P2",
+      "eligible": true,
+      "status": "Running",
+      "sensor": false
+    },
+    "M-134": {
+      "id": "M-134",
+      "name": "Industrial drive",
+      "site_id": "site-a",
+      "contract_id": "P2",
+      "eligible": true,
+      "status": "Running",
+      "sensor": false
+    },
+    "M-135": {
+      "id": "M-135",
+      "name": "Industrial drive",
+      "site_id": "site-a",
+      "contract_id": "P2",
+      "eligible": true,
+      "status": "Running",
+      "sensor": false
+    },
+    "M-136": {
+      "id": "M-136",
+      "name": "Industrial drive",
+      "site_id": "site-a",
+      "contract_id": "P2",
+      "eligible": true,
+      "status": "Running",
+      "sensor": false
+    },
+    "M-137": {
+      "id": "M-137",
+      "name": "Industrial drive",
+      "site_id": "site-a",
+      "contract_id": "P2",
+      "eligible": true,
+      "status": "Running",
+      "sensor": false
+    },
+    "M-138": {
+      "id": "M-138",
+      "name": "Industrial drive",
+      "site_id": "site-c",
+      "contract_id": "P2",
+      "eligible": true,
+      "status": "Running",
+      "sensor": false
+    },
+    "M-139": {
+      "id": "M-139",
+      "name": "Industrial drive",
+      "site_id": "site-c",
+      "contract_id": "P2",
+      "eligible": true,
+      "status": "Running",
+      "sensor": false
+    },
+    "M-140": {
+      "id": "M-140",
+      "name": "Industrial drive",
+      "site_id": "site-c",
+      "contract_id": "P2",
+      "eligible": true,
+      "status": "Running",
+      "sensor": false
+    },
+    "M-141": {
+      "id": "M-141",
+      "name": "Industrial drive",
+      "site_id": "site-c",
+      "contract_id": "P2",
+      "eligible": true,
+      "status": "Running",
+      "sensor": false
+    }
+  },
+  "technicians": {
+    "ravi": {
+      "id": "ravi",
+      "name": "Ravi",
+      "skills": {
+        "hydraulics": 2,
+        "gearbox": 2
+      },
+      "certificate_valid": true,
+      "certificate_expires": "2027-10-01",
+      "available": true,
+      "distance_km": 6,
+      "travel_minutes": 9,
+      "site_id": "site-a",
+      "shift_slots": 32,
+      "device_id": "device-ravi"
+    },
+    "priya": {
+      "id": "priya",
+      "name": "Priya",
+      "skills": {
+        "hydraulics": 2,
+        "gearbox": 2
+      },
+      "certificate_valid": true,
+      "certificate_expires": "2027-10-01",
+      "available": true,
+      "distance_km": 12,
+      "travel_minutes": 18,
+      "site_id": "site-a",
+      "shift_slots": 32,
+      "device_id": "device-priya",
+      "shift_end": "2026-10-07T08:30:00+00:00"
+    },
+    "karthik": {
+      "id": "karthik",
+      "name": "Karthik",
+      "skills": {
+        "hydraulics": 1,
+        "gearbox": 2
+      },
+      "certificate_valid": true,
+      "certificate_expires": "2027-10-01",
+      "available": true,
+      "distance_km": 17,
+      "travel_minutes": 25,
+      "site_id": "site-a",
+      "shift_slots": 32,
+      "device_id": "device-karthik"
+    },
+    "arjun": {
+      "id": "arjun",
+      "name": "Arjun",
+      "skills": {
+        "hydraulics": 2,
+        "gearbox": 2
+      },
+      "certificate_valid": false,
+      "certificate_expires": "2026-09-01",
+      "available": true,
+      "distance_km": 7,
+      "travel_minutes": 10,
+      "site_id": "site-a",
+      "shift_slots": 32,
+      "device_id": "device-arjun"
+    },
+    "meena": {
+      "id": "meena",
+      "name": "Meena",
+      "skills": {
+        "hydraulics": 2,
+        "gearbox": 2
+      },
+      "certificate_valid": true,
+      "certificate_expires": "2027-10-01",
+      "available": true,
+      "distance_km": 150,
+      "travel_minutes": 150,
+      "site_id": "site-c",
+      "shift_slots": 32,
+      "device_id": "device-meena"
+    },
+    "dev": {
+      "id": "dev",
+      "name": "Dev",
+      "skills": {
+        "hydraulics": 2,
+        "gearbox": 2
+      },
+      "certificate_valid": true,
+      "certificate_expires": "2027-10-01",
+      "available": true,
+      "distance_km": 20,
+      "travel_minutes": 30,
+      "site_id": "site-a",
+      "shift_slots": 32,
+      "device_id": "device-dev"
+    },
+    "contractor-1": {
+      "id": "contractor-1",
+      "name": "Approved contractor",
+      "contractor": true,
+      "approved": true,
+      "sites": [
+        "site-a"
+      ],
+      "skills": {
+        "hydraulics": 2
+      },
+      "certificate_valid": true,
+      "certificate_expires": "2027-10-01",
+      "available": true,
+      "distance_km": 21,
+      "travel_minutes": 31,
+      "site_id": "site-a",
+      "shift_slots": 32,
+      "device_id": "device-contractor-1",
+      "fee_paise": 450000
+    }
+  },
+  "contracts": {
+    "P1": {
+      "id": "P1",
+      "resolution_minutes": 240,
+      "response_minutes": 120,
+      "penalty_rate_paise": 500000,
+      "penalty_unit_minutes": 15,
+      "penalty_cap_paise": 5000000,
+      "calendar": "24x7",
+      "auto_approve_paise": 1000000
+    },
+    "P2": {
+      "id": "P2",
+      "resolution_minutes": 240,
+      "response_minutes": 180,
+      "penalty_rate_paise": 300000,
+      "penalty_unit_minutes": 15,
+      "penalty_cap_paise": 5000000,
+      "calendar": "24x7",
+      "auto_approve_paise": 1000000
+    }
+  },
+  "jobs": {
+    "J-2236": {
+      "id": "J-2236",
+      "machine_id": "M-117",
+      "site_id": "site-a",
+      "technician_id": "ravi",
+      "state": "assigned",
+      "priority": "P2",
+      "fault": "gearbox_overhaul",
+      "created_at": "2026-10-07T03:00:00+00:00",
+      "deadline": "2026-10-07T08:45:00+00:00",
+      "planned_start": "2026-10-07T06:30:00+00:00",
+      "duration_minutes": 95,
+      "planned_parts": {},
+      "issued_parts": {},
+      "evidence": [],
+      "tasks": [],
+      "checklist": [],
+      "acceptance": "Pending",
+      "on_site": false
+    },
+    "J-2239": {
+      "id": "J-2239",
+      "machine_id": "M-122",
+      "site_id": "site-a",
+      "technician_id": "ravi",
+      "state": "assigned",
+      "priority": "P2",
+      "fault": "gearbox_overhaul",
+      "created_at": "2026-10-07T03:00:00+00:00",
+      "deadline": "2026-10-07T10:00:00+00:00",
+      "planned_start": "2026-10-07T08:10:00+00:00",
+      "duration_minutes": 95,
+      "planned_parts": {},
+      "issued_parts": {},
+      "evidence": [],
+      "tasks": [],
+      "checklist": [],
+      "acceptance": "Pending",
+      "on_site": false
+    },
+    "J-2240": {
+      "id": "J-2240",
+      "machine_id": "M-133",
+      "site_id": "site-a",
+      "technician_id": "dev",
+      "state": "assigned",
+      "priority": "P1",
+      "fault": "gearbox_overhaul",
+      "created_at": "2026-10-07T03:00:00+00:00",
+      "deadline": "2026-10-07T06:00:00+00:00",
+      "planned_start": "2026-10-07T03:35:00+00:00",
+      "duration_minutes": 95,
+      "planned_parts": {
+        "HS-40": 1
+      },
+      "issued_parts": {
+        "HS-40": 1
+      },
+      "evidence": [],
+      "tasks": [],
+      "checklist": [],
+      "acceptance": "Pending",
+      "on_site": true
+    },
+    "J-2253": {
+      "id": "J-2253",
+      "machine_id": "M-133",
+      "site_id": "site-a",
+      "technician_id": "karthik",
+      "state": "assigned",
+      "priority": "P2",
+      "fault": "gearbox_overhaul",
+      "created_at": "2026-10-07T03:00:00+00:00",
+      "deadline": "2026-10-07T12:00:00+00:00",
+      "planned_start": "2026-10-07T09:50:00+00:00",
+      "duration_minutes": 95,
+      "planned_parts": {},
+      "issued_parts": {},
+      "evidence": [],
+      "tasks": [],
+      "checklist": [],
+      "acceptance": "Pending",
+      "on_site": false
+    },
+    "J-2254": {
+      "id": "J-2254",
+      "machine_id": "M-134",
+      "site_id": "site-a",
+      "technician_id": "priya",
+      "state": "assigned",
+      "priority": "P2",
+      "fault": "gearbox_overhaul",
+      "created_at": "2026-10-07T03:00:00+00:00",
+      "deadline": "2026-10-07T08:00:00+00:00",
+      "planned_start": "2026-10-07T05:55:00+00:00",
+      "duration_minutes": 95,
+      "planned_parts": {},
+      "issued_parts": {},
+      "evidence": [],
+      "tasks": [],
+      "checklist": [],
+      "acceptance": "Pending",
+      "on_site": false
+    },
+    "J-2255": {
+      "id": "J-2255",
+      "machine_id": "M-135",
+      "site_id": "site-a",
+      "technician_id": "dev",
+      "state": "assigned",
+      "priority": "P2",
+      "fault": "gearbox_overhaul",
+      "created_at": "2026-10-07T03:00:00+00:00",
+      "deadline": "2026-10-07T07:30:00+00:00",
+      "planned_start": "2026-10-07T05:15:00+00:00",
+      "duration_minutes": 95,
+      "planned_parts": {},
+      "issued_parts": {},
+      "evidence": [],
+      "tasks": [],
+      "checklist": [],
+      "acceptance": "Pending",
+      "on_site": false
+    },
+    "J-2256": {
+      "id": "J-2256",
+      "machine_id": "M-136",
+      "site_id": "site-a",
+      "technician_id": "dev",
+      "state": "assigned",
+      "priority": "P2",
+      "fault": "gearbox_overhaul",
+      "created_at": "2026-10-07T03:00:00+00:00",
+      "deadline": "2026-10-07T09:00:00+00:00",
+      "planned_start": "2026-10-07T07:00:00+00:00",
+      "duration_minutes": 95,
+      "planned_parts": {},
+      "issued_parts": {},
+      "evidence": [],
+      "tasks": [],
+      "checklist": [],
+      "acceptance": "Pending",
+      "on_site": false
+    },
+    "J-2257": {
+      "id": "J-2257",
+      "machine_id": "M-137",
+      "site_id": "site-a",
+      "technician_id": "dev",
+      "state": "assigned",
+      "priority": "P2",
+      "fault": "gearbox_overhaul",
+      "created_at": "2026-10-07T03:00:00+00:00",
+      "deadline": "2026-10-07T11:00:00+00:00",
+      "planned_start": "2026-10-07T08:40:00+00:00",
+      "duration_minutes": 95,
+      "planned_parts": {},
+      "issued_parts": {},
+      "evidence": [],
+      "tasks": [],
+      "checklist": [],
+      "acceptance": "Pending",
+      "on_site": false
+    },
+    "J-2258": {
+      "id": "J-2258",
+      "machine_id": "M-138",
+      "site_id": "site-c",
+      "technician_id": "meena",
+      "state": "assigned",
+      "priority": "P2",
+      "fault": "gearbox_overhaul",
+      "created_at": "2026-10-07T03:00:00+00:00",
+      "deadline": "2026-10-07T06:00:00+00:00",
+      "planned_start": "2026-10-07T03:35:00+00:00",
+      "duration_minutes": 95,
+      "planned_parts": {},
+      "issued_parts": {},
+      "evidence": [],
+      "tasks": [],
+      "checklist": [],
+      "acceptance": "Pending",
+      "on_site": false
+    },
+    "J-2259": {
+      "id": "J-2259",
+      "machine_id": "M-139",
+      "site_id": "site-c",
+      "technician_id": "meena",
+      "state": "assigned",
+      "priority": "P2",
+      "fault": "gearbox_overhaul",
+      "created_at": "2026-10-07T03:00:00+00:00",
+      "deadline": "2026-10-07T07:30:00+00:00",
+      "planned_start": "2026-10-07T05:15:00+00:00",
+      "duration_minutes": 95,
+      "planned_parts": {},
+      "issued_parts": {},
+      "evidence": [],
+      "tasks": [],
+      "checklist": [],
+      "acceptance": "Pending",
+      "on_site": false
+    },
+    "J-2260": {
+      "id": "J-2260",
+      "machine_id": "M-140",
+      "site_id": "site-c",
+      "technician_id": "meena",
+      "state": "assigned",
+      "priority": "P2",
+      "fault": "gearbox_overhaul",
+      "created_at": "2026-10-07T03:00:00+00:00",
+      "deadline": "2026-10-07T09:00:00+00:00",
+      "planned_start": "2026-10-07T07:00:00+00:00",
+      "duration_minutes": 95,
+      "planned_parts": {},
+      "issued_parts": {},
+      "evidence": [],
+      "tasks": [],
+      "checklist": [],
+      "acceptance": "Pending",
+      "on_site": false
+    }
+  },
+  "requests": {},
+  "commitments": {
+    "time:J-2236": {
+      "id": "time:J-2236",
+      "type": "TECH_TIME",
+      "job_id": "J-2236",
+      "resource": "TIME",
+      "owner": "ravi",
+      "state": "HELD",
+      "source": "tech:ravi:2026-10-07:free",
+      "reservation_account": "job:J-2236:allocated",
+      "quantity": 7,
+      "starts_at": "2026-10-07T06:30:00+00:00",
+      "ends_at": "2026-10-07T08:05:00+00:00",
+      "depends_on": []
+    },
+    "sla:J-2236": {
+      "id": "sla:J-2236",
+      "type": "SLA_WINDOW",
+      "job_id": "J-2236",
+      "state": "ACTIVE",
+      "deadline": "2026-10-07T08:45:00+00:00",
+      "depends_on": [
+        "time:J-2236"
+      ]
+    },
+    "time:J-2239": {
+      "id": "time:J-2239",
+      "type": "TECH_TIME",
+      "job_id": "J-2239",
+      "resource": "TIME",
+      "owner": "ravi",
+      "state": "HELD",
+      "source": "tech:ravi:2026-10-07:free",
+      "reservation_account": "job:J-2239:allocated",
+      "quantity": 7,
+      "starts_at": "2026-10-07T08:10:00+00:00",
+      "ends_at": "2026-10-07T09:45:00+00:00",
+      "depends_on": [
+        "time:J-2236"
+      ]
+    },
+    "sla:J-2239": {
+      "id": "sla:J-2239",
+      "type": "SLA_WINDOW",
+      "job_id": "J-2239",
+      "state": "ACTIVE",
+      "deadline": "2026-10-07T10:00:00+00:00",
+      "depends_on": [
+        "time:J-2239"
+      ]
+    },
+    "time:J-2240": {
+      "id": "time:J-2240",
+      "type": "TECH_TIME",
+      "job_id": "J-2240",
+      "resource": "TIME",
+      "owner": "dev",
+      "state": "HELD",
+      "source": "tech:dev:2026-10-07:free",
+      "reservation_account": "job:J-2240:allocated",
+      "quantity": 7,
+      "starts_at": "2026-10-07T03:35:00+00:00",
+      "ends_at": "2026-10-07T05:10:00+00:00",
+      "depends_on": []
+    },
+    "sla:J-2240": {
+      "id": "sla:J-2240",
+      "type": "SLA_WINDOW",
+      "job_id": "J-2240",
+      "state": "ACTIVE",
+      "deadline": "2026-10-07T06:00:00+00:00",
+      "depends_on": [
+        "time:J-2240"
+      ]
+    },
+    "time:J-2253": {
+      "id": "time:J-2253",
+      "type": "TECH_TIME",
+      "job_id": "J-2253",
+      "resource": "TIME",
+      "owner": "karthik",
+      "state": "HELD",
+      "source": "tech:karthik:2026-10-07:free",
+      "reservation_account": "job:J-2253:allocated",
+      "quantity": 7,
+      "starts_at": "2026-10-07T09:50:00+00:00",
+      "ends_at": "2026-10-07T11:25:00+00:00",
+      "depends_on": []
+    },
+    "sla:J-2253": {
+      "id": "sla:J-2253",
+      "type": "SLA_WINDOW",
+      "job_id": "J-2253",
+      "state": "ACTIVE",
+      "deadline": "2026-10-07T12:00:00+00:00",
+      "depends_on": [
+        "time:J-2253"
+      ]
+    },
+    "time:J-2254": {
+      "id": "time:J-2254",
+      "type": "TECH_TIME",
+      "job_id": "J-2254",
+      "resource": "TIME",
+      "owner": "priya",
+      "state": "HELD",
+      "source": "tech:priya:2026-10-07:free",
+      "reservation_account": "job:J-2254:allocated",
+      "quantity": 7,
+      "starts_at": "2026-10-07T05:55:00+00:00",
+      "ends_at": "2026-10-07T07:30:00+00:00",
+      "depends_on": []
+    },
+    "sla:J-2254": {
+      "id": "sla:J-2254",
+      "type": "SLA_WINDOW",
+      "job_id": "J-2254",
+      "state": "ACTIVE",
+      "deadline": "2026-10-07T08:00:00+00:00",
+      "depends_on": [
+        "time:J-2254"
+      ]
+    },
+    "time:J-2255": {
+      "id": "time:J-2255",
+      "type": "TECH_TIME",
+      "job_id": "J-2255",
+      "resource": "TIME",
+      "owner": "dev",
+      "state": "HELD",
+      "source": "tech:dev:2026-10-07:free",
+      "reservation_account": "job:J-2255:allocated",
+      "quantity": 7,
+      "starts_at": "2026-10-07T05:15:00+00:00",
+      "ends_at": "2026-10-07T06:50:00+00:00",
+      "depends_on": [
+        "time:J-2240"
+      ]
+    },
+    "sla:J-2255": {
+      "id": "sla:J-2255",
+      "type": "SLA_WINDOW",
+      "job_id": "J-2255",
+      "state": "ACTIVE",
+      "deadline": "2026-10-07T07:30:00+00:00",
+      "depends_on": [
+        "time:J-2255"
+      ]
+    },
+    "time:J-2256": {
+      "id": "time:J-2256",
+      "type": "TECH_TIME",
+      "job_id": "J-2256",
+      "resource": "TIME",
+      "owner": "dev",
+      "state": "HELD",
+      "source": "tech:dev:2026-10-07:free",
+      "reservation_account": "job:J-2256:allocated",
+      "quantity": 7,
+      "starts_at": "2026-10-07T07:00:00+00:00",
+      "ends_at": "2026-10-07T08:35:00+00:00",
+      "depends_on": [
+        "time:J-2255"
+      ]
+    },
+    "sla:J-2256": {
+      "id": "sla:J-2256",
+      "type": "SLA_WINDOW",
+      "job_id": "J-2256",
+      "state": "ACTIVE",
+      "deadline": "2026-10-07T09:00:00+00:00",
+      "depends_on": [
+        "time:J-2256"
+      ]
+    },
+    "time:J-2257": {
+      "id": "time:J-2257",
+      "type": "TECH_TIME",
+      "job_id": "J-2257",
+      "resource": "TIME",
+      "owner": "dev",
+      "state": "HELD",
+      "source": "tech:dev:2026-10-07:free",
+      "reservation_account": "job:J-2257:allocated",
+      "quantity": 7,
+      "starts_at": "2026-10-07T08:40:00+00:00",
+      "ends_at": "2026-10-07T10:15:00+00:00",
+      "depends_on": [
+        "time:J-2256"
+      ]
+    },
+    "sla:J-2257": {
+      "id": "sla:J-2257",
+      "type": "SLA_WINDOW",
+      "job_id": "J-2257",
+      "state": "ACTIVE",
+      "deadline": "2026-10-07T11:00:00+00:00",
+      "depends_on": [
+        "time:J-2257"
+      ]
+    },
+    "time:J-2258": {
+      "id": "time:J-2258",
+      "type": "TECH_TIME",
+      "job_id": "J-2258",
+      "resource": "TIME",
+      "owner": "meena",
+      "state": "HELD",
+      "source": "tech:meena:2026-10-07:free",
+      "reservation_account": "job:J-2258:allocated",
+      "quantity": 7,
+      "starts_at": "2026-10-07T03:35:00+00:00",
+      "ends_at": "2026-10-07T05:10:00+00:00",
+      "depends_on": []
+    },
+    "sla:J-2258": {
+      "id": "sla:J-2258",
+      "type": "SLA_WINDOW",
+      "job_id": "J-2258",
+      "state": "ACTIVE",
+      "deadline": "2026-10-07T06:00:00+00:00",
+      "depends_on": [
+        "time:J-2258"
+      ]
+    },
+    "time:J-2259": {
+      "id": "time:J-2259",
+      "type": "TECH_TIME",
+      "job_id": "J-2259",
+      "resource": "TIME",
+      "owner": "meena",
+      "state": "HELD",
+      "source": "tech:meena:2026-10-07:free",
+      "reservation_account": "job:J-2259:allocated",
+      "quantity": 7,
+      "starts_at": "2026-10-07T05:15:00+00:00",
+      "ends_at": "2026-10-07T06:50:00+00:00",
+      "depends_on": [
+        "time:J-2258"
+      ]
+    },
+    "sla:J-2259": {
+      "id": "sla:J-2259",
+      "type": "SLA_WINDOW",
+      "job_id": "J-2259",
+      "state": "ACTIVE",
+      "deadline": "2026-10-07T07:30:00+00:00",
+      "depends_on": [
+        "time:J-2259"
+      ]
+    },
+    "time:J-2260": {
+      "id": "time:J-2260",
+      "type": "TECH_TIME",
+      "job_id": "J-2260",
+      "resource": "TIME",
+      "owner": "meena",
+      "state": "HELD",
+      "source": "tech:meena:2026-10-07:free",
+      "reservation_account": "job:J-2260:allocated",
+      "quantity": 7,
+      "starts_at": "2026-10-07T07:00:00+00:00",
+      "ends_at": "2026-10-07T08:35:00+00:00",
+      "depends_on": [
+        "time:J-2259"
+      ]
+    },
+    "sla:J-2260": {
+      "id": "sla:J-2260",
+      "type": "SLA_WINDOW",
+      "job_id": "J-2260",
+      "state": "ACTIVE",
+      "deadline": "2026-10-07T09:00:00+00:00",
+      "depends_on": [
+        "time:J-2260"
+      ]
+    },
+    "hold-existing": {
+      "id": "hold-existing",
+      "type": "PART_HOLD",
+      "job_id": "J-2240",
+      "resource": "HS-40",
+      "quantity": 1,
+      "source": "store:site-b:available",
+      "owner": "dev",
+      "state": "HELD",
+      "physical_location": "site-b",
+      "expires_at": "2026-10-07T12:00:00+00:00",
+      "depends_on": [
+        "time:J-2240"
+      ]
+    }
+  },
+  "balances": {
+    "tech:ravi:2026-10-07:free|TIME": 18,
+    "tech:priya:2026-10-07:free|TIME": 25,
+    "tech:karthik:2026-10-07:free|TIME": 25,
+    "tech:arjun:2026-10-07:free|TIME": 32,
+    "tech:meena:2026-10-07:free|TIME": 11,
+    "tech:dev:2026-10-07:free|TIME": 4,
+    "tech:contractor-1:2026-10-07:free|TIME": 32,
+    "store:site-b:available|HS-40": 1,
+    "job:J-2240:reserved|HS-40": 1,
+    "store:site-a:available|HS-40": 0,
+    "van:priya:stock|O-RING": 4,
+    "store:site-b:available|JACK": 1,
+    "store:site-b:available|PART-01": 5,
+    "store:site-b:available|PART-02": 5,
+    "store:site-b:available|PART-03": 5,
+    "store:site-b:available|PART-04": 5,
+    "store:site-b:available|PART-05": 5,
+    "store:site-b:available|PART-06": 5,
+    "store:site-b:available|PART-07": 5,
+    "store:site-b:available|PART-08": 5,
+    "store:site-b:available|PART-09": 5,
+    "store:site-b:available|PART-10": 5,
+    "store:site-b:available|PART-11": 5,
+    "store:site-b:available|PART-12": 5,
+    "store:site-b:available|PART-13": 5,
+    "store:site-b:available|PART-14": 5,
+    "store:site-b:available|PART-15": 5,
+    "store:site-b:available|PART-16": 5,
+    "store:site-b:available|PART-17": 5,
+    "job:J-2236:allocated|TIME": 7,
+    "job:J-2239:allocated|TIME": 7,
+    "job:J-2240:allocated|TIME": 7,
+    "job:J-2253:allocated|TIME": 7,
+    "job:J-2254:allocated|TIME": 7,
+    "job:J-2255:allocated|TIME": 7,
+    "job:J-2256:allocated|TIME": 7,
+    "job:J-2257:allocated|TIME": 7,
+    "job:J-2258:allocated|TIME": 7,
+    "job:J-2259:allocated|TIME": 7,
+    "job:J-2260:allocated|TIME": 7
+  },
+  "entries": [
+    {
+      "transaction_id": "seed-time-001",
+      "account": "tech:ravi:2026-10-07:free",
+      "resource": "TIME",
+      "quantity": -7,
+      "actor": "fixture",
+      "occurred_at": "2026-10-07T03:32:00+00:00"
+    },
+    {
+      "transaction_id": "seed-time-001",
+      "account": "job:J-2236:allocated",
+      "resource": "TIME",
+      "quantity": 7,
+      "actor": "fixture",
+      "occurred_at": "2026-10-07T03:32:00+00:00"
+    },
+    {
+      "transaction_id": "seed-time-002",
+      "account": "tech:ravi:2026-10-07:free",
+      "resource": "TIME",
+      "quantity": -7,
+      "actor": "fixture",
+      "occurred_at": "2026-10-07T03:32:00+00:00"
+    },
+    {
+      "transaction_id": "seed-time-002",
+      "account": "job:J-2239:allocated",
+      "resource": "TIME",
+      "quantity": 7,
+      "actor": "fixture",
+      "occurred_at": "2026-10-07T03:32:00+00:00"
+    },
+    {
+      "transaction_id": "seed-time-003",
+      "account": "tech:dev:2026-10-07:free",
+      "resource": "TIME",
+      "quantity": -7,
+      "actor": "fixture",
+      "occurred_at": "2026-10-07T03:32:00+00:00"
+    },
+    {
+      "transaction_id": "seed-time-003",
+      "account": "job:J-2240:allocated",
+      "resource": "TIME",
+      "quantity": 7,
+      "actor": "fixture",
+      "occurred_at": "2026-10-07T03:32:00+00:00"
+    },
+    {
+      "transaction_id": "seed-time-004",
+      "account": "tech:karthik:2026-10-07:free",
+      "resource": "TIME",
+      "quantity": -7,
+      "actor": "fixture",
+      "occurred_at": "2026-10-07T03:32:00+00:00"
+    },
+    {
+      "transaction_id": "seed-time-004",
+      "account": "job:J-2253:allocated",
+      "resource": "TIME",
+      "quantity": 7,
+      "actor": "fixture",
+      "occurred_at": "2026-10-07T03:32:00+00:00"
+    },
+    {
+      "transaction_id": "seed-time-005",
+      "account": "tech:priya:2026-10-07:free",
+      "resource": "TIME",
+      "quantity": -7,
+      "actor": "fixture",
+      "occurred_at": "2026-10-07T03:32:00+00:00"
+    },
+    {
+      "transaction_id": "seed-time-005",
+      "account": "job:J-2254:allocated",
+      "resource": "TIME",
+      "quantity": 7,
+      "actor": "fixture",
+      "occurred_at": "2026-10-07T03:32:00+00:00"
+    },
+    {
+      "transaction_id": "seed-time-006",
+      "account": "tech:dev:2026-10-07:free",
+      "resource": "TIME",
+      "quantity": -7,
+      "actor": "fixture",
+      "occurred_at": "2026-10-07T03:32:00+00:00"
+    },
+    {
+      "transaction_id": "seed-time-006",
+      "account": "job:J-2255:allocated",
+      "resource": "TIME",
+      "quantity": 7,
+      "actor": "fixture",
+      "occurred_at": "2026-10-07T03:32:00+00:00"
+    },
+    {
+      "transaction_id": "seed-time-007",
+      "account": "tech:dev:2026-10-07:free",
+      "resource": "TIME",
+      "quantity": -7,
+      "actor": "fixture",
+      "occurred_at": "2026-10-07T03:32:00+00:00"
+    },
+    {
+      "transaction_id": "seed-time-007",
+      "account": "job:J-2256:allocated",
+      "resource": "TIME",
+      "quantity": 7,
+      "actor": "fixture",
+      "occurred_at": "2026-10-07T03:32:00+00:00"
+    },
+    {
+      "transaction_id": "seed-time-008",
+      "account": "tech:dev:2026-10-07:free",
+      "resource": "TIME",
+      "quantity": -7,
+      "actor": "fixture",
+      "occurred_at": "2026-10-07T03:32:00+00:00"
+    },
+    {
+      "transaction_id": "seed-time-008",
+      "account": "job:J-2257:allocated",
+      "resource": "TIME",
+      "quantity": 7,
+      "actor": "fixture",
+      "occurred_at": "2026-10-07T03:32:00+00:00"
+    },
+    {
+      "transaction_id": "seed-time-009",
+      "account": "tech:meena:2026-10-07:free",
+      "resource": "TIME",
+      "quantity": -7,
+      "actor": "fixture",
+      "occurred_at": "2026-10-07T03:32:00+00:00"
+    },
+    {
+      "transaction_id": "seed-time-009",
+      "account": "job:J-2258:allocated",
+      "resource": "TIME",
+      "quantity": 7,
+      "actor": "fixture",
+      "occurred_at": "2026-10-07T03:32:00+00:00"
+    },
+    {
+      "transaction_id": "seed-time-010",
+      "account": "tech:meena:2026-10-07:free",
+      "resource": "TIME",
+      "quantity": -7,
+      "actor": "fixture",
+      "occurred_at": "2026-10-07T03:32:00+00:00"
+    },
+    {
+      "transaction_id": "seed-time-010",
+      "account": "job:J-2259:allocated",
+      "resource": "TIME",
+      "quantity": 7,
+      "actor": "fixture",
+      "occurred_at": "2026-10-07T03:32:00+00:00"
+    },
+    {
+      "transaction_id": "seed-time-011",
+      "account": "tech:meena:2026-10-07:free",
+      "resource": "TIME",
+      "quantity": -7,
+      "actor": "fixture",
+      "occurred_at": "2026-10-07T03:32:00+00:00"
+    },
+    {
+      "transaction_id": "seed-time-011",
+      "account": "job:J-2260:allocated",
+      "resource": "TIME",
+      "quantity": 7,
+      "actor": "fixture",
+      "occurred_at": "2026-10-07T03:32:00+00:00"
+    }
+  ],
+  "events": [
+    {
+      "event_id": "evt-000001",
+      "tenant_seq": 1,
+      "tenant_id": "provider-demo",
+      "type": "StockReceived",
+      "machine": null,
+      "machine_seq": null,
+      "occurred_at": "2026-10-07T03:32:00+00:00",
+      "actor": "system",
+      "payload": {
+        "resource": "O-RING",
+        "quantity": 4,
+        "location": "site-b"
+      },
+      "cause_hash": null,
+      "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "machine_prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "hash": "78f25dea72fba2585a9d9edc1dc916eaf21df74d4c733e85b04fbcd6e2df291f",
+      "machine_hash": null
+    },
+    {
+      "event_id": "evt-000002",
+      "tenant_seq": 2,
+      "tenant_id": "provider-demo",
+      "type": "StoreIssued",
+      "machine": null,
+      "machine_seq": null,
+      "occurred_at": "2026-10-07T03:32:00+00:00",
+      "actor": "system",
+      "payload": {
+        "resource": "O-RING",
+        "quantity": 4,
+        "technician_id": "priya",
+        "received_at": "2026-10-05T03:30:00+00:00"
+      },
+      "cause_hash": null,
+      "prev_hash": "78f25dea72fba2585a9d9edc1dc916eaf21df74d4c733e85b04fbcd6e2df291f",
+      "machine_prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "hash": "ee6a37d9d22f54a3abc9ebee8f92e265e9ac84aa4b0585380bbad3a7a9442815",
+      "machine_hash": null
+    }
+  ],
+  "breaches": {},
+  "plans": {},
+  "evidence": {},
+  "devices": {
+    "device-ravi": {
+      "id": "device-ravi",
+      "user_id": "ravi",
+      "last_seq": 0,
+      "last_sync": "2026-10-07T03:32:00+00:00",
+      "results": {},
+      "pending": {}
+    },
+    "device-priya": {
+      "id": "device-priya",
+      "user_id": "priya",
+      "last_seq": 0,
+      "last_sync": "2026-10-07T03:32:00+00:00",
+      "results": {},
+      "pending": {}
+    },
+    "device-karthik": {
+      "id": "device-karthik",
+      "user_id": "karthik",
+      "last_seq": 0,
+      "last_sync": "2026-10-07T03:32:00+00:00",
+      "results": {},
+      "pending": {}
+    },
+    "device-arjun": {
+      "id": "device-arjun",
+      "user_id": "arjun",
+      "last_seq": 0,
+      "last_sync": "2026-10-07T03:32:00+00:00",
+      "results": {},
+      "pending": {}
+    },
+    "device-meena": {
+      "id": "device-meena",
+      "user_id": "meena",
+      "last_seq": 0,
+      "last_sync": "2026-10-07T03:32:00+00:00",
+      "results": {},
+      "pending": {}
+    },
+    "device-dev": {
+      "id": "device-dev",
+      "user_id": "dev",
+      "last_seq": 0,
+      "last_sync": "2026-10-07T03:32:00+00:00",
+      "results": {},
+      "pending": {}
+    },
+    "device-contractor-1": {
+      "id": "device-contractor-1",
+      "user_id": "contractor-1",
+      "last_seq": 0,
+      "last_sync": "2026-10-07T03:32:00+00:00",
+      "results": {},
+      "pending": {}
+    }
+  },
+  "pauses": {},
+  "variances": {},
+  "receipts": [],
+  "adapters": {
+    "telemetry": {
+      "enabled": true
+    },
+    "billing": {
+      "enabled": false
+    }
+  },
+  "users": {
+    "coordinator": {
+      "user_id": "coordinator",
+      "role": "coordinator",
+      "tenant_id": "provider-demo",
+      "sites": [
+        "site-a",
+        "site-b",
+        "site-c"
+      ],
+      "device_id": "device-coordinator"
+    },
+    "manager": {
+      "user_id": "manager",
+      "role": "manager",
+      "tenant_id": "provider-demo",
+      "sites": [
+        "site-a",
+        "site-b",
+        "site-c"
+      ],
+      "device_id": "device-manager"
+    },
+    "supervisor": {
+      "user_id": "supervisor",
+      "role": "supervisor",
+      "tenant_id": "provider-demo",
+      "sites": [
+        "site-a",
+        "site-b"
+      ],
+      "device_id": "device-supervisor",
+      "pin": "4826"
+    },
+    "requester": {
+      "user_id": "requester",
+      "role": "requester",
+      "tenant_id": "provider-demo",
+      "sites": [
+        "site-a"
+      ],
+      "device_id": "device-requester"
+    },
+    "storekeeper": {
+      "user_id": "storekeeper",
+      "role": "storekeeper",
+      "tenant_id": "provider-demo",
+      "sites": [
+        "site-b"
+      ],
+      "device_id": "device-storekeeper"
+    },
+    "auditor": {
+      "user_id": "auditor",
+      "role": "auditor",
+      "tenant_id": "provider-demo",
+      "sites": [
+        "site-a",
+        "site-b",
+        "site-c"
+      ],
+      "device_id": "device-auditor"
+    },
+    "admin": {
+      "user_id": "admin",
+      "role": "admin",
+      "tenant_id": "provider-demo",
+      "sites": [
+        "site-a",
+        "site-b",
+        "site-c"
+      ],
+      "device_id": "device-admin"
+    },
+    "ravi": {
+      "user_id": "ravi",
+      "role": "technician",
+      "tenant_id": "provider-demo",
+      "sites": [
+        "site-a",
+        "site-b",
+        "site-c"
+      ],
+      "technician_id": "ravi",
+      "device_id": "device-ravi"
+    },
+    "priya": {
+      "user_id": "priya",
+      "role": "technician",
+      "tenant_id": "provider-demo",
+      "sites": [
+        "site-a",
+        "site-b",
+        "site-c"
+      ],
+      "technician_id": "priya",
+      "device_id": "device-priya"
+    },
+    "karthik": {
+      "user_id": "karthik",
+      "role": "technician",
+      "tenant_id": "provider-demo",
+      "sites": [
+        "site-a",
+        "site-b",
+        "site-c"
+      ],
+      "technician_id": "karthik",
+      "device_id": "device-karthik"
+    },
+    "arjun": {
+      "user_id": "arjun",
+      "role": "technician",
+      "tenant_id": "provider-demo",
+      "sites": [
+        "site-a",
+        "site-b",
+        "site-c"
+      ],
+      "technician_id": "arjun",
+      "device_id": "device-arjun"
+    },
+    "meena": {
+      "user_id": "meena",
+      "role": "technician",
+      "tenant_id": "provider-demo",
+      "sites": [
+        "site-a",
+        "site-b",
+        "site-c"
+      ],
+      "technician_id": "meena",
+      "device_id": "device-meena"
+    },
+    "dev": {
+      "user_id": "dev",
+      "role": "technician",
+      "tenant_id": "provider-demo",
+      "sites": [
+        "site-a",
+        "site-b",
+        "site-c"
+      ],
+      "technician_id": "dev",
+      "device_id": "device-dev"
+    },
+    "contractor-1": {
+      "user_id": "contractor-1",
+      "role": "technician",
+      "tenant_id": "provider-demo",
+      "sites": [
+        "site-a",
+        "site-b",
+        "site-c"
+      ],
+      "technician_id": "contractor-1",
+      "device_id": "device-contractor-1"
+    }
+  },
+  "metadata": {
+    "fixture_version": 1,
+    "durations": {
+      "hydraulic_leak": 55,
+      "gearbox_overhaul": 95
+    },
+    "part_costs_paise": {
+      "HS-40": 240000,
+      "O-RING": 15000,
+      "JACK": 0
+    },
+    "required_checklist": [
+      "isolate",
+      "inspect",
+      "replace",
+      "test",
+      "before_photo",
+      "after_photo"
+    ],
+    "initial_resource_totals": {
+      "TIME": 224,
+      "HS-40": 2,
+      "O-RING": 4,
+      "JACK": 1,
+      "PART-01": 5,
+      "PART-02": 5,
+      "PART-03": 5,
+      "PART-04": 5,
+      "PART-05": 5,
+      "PART-06": 5,
+      "PART-07": 5,
+      "PART-08": 5,
+      "PART-09": 5,
+      "PART-10": 5,
+      "PART-11": 5,
+      "PART-12": 5,
+      "PART-13": 5,
+      "PART-14": 5,
+      "PART-15": 5,
+      "PART-16": 5,
+      "PART-17": 5
+    },
+    "next_request": 2231,
+    "demo_credentials": {
+      "otp": "246810",
+      "supervisor_pin": "4826"
+    },
+    "gate_keys": {},
+    "seed_history": {
+      "hydraulic_leak": [
+        50,
+        53,
+        55,
+        58,
+        60
+      ],
+      "gearbox_overhaul": [
+        85,
+        90,
+        95,
+        100,
+        105
+      ]
+    }
+  }
+}
