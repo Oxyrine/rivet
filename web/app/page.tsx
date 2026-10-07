@@ -412,11 +412,11 @@ export default function Landing() {
           
           <div className={s.heroContent}>
             <h1>
-              Good machines.<br />
-              <em>Keep them running.</em>
+              Industrial service.<br />
+              <em>Without the downtime.</em>
             </h1>
             <p>
-              Get the right people and parts to the job. Handle the changes. Keep a record of the work.
+              Dispatch qualified technicians, secure spare parts before departure, and resolve schedule disruptions in real time. Complete verified history for every machine.
             </p>
             <div className={s.heroActions}>
               <Link href="/control" passHref>

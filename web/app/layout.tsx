@@ -33,8 +33,8 @@ const barlowCondensed = Barlow_Condensed({
 });
 
 export const metadata: Metadata = {
-  title: 'Rivet — Keep good machines running.',
-  description: 'Coordinate heavy industrial equipment servicing, dispatch qualified technicians, track disruption impact, and verify tamper-proof records.',
+  title: 'Rivet — Industrial Service & Operations Platform',
+  description: 'Coordinate heavy industrial equipment servicing, dispatch qualified technicians, resolve schedule disruptions in real time, and maintain complete verified service records.',
 };
 
 export const viewport: Viewport = {
