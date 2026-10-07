@@ -299,15 +299,15 @@ export default function ControlRoom() {
         </div>
         <div>
           <label>RECOVERY PLANS</label>
-          <strong>{recovery?.plans?.length ?? '—'}</strong>
+          <strong>{recovery ? (recovery.plans?.length || recovery.partial_plans?.length || 0) : '—'}</strong>
           <small>{recovery ? `${recovery.combinations_examined} candidate options simulated` : 'Simulate before applying schedule change'}</small>
         </div>
       </section>
 
       {/* 3-Column Operational Workspace */}
       <div className={s.workspace}>
-        {/* Column 1: Dispatch Board */}
-        <section className={s.panel}>
+        {/* Dispatch board: the full width, so every row reads on one line */}
+        <section className={`${s.panel} ${s.wide}`}>
           <div className={s.panelhead}>
             <div>
               <span className={s.kicker}>DISPATCH SCHEDULE</span>
@@ -360,7 +360,7 @@ export default function ControlRoom() {
                       <span className={s.avatar}>{(j.technician_id || '?')[0].toUpperCase()}</span>
                       {j.technician_id || 'Unassigned'}
                     </td>
-                    <td>
+                    <td className={s.timecell}>
                       {clock(j.planned_start)} <span className={s.muted}>→</span> {clock(j.deadline)}
                       <small>IST · {j.duration_minutes}m duration</small>
                     </td>
@@ -421,7 +421,7 @@ export default function ControlRoom() {
                   onClick={() => setTab('plans')}
                   className={tab === 'plans' ? s.activetab : ''}
                 >
-                  Recovery Plans <span>{recovery.plans.length}</span>
+                  Recovery Plans <span>{recovery.plans.length || recovery.partial_plans?.length || 0}</span>
                 </button>
               </div>
               {tab === 'impact' && (
@@ -472,6 +472,7 @@ export default function ControlRoom() {
             Risk scores synthesize travel delays, SLA margins, and part availability.
           </p>
 
+          <div className={s.radarlist}>
           {risk.map(r => (
             <button
               key={r.job_id}
@@ -494,16 +495,19 @@ export default function ControlRoom() {
                 <i style={{ width: `${r.score}%` }} />
               </div>
               {r.signals.length ? (
-                r.signals.map((signal: any) => (
-                  <small key={signal.signal}>
-                    {signal.signal} · +{signal.points} pts
-                  </small>
-                ))
+                <div className={s.signals}>
+                  {r.signals.map((signal: any) => (
+                    <small key={signal.signal}>
+                      {signal.signal} · +{signal.points}
+                    </small>
+                  ))}
+                </div>
               ) : (
                 <small>No risk signals · {r.sla_margin_minutes}m SLA margin</small>
               )}
             </button>
           ))}
+          </div>
         </aside>
       </div>
 

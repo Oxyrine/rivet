@@ -8,9 +8,10 @@
 .row:focus-visible{outline-offset:-2px}
 .picked{background:var(--surface-sunken)}
 .row td{vertical-align:middle}
-.letter{display:inline-grid;place-items:center;width:30px;height:30px;border:1px solid var(--line);border-radius:2px;font:600 17px var(--font-barlow-condensed),sans-serif;margin-right:12px;background:var(--surface);vertical-align:middle}
+.letter{display:inline-grid;place-items:center;width:30px;height:30px;border:1px solid var(--line);border-radius:2px;font:600 17px var(--font-barlow-condensed),sans-serif;margin-right:0;background:var(--surface);vertical-align:middle}
 .picked .letter{background:var(--brand);border-color:var(--brand);color:#fff}
-.who{display:inline-flex;flex-direction:column;gap:3px;vertical-align:middle}
+.plancell{display:flex;align-items:center;gap:12px}
+.who{display:flex;flex-direction:column;gap:3px;min-width:0}
 .who small{font:10px var(--font-ibm-plex-mono),monospace;color:var(--ink-2)}
 .row td:not(:first-child){font:500 15px var(--font-ibm-plex-mono),monospace}
 .bad{color:var(--critical)}
@@ -34,3 +35,29 @@
 .approve{background:var(--brand);border-color:var(--brand);color:#fff7eb;font-weight:500;padding:11px 18px;border-radius:4px;border:1px solid var(--brand)}
 .approve:enabled:hover{background:var(--brand-hover);border-color:var(--brand-hover)}
 .actions small{color:var(--ink-2)}
+
+/* Recovery outcome: a clear notice, then plans, then what to do about the jobs nobody could take */
+.notice{border:1px solid var(--warning-border);background:var(--warning-surface);color:var(--ink);padding:14px 16px;border-radius:4px;display:grid;gap:4px;margin-bottom:16px;line-height:1.5;font-size:13.5px}
+.notice b{color:var(--warning);font-size:14px}
+.alert{border-color:var(--critical-border);background:var(--critical-surface)}
+.alert b{color:var(--critical)}
+.followup{margin-top:20px}
+.followup h3{font:600 22px var(--font-barlow-condensed),sans-serif;margin:0 0 12px}
+.jobcard{border:1px solid var(--line);background:var(--surface);border-radius:4px;padding:14px 16px;margin-bottom:12px}
+.jobhead{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.jobhead b{font:600 13.5px var(--font-ibm-plex-mono),monospace}
+.pri{font:600 10.5px var(--font-ibm-plex-mono),monospace;padding:2px 8px;border:1px solid var(--line);border-radius:999px;color:var(--ink-2)}
+.p1{color:var(--critical);border-color:var(--critical-border);background:var(--critical-surface)}
+.reason{font-size:13px;color:var(--ink);margin:10px 0 0;line-height:1.5}
+.label{font:600 10px var(--font-ibm-plex-mono),monospace;letter-spacing:1px;text-transform:uppercase;color:var(--ink-3);margin:14px 0 7px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12px;border:1px solid var(--line);background:var(--surface-sunken);padding:4px 10px;border-radius:999px;color:var(--ink-2);line-height:1.4}
+.chip b{font-weight:600;color:var(--ink)}
+.steps{margin:0;padding-left:20px;display:grid;gap:6px;font-size:13px;color:var(--ink);line-height:1.5}
+.steps li::marker{color:var(--brand-accent);font-weight:600}
+.ruledout{margin-top:16px;border:1px solid var(--line);border-radius:4px;background:var(--surface-sunken)}
+.ruledout summary{cursor:pointer;padding:10px 14px;font:600 11px var(--font-ibm-plex-mono),monospace;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-2)}
+.ruledout ul{list-style:none;margin:0;padding:4px 14px 12px;display:grid;gap:8px}
+.ruledout li{font-size:12.5px;color:var(--ink-2);display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
+.ruledout li b{font-weight:500;color:var(--ink)}
+.ruledout small{font:11px var(--font-ibm-plex-mono),monospace}

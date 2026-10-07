@@ -60,7 +60,7 @@ def refresh_plans(technician_id: str, principal=Depends(require_roles(*WRITE))):
     def execute(state):
         scoped_impact(state, technician_id, principal)
         result = recovery(state, technician_id)
-        for p in result['plans']: state.plans[p['id']] = p
+        for p in result['plans'] + result['partial_plans']: state.plans[p['id']] = p
         return result
     return store.mutate(execute)
 
@@ -78,7 +78,7 @@ def breach_plans(breach_id: str, principal=Depends(require_roles(*READ))):
     result = recovery(state, breach['technician_id'])
     def execute(current):
         if fingerprint(current) != fingerprint(state): raise DomainError('STALE_PLAN', 'Reservations changed while plans were computed')
-        for plan in result['plans']: current.plans[plan['id']] = plan
+        for plan in result['plans'] + result['partial_plans']: current.plans[plan['id']] = plan
         return result
     return store.mutate(execute)
 

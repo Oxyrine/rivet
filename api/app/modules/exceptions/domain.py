@@ -92,57 +92,102 @@ def rank_key(plan):
             plan.get('continuity_cost', 0), plan.get('signature', ''))
 
 
-def _simulate(state, jobs, tech_ids):
+def _place(state, job, tid, busy, used_slots, stock):
+    """Try to put one job on one technician. Returns (placement, None) or (None, reason).
+    The shared busy/used_slots/stock are only changed when the job is placed."""
+    tech = state.technicians[tid]
+    slots = (job.get('duration_minutes', 60)+14)//15
+    available = state.balances.get(f'tech:{tid}:{state.now[:10]}:free|TIME', 0)
+    if used_slots.get(tid, 0) + slots > available: return None, f"{tech['name']} has no free time left today"
+    local_stock, part_actions, changes = dict(stock), [], 0
+    for resource, quantity in job.get('planned_parts', {}).items():
+        holds = [c for c in state.commitments.values() if c.get('job_id') == job['id'] and c.get('resource') == resource and c.get('state') in ACTIVE]
+        accessible = [c for c in holds if not c.get('collected') and not str(c.get('physical_location', '')).startswith(('van:', 'custody:'))]
+        held = sum(c.get('quantity', 0) for c in accessible)
+        if held >= quantity:
+            for c in accessible: part_actions.append({'type': 'TRANSFER_HOLD', 'commitment_id': c['id'], 'job_id': job['id'], 'owner': tid})
+        else:
+            needed = quantity-held
+            sources = sorted(key for key in local_stock if key.endswith('|'+resource) and ':available|' in key and local_stock[key] >= needed)
+            if not sources: return None, f'No {resource} is available to reserve for this job'
+            selected = sources[0]; local_stock[selected] -= needed
+            part_actions.append({'type': 'RESOURCE_PART', 'job_id': job['id'], 'resource': resource, 'source': selected.rsplit('|', 1)[0], 'quantity': needed, 'owner': tid})
+            changes += 1
+    slot = _finish_slot(state, job, tech, busy[tid])
+    if not slot: return None, f"{tech['name']} cannot finish it inside the shift and overtime limit"
+    start, finish = slot
+    used_slots[tid] = used_slots.get(tid, 0) + slots
+    stock.clear(); stock.update(local_stock)
+    busy[tid].append(slot)
+    late_seconds = max(0, int((finish - instant(job['deadline'])).total_seconds()))
+    contract = state.contracts.get(job.get('priority', 'P2'), {})
+    units = (late_seconds + contract.get('penalty_unit_minutes', 15)*60-1)//(contract.get('penalty_unit_minutes', 15)*60)
+    charge = min(units * contract.get('penalty_rate_paise', 0), contract.get('penalty_cap_paise', 0))
+    changes += int(tid != job.get('technician_id'))
+    return {'assignment': {'job_id': job['id'], 'technician_id': tid, 'technician_name': tech['name'],
+            'planned_start': start.isoformat(), 'projected_finish': finish.isoformat(),
+            'late_minutes': (late_seconds+59)//60, 'penalty_paise': charge, 'priority': job.get('priority', 'P2')},
+            'part_actions': part_actions, 'late': bool(late_seconds), 'penalty': charge, 'travel': tech.get('travel_minutes', 0),
+            'changes': changes, 'continuity': int(tid not in job.get('previous_technicians', []))}, None
+
+
+def _simulate(state, jobs, tech_ids, allow_unplaced=False):
+    """One complete assignment of every job. With allow_unplaced, a job that cannot be placed (tech id None, or no
+    feasible slot) is left out and reported, so the rest can still be recovered; otherwise any failure rejects the plan."""
     affected = {j['id'] for j in jobs}
     busy = {tid: [] for tid in state.technicians}
     for j in state.jobs.values():
         if j['id'] in affected or j.get('state') in TERMINAL or not j.get('technician_id'): continue
         start = instant(j.get('planned_start', state.now))
         busy.setdefault(j['technician_id'], []).append((start, start + timedelta(minutes=j.get('duration_minutes', 60))))
-    assignments, misses, penalty, travel, changes, continuity = [], dict(P1=0, P2=0, P3=0), 0, 0, 0, 0
+    assignments, unplaced, misses, penalty, travel, changes, continuity = [], [], dict(P1=0, P2=0, P3=0), 0, 0, 0, 0
     used_slots, part_actions, stock = {}, [], dict(state.balances)
     for job, tid in zip(jobs, tech_ids):
-        tech = state.technicians[tid]
-        used_slots[tid] = used_slots.get(tid, 0) + (job.get('duration_minutes', 60)+14)//15
-        available = state.balances.get(f'tech:{tid}:{state.now[:10]}:free|TIME', 0)
-        if used_slots[tid] > available: return None
-        for resource, quantity in job.get('planned_parts', {}).items():
-            holds = [c for c in state.commitments.values() if c.get('job_id') == job['id'] and c.get('resource') == resource and c.get('state') in ACTIVE]
-            accessible = [c for c in holds if not c.get('collected') and not str(c.get('physical_location', '')).startswith(('van:', 'custody:'))]
-            held = sum(c.get('quantity', 0) for c in accessible)
-            if held >= quantity:
-                for c in accessible: part_actions.append({'type': 'TRANSFER_HOLD', 'commitment_id': c['id'], 'job_id': job['id'], 'owner': tid})
-            else:
-                needed = quantity-held
-                sources = sorted(key for key in stock if key.endswith('|'+resource) and ':available|' in key and stock[key] >= needed)
-                if not sources: return None
-                selected = sources[0]; stock[selected] -= needed
-                part_actions.append({'type': 'RESOURCE_PART', 'job_id': job['id'], 'resource': resource, 'source': selected.rsplit('|', 1)[0], 'quantity': needed, 'owner': tid})
-                changes += 1
-        slot = _finish_slot(state, job, tech, busy[tid])
-        if not slot: return None
-        start, finish = slot
-        busy[tid].append(slot)
-        late_seconds = max(0, int((finish - instant(job['deadline'])).total_seconds()))
-        contract = state.contracts.get(job.get('priority', 'P2'), {})
-        units = (late_seconds + contract.get('penalty_unit_minutes', 15)*60-1)//(contract.get('penalty_unit_minutes', 15)*60)
-        charge = min(units * contract.get('penalty_rate_paise', 0), contract.get('penalty_cap_paise', 0))
-        if late_seconds: misses[job.get('priority', 'P2')] = misses.get(job.get('priority', 'P2'), 0)+1
-        penalty += charge
-        travel += tech.get('travel_minutes', 0)
-        changes += int(tid != job.get('technician_id'))
-        continuity += int(tid not in job.get('previous_technicians', []))
-        assignments.append({'job_id': job['id'], 'technician_id': tid, 'technician_name': tech['name'],
-            'planned_start': start.isoformat(), 'projected_finish': finish.isoformat(),
-            'late_minutes': (late_seconds+59)//60, 'penalty_paise': charge, 'priority': job.get('priority', 'P2')})
-    needs_manager = any(state.technicians[t].get('contractor') for t in tech_ids)
+        reason = 'No eligible technician is available for this job'
+        placed = None
+        if tid is not None:
+            placed, reason = _place(state, job, tid, busy, used_slots, stock)
+        if not placed:
+            if not allow_unplaced: return None
+            unplaced.append({'job_id': job['id'], 'priority': job.get('priority', 'P2'), 'reason': reason})
+            continue
+        part_actions += placed['part_actions']
+        changes += placed['changes']; continuity += placed['continuity']; travel += placed['travel']; penalty += placed['penalty']
+        if placed['late']: misses[job.get('priority', 'P2')] = misses.get(job.get('priority', 'P2'), 0)+1
+        assignments.append(placed['assignment'])
+    chosen = [t for t in tech_ids if t is not None]
+    needs_manager = any(state.technicians[t].get('contractor') for t in chosen)
     changes += int(needs_manager)
     signature = '|'.join(f"{a['job_id']}:{a['technician_id']}:{a['planned_start']}" for a in assignments)
-    return {'assignments': assignments, 'part_actions': part_actions, 'sla_misses': misses, 'misses_total': sum(misses.values()),
+    return {'assignments': assignments, 'unplaced': unplaced, 'part_actions': part_actions, 'sla_misses': misses, 'misses_total': sum(misses.values()),
             'penalty_paise': penalty, 'commitments_changed': changes, 'added_travel_minutes': travel,
             'continuity_cost': continuity, 'needs_manager': needs_manager,
-            'contractor_fee_paise': sum(state.technicians[t].get('fee_paise', 0) for t in set(tech_ids)),
+            'contractor_fee_paise': sum(state.technicians[t].get('fee_paise', 0) for t in set(chosen)),
             'signature': signature, 'confidence': 'Duration is estimated from seeded service history; confirm field conditions.'}
+
+
+def rank_key_partial(plan):
+    """Partial plans: save the P1 jobs first, then as many jobs as possible, then the usual rules."""
+    return (sum(1 for u in plan['unplaced'] if u['priority'] == 'P1'), len(plan['unplaced']), *rank_key(plan))
+
+
+def next_steps(job, blockers):
+    """What a person can actually do about a job nobody can take. Escalation is one option, not the only one."""
+    reasons = ' '.join(b['reason'] for b in blockers)
+    steps = []
+    if job.get('priority') == 'P1':
+        steps.append('P1 jobs cannot be moved to another day. Ask the service manager to authorise an approved contractor or overtime.')
+    else:
+        steps.append("Offer the customer the next available slot. P2 and P3 jobs can be rescheduled with the customer's consent.")
+    if 'unavailable' in reasons or 'dropped out' in reasons:
+        steps.append('Technicians marked unavailable return to the pool once they are available again. Generate the plan again then.')
+    if 'Required skill level is missing' in reasons:
+        steps.append('Only technicians with the required skill level can take this job. Check certifications and approved contractors.')
+    if 'Certification expired' in reasons:
+        steps.append('A technician with an expired certificate stays excluded until it is renewed.')
+    if 'Travel exceeds' in reasons:
+        steps.append('Technicians beyond the travel limit are excluded. A closer technician or contractor would open this up.')
+    return steps
 
 
 def recovery(state, technician_id, limit=10, time_budget_seconds=2):
@@ -172,24 +217,58 @@ def recovery(state, technician_id, limit=10, time_budget_seconds=2):
             plan = _simulate(state, jobs, combination)
             if plan: candidates.append(plan)
     candidates.sort(key=rank_key)
+    # No plan places every job: look for the best partial plans, which save what can be saved and name what cannot.
+    partial = []
+    if jobs and not candidates:
+        started = monotonic(); seen = set()
+        for combination in product(*[c + [None] for c in choices]):
+            if all(c is None for c in combination): continue
+            if monotonic()-started > time_budget_seconds:
+                truncated = True; break
+            examined += 1
+            plan = _simulate(state, jobs, combination, allow_unplaced=True)
+            if plan and plan['assignments'] and plan['signature'] not in seen:
+                seen.add(plan['signature']); partial.append(plan)
+        partial.sort(key=rank_key_partial)
+        partial = partial[:3]
     version = fingerprint(state)
+    for index, plan in enumerate(partial):
+        plan['partial'] = True; plan['rank'] = index+1
+        plan['id'] = 'plan-' + sha256((version+'partial|'+plan['signature']).encode()).hexdigest()[:16]
+        plan['state_version'] = version; plan['technician_id'] = technician_id
+        plan['explanation'] = f"Places {len(plan['assignments'])} of {len(jobs)} jobs; {len(plan['unplaced'])} still need{'s' if len(plan['unplaced']) == 1 else ''} follow-up; {plan['misses_total']} projected SLA misses among those placed."
     for index, plan in enumerate(candidates):
         plan['rank'] = index+1
         plan['id'] = 'plan-' + sha256((version+plan['signature']).encode()).hexdigest()[:16]
         plan['state_version'] = version
         plan['technician_id'] = technician_id
         plan['explanation'] = f"{plan['misses_total']} projected SLA misses; ₹{plan['penalty_paise']//100:,} penalty exposure; {plan['commitments_changed']} commitments changed."
-    return {'impact': affected, 'plans': candidates[:limit], 'rejected': rejected,
+    blockers = {}
+    for r in rejected:
+        if r.get('technician_id'): blockers.setdefault(r['job_id'], []).append({'technician_id': r['technician_id'], 'name': r['candidate'], 'reason': r['reason']})
+    diagnostics = [{'job_id': j['id'], 'machine_id': j.get('machine_id'), 'priority': j.get('priority', 'P2'), 'deadline': j.get('deadline'),
+                    'blockers': blockers.get(j['id'], []), 'next_steps': next_steps(j, blockers.get(j['id'], []))} for j in jobs]
+    if jobs and not candidates and partial:
+        best = partial[0]
+        message = (f"No plan places every job. The best partial plan saves {len(best['assignments'])} of {len(jobs)}; "
+                   f"{len(best['unplaced'])} {'needs' if len(best['unplaced']) == 1 else 'need'} follow-up, listed below. Existing reservations were preserved.")
+    elif jobs and not candidates:
+        message = 'No technician can take these jobs right now. The reasons and next steps are listed below. Existing reservations were preserved.'
+    else:
+        message = None
+    return {'impact': affected, 'plans': candidates[:limit], 'partial_plans': partial, 'jobs': diagnostics, 'rejected': rejected,
             'combinations_examined': examined, 'truncated': truncated,
-            'no_feasible_path': bool(jobs) and not candidates,
-            'message': 'No feasible recovery. Escalate to the service manager; existing reservations were preserved.' if jobs and not candidates else None}
+            'no_feasible_path': bool(jobs) and not candidates, 'message': message}
 
 
 def dropout(state, technician_id, reason='Reported unavailable', actor='coordinator'):
     new = state.clone(); before = len(new.events)
     if technician_id not in new.technicians: raise DomainError('NOT_FOUND', 'Technician does not exist', status=404)
     if not new.technicians[technician_id].get('available', True):
-        return new, [], recovery(new, technician_id)
+        # Already out: show the current options, and keep them so they can be approved.
+        result = recovery(new, technician_id)
+        for plan in result['plans'] + result['partial_plans']: new.plans[plan['id']] = plan
+        return new, [], result
     affected = impact(new, technician_id)
     new.technicians[technician_id]['available'] = False
     breach_id = f"breach-{len(new.breaches)+1:04d}"
@@ -201,8 +280,8 @@ def dropout(state, technician_id, reason='Reported unavailable', actor='coordina
         new.jobs[jid]['at_risk'] = True
         emit(new, 'CommitmentBreached', new.jobs[jid]['machine_id'], {'breach_id': breach_id, 'job_id': jid, 'technician_id': technician_id, 'reason': reason}, actor)
     result = recovery(new, technician_id)
-    for plan in result['plans']: new.plans[plan['id']] = plan
-    emit(new, 'RecoveryProposed', payload={'breach_id': breach_id, 'plan_ids': [p['id'] for p in result['plans']], 'affected_jobs': affected['affected_jobs']}, actor=actor)
+    for plan in result['plans'] + result['partial_plans']: new.plans[plan['id']] = plan
+    emit(new, 'RecoveryProposed', payload={'breach_id': breach_id, 'plan_ids': [p['id'] for p in result['plans'] + result['partial_plans']], 'affected_jobs': affected['affected_jobs']}, actor=actor)
     return new, new.events[before:], dict(result, breach_id=breach_id)
 
 
@@ -258,10 +337,16 @@ def approve_plan(state, plan_id, role, actor):
         for commitment in new.commitments.values():
             if commitment.get('job_id') == assignment['job_id'] and commitment.get('type') == 'SLA_WINDOW':
                 commitment['depends_on'] = [dependency for dependency in commitment.get('depends_on', []) if not dependency.startswith(('time:', 'recovery-'))] + [cid]
+    left = [u['job_id'] for u in plan.get('unplaced', [])]
+    for jid in left:
+        new.jobs[jid]['at_risk'] = True; new.jobs[jid]['recovery_status'] = 'needs_follow_up'
+        emit(new, 'RecoveryUnplaced', new.jobs[jid]['machine_id'], {'job_id': jid, 'plan_id': plan_id, 'reason': next(u['reason'] for u in plan['unplaced'] if u['job_id'] == jid)}, actor)
     for breach in new.breaches.values():
-        if breach.get('technician_id') == plan['technician_id'] and breach.get('state') == 'OPEN': breach['state'] = 'RECOVERED'
+        if breach.get('technician_id') == plan['technician_id'] and breach.get('state') in ('OPEN', 'PARTIALLY_RECOVERED'):
+            breach['state'] = 'PARTIALLY_RECOVERED' if left else 'RECOVERED'
+            if left: breach['affected_jobs'] = left
     new.plans[plan_id]['approved_by'] = actor
-    return new, new.events[before:], {'approved': True, 'plan_id': plan_id, 'assignments': plan['assignments']}
+    return new, new.events[before:], {'approved': True, 'plan_id': plan_id, 'assignments': plan['assignments'], 'unplaced': plan.get('unplaced', [])}
 
 
 def risk(state):
