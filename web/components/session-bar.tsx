@@ -1,7 +1,4 @@
 'use client';
-import {useState} from 'react';
-import {api,useSession} from '@/lib/api';
-import {hostedAuth,supabase} from '@/lib/supabase';
 
 import { useState } from 'react';
 import { api, useSession } from '@/lib/api';
