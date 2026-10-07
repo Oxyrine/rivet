@@ -14,6 +14,8 @@ export default function Portal() {
   const [detail, setDetail] = useState<any>(null);
   const [pin, setPin] = useState('');
   const [message, setMessage] = useState('');
+  const [failed, setFailed] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [line, setLine] = useState('labour');
   const [presence, setPresence] = useState(false);
   const [recon, setRecon] = useState<any>(null);
@@ -35,17 +37,33 @@ export default function Portal() {
     }
   }, [selected, session]);
 
-  const act = async (path: string, body: any = {}) => {
+  // Results show as a toast in view: the page is long, so a message at the bottom goes unseen.
+  const say = (text: string, isError = false) => {
+    setMessage(text);
+    setFailed(isError);
+  };
+  useEffect(() => {
+    if (!message) return;
+    const timer = setTimeout(() => setMessage(''), 6000);
+    return () => clearTimeout(timer);
+  }, [message]);
+
+  const act = async (path: string, body: any = {}, done = 'Recorded in the audit history.', notFound = '') => {
+    setBusy(true);
     try {
       const result = await api<any>(path, { method: 'POST', body: JSON.stringify(body) });
-      setMessage('Recorded in the audit history.');
       await refresh();
       setDetail(await api<any>(`/jobs/${selected}`));
+      say(done);
       return result;
     } catch (e: any) {
-      setMessage(e.message);
+      say(e.status === 404 && notFound ? notFound : e.message, true);
+    } finally {
+      setBusy(false);
     }
   };
+
+  const stateLabel: Record<string, string> = { PROPOSED: 'Awaiting your confirmation', HELD: 'Confirmed', FULFILLED: 'Fulfilled' };
 
   const j = detail?.job || detail;
   const blocked = !!j && (j.state === 'closure_blocked' || recon?.outcome === 'Unexplained' || !!recon?.rows?.some((r: any) => r.outcome === 'Unconfirmed'));
@@ -114,16 +132,19 @@ export default function Portal() {
             {j.commitments?.filter((c: any) => ['ACCESS_WINDOW', 'SHUTDOWN_WINDOW', 'PERMIT_TO_WORK'].includes(c.type)).map((c: any) => (
               <div className="toolbar" key={c.id} style={{ background: 'var(--surface-sunken)', padding: '12px 16px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)' }}>
                 <span style={{ fontWeight: 500, marginRight: 'auto' }}>
-                  {c.type.replaceAll('_', ' ')} · <span style={{ color: 'var(--ink-2)' }}>{c.state}</span>
+                  {c.type.replaceAll('_', ' ')} · <span style={{ color: 'var(--ink-2)' }}>{stateLabel[c.state] || c.state}</span>
                 </span>
-                <button className="secondary-button" onClick={() => act(`/customer-commitments/${c.id}/confirm`)}>Confirm</button>
-                <button className="secondary-button" onClick={() => act(`/customer-commitments/${c.id}/fulfil`)}>Fulfilled</button>
+                <button className="secondary-button" disabled={busy || c.state !== 'PROPOSED'} onClick={() => act(`/customer-commitments/${c.id}/confirm`, {}, `${c.type.replaceAll('_', ' ')} confirmed.`)}>Confirm</button>
+                <button className="secondary-button" disabled={busy || c.state === 'FULFILLED'} onClick={() => act(`/customer-commitments/${c.id}/fulfil`, {}, `${c.type.replaceAll('_', ' ')} marked fulfilled.`)}>Fulfilled</button>
               </div>
             ))}
             <div className="toolbar" style={{ marginTop: '16px' }}>
-              <button className="secondary-button" onClick={() => act(`/pauses/pause:${selected}/confirm`)}>Confirm recorded permit pause</button>
-              <button className="secondary-button" onClick={() => act(`/jobs/${selected}/machine-running`)}>Confirm machine running</button>
+              <button className="secondary-button" disabled={busy} onClick={() => act(`/pauses/pause:${selected}/confirm`, {}, 'Permit pause confirmed.', 'No permit pause is recorded yet. One starts when the technician waits on the permit.')}>Confirm recorded permit pause</button>
+              <button className="secondary-button" disabled={busy || !!j.machine_running_at} onClick={() => act(`/jobs/${selected}/machine-running`, {}, 'Machine running confirmed.')}>Confirm machine running</button>
             </div>
+            <p className="muted" style={{ fontSize: '13px', marginTop: '12px' }}>
+              Machine running: {j.machine_running_at ? `confirmed ${new Date(j.machine_running_at).toLocaleString()}` : 'not confirmed yet'}
+            </p>
           </section>
 
           <section className="panel">
@@ -198,7 +219,24 @@ export default function Portal() {
         </>
       )}
 
-      {message && <p className="notice" role="status">{message}</p>}
+      {message && (
+        <p
+          className="notice"
+          role="status"
+          style={{
+            position: 'fixed',
+            right: 24,
+            bottom: 24,
+            zIndex: 50,
+            maxWidth: 420,
+            margin: 0,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+            ...(failed ? { borderColor: 'var(--critical, #b3261e)', color: 'var(--critical, #b3261e)' } : {}),
+          }}
+        >
+          {message}
+        </p>
+      )}
     </div>
   );
 }
