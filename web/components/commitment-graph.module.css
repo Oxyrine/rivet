@@ -1,0 +1,27 @@
+.graph{padding:24px;background:var(--panel);background-image:radial-gradient(#a7b18e55 .7px,transparent .7px);background-size:14px 14px}
+.headline{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:16px}
+.headline div{background:var(--panel);padding:16px 18px;display:flex;flex-direction:column;gap:6px}
+.headline strong{font:600 44px/1 var(--display);letter-spacing:-.5px}
+.headline span{font:10px var(--mono);letter-spacing:.8px;text-transform:uppercase;color:var(--muted)}
+.hot{color:var(--red)}
+.caption{margin:0 0 16px;font-size:13px;color:var(--text)}
+.scroller{overflow-x:auto;padding-bottom:6px}
+.scroller svg{display:block;width:100%;height:auto;max-height:520px}
+.edge{fill:none;stroke:var(--red);stroke-width:1.6;stroke-dasharray:1;stroke-dashoffset:0;animation:draw .5s ease-out backwards}
+.node rect{fill:#fff4ef;stroke:var(--red);stroke-width:1.2;animation:hit .5s ease-out backwards;animation-delay:inherit}
+.node.root rect{fill:#f9e2da;stroke-width:2}
+.node[role=button]{cursor:pointer}
+.node[role=button]:hover rect,.node[role=button]:focus-visible rect{fill:#f7d9cf}
+.node text{pointer-events:none}
+.kind{font:8.5px var(--mono);letter-spacing:.9px;fill:var(--red)}
+.title{font:600 13px 'IBM Plex Sans',sans-serif;fill:var(--text)}
+.meta{font:9.5px var(--mono);fill:var(--muted)}
+.foot{margin-top:14px;border-top:1px solid var(--border);padding-top:14px;font:11px var(--mono);color:var(--muted);display:grid;gap:12px}
+.unaffected{display:grid;gap:8px}
+.unaffected div{display:flex;flex-wrap:wrap;gap:6px}
+.unaffected button{padding:5px 9px;font:10px var(--mono);border-color:#b8c5a3;background:#f1f5e6;color:var(--green)}
+.unaffected button.chosen{background:var(--green);color:#fff;border-color:var(--green)}
+.unaffected p{margin:0;font:13px 'IBM Plex Sans',sans-serif;color:var(--text);background:#eef3e2;border:1px solid #c6d4b0;border-radius:2px;padding:10px 12px}
+@keyframes draw{from{stroke-dashoffset:1;opacity:.2}to{stroke-dashoffset:0;opacity:1}}
+@keyframes hit{from{fill:#f4f6ea;stroke:#b8c5a3}to{fill:#fff4ef;stroke:#b13b30}}
+@media(max-width:600px){.headline strong{font-size:34px}.headline div{padding:12px}}

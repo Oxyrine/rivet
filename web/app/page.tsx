@@ -1,32 +1,43 @@
+'use client';
 import Link from 'next/link';
-import {ArrowUpRight, ArrowRight, Wrench, Route, Fingerprint} from 'lucide-react';
-import s from './home.module.css';
+import {useCallback,useEffect,useState} from 'react';
+import {ArrowUpRight,ArrowRight,Check,Search,LayoutDashboard,ClipboardCheck,Fingerprint,ScanLine,PackageCheck,Wrench,RefreshCw,ShieldCheck} from 'lucide-react';
+import {SessionBar} from '@/components/session-bar';
+import {api,useSession} from '@/lib/api';
+import s from './landing.module.css';
 
-const stations=[
-  {id:'01',title:'Get the crew in place.',description:'Match the job to the right technician. Reserve the parts before the van leaves.',href:'/control',link:'Open dispatch',Icon:Wrench},
-  {id:'02',title:'Stay ahead of the delay.',description:'Trace the jobs a disruption touches and compare your recovery options.',href:'/control',link:'Review the schedule',Icon:Route},
-  {id:'03',title:'Leave a proper record.',description:'Review the work, check the evidence, and keep a service history you can verify.',href:'/verify',link:'Check a service record',Icon:Fingerprint},
+type Job={id:string;machine_id:string;site_id:string;state:string;priority:string;fault?:string;technician_id?:string};
+const shortcuts=[
+ {href:'/control',title:'Dispatch & recovery',description:'Assign technicians, reserve parts and manage changes.',Icon:LayoutDashboard,number:'01'},
+ {href:'/portal',title:'Customer approvals',description:'Review service evidence and sign off completed work.',Icon:ClipboardCheck,number:'02'},
+ {href:'/verify',title:'Verify a record',description:'Check a signed service record and its retained history.',Icon:Fingerprint,number:'03'},
+ {href:'/gate',title:'Site check-in',description:'Set up the arrival code for technicians at your site.',Icon:ScanLine,number:'04'},
 ];
-export default function Home(){return <div className={s.home}>
-  <div className={s.overline}><span>RIVET / FIELD OPERATIONS</span><span className={s.edition}>SERVICE MANUAL · VOL. 01</span></div>
-  <section className={s.hero}>
-    <div className={s.intro}><span className={s.label}>FOR THE PEOPLE WHO KEEP THINGS WORKING</span><h1>Good machines.<br/><em>Keep them<br/>running.</em></h1><p>A working day has a lot of moving parts.<br/>Bring the people, the equipment and the paperwork together.</p><Link className={s.launch} href="/control">Enter the control room <ArrowUpRight size={18}/></Link><Link className={s.customer} href="/portal">Here to review a service? <ArrowRight size={14}/></Link></div>
-    <figure className={s.drawing}><div className={s.drawingTitle}><span>ASSEMBLY / HYDRAULIC PRESS</span><span>FIG. 01</span></div>
-      <svg viewBox="0 0 420 360" role="img" aria-label="Technical line drawing of a hydraulic press with a pressure gauge and service connection">
-        <defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0V6" stroke="currentColor" strokeWidth=".6"/></pattern></defs>
-        <g fill="none" stroke="currentColor" strokeWidth="1.4"><path d="M60 290h265M75 290V80h215v210M88 290V93h189v197M66 72h233v21H66zM50 290h282v16H50zM66 308h14v9H66m234-9h14v9h-14M137 93v26h91V93M163 119v67h39v-67M151 186h63v17h-63zM125 238h116v52H125zM137 253h92M137 270h92M182 51v21M150 51h64M182 37v14"/>
-        <path d="M168 146h29M168 153h29M168 160h29M115 230h136M115 220v20m136-20v20"/>
-        <circle cx="291" cy="144" r="25"/><circle cx="291" cy="144" r="20"/><path d="M291 119v6m25 19h-6m-19 25v-6m-25-19h6M287 148l17-19M291 169v71h47v-98h-22M338 200h16v52h-16M350 240h15v50h-40"/>
-        <path d="M45 72H24v235h21M20 72h8m-8 235h8M80 328v13h210v-13M80 337v8m210-8v8" strokeDasharray="2 3" opacity=".5"/>
-        <path d="M137 119h26v67h-26zM202 119h26v67h-26z" fill="url(#hatch)" opacity=".25"/>
-        <path className={s.pressure} d="M365 290v-90h-27V106h-90V80" stroke="var(--accent)" strokeDasharray="4 8"/>
-        <g className={s.servicePoint}><circle cx="365" cy="200" r="7" stroke="var(--accent)"/><circle cx="365" cy="200" r="2" fill="var(--accent)" stroke="none"/></g>
-        <path d="M75 104 49 48H20M204 186l38 26h71M326 278l45 43h29" opacity=".4"/>
-        </g><g fill="currentColor" fontFamily="monospace" fontSize="8"><text x="20" y="39">FRAME / 01</text><text x="246" y="226">RAM / 02</text><text x="333" y="337">RETURN / 03</text><text x="154" y="354">SERVICE ELEVATION</text></g>
-      </svg><figcaption><span>DESIGNED TO BE MAINTAINED.</span><span>ILLUSTRATION · NOT LIVE TELEMETRY</span></figcaption>
-    </figure>
-  </section>
-  <div className={s.sectionRule}><span>THE WORK, FROM START TO SIGN-OFF</span><span>01 — 03</span></div>
-  <section className={s.stations} aria-label="Service workflow">{stations.map(({id,title,description,href,link,Icon})=><Link className={s.station} key={id} href={href}><div className={s.stationTop}><span>{id}</span><Icon size={22} strokeWidth={1.3}/></div><h2>{title}</h2><p>{description}</p><span className={s.stationLink}>{link}<ArrowUpRight size={15}/></span></Link>)}</section>
-  <footer className={s.footer}><span>PEOPLE. PARTS. PROOF.</span><span>Development workspace · simulated equipment telemetry</span></footer>
- </div>}
+const stages=[
+ {label:'Plan the job',title:'Know who’s going. Know what’s ready.',description:'Match the request to a qualified technician and reserve the parts they need before work begins.',Icon:Wrench},
+ {label:'Handle a change',title:'See the impact before you change the plan.',description:'Trace a dropout through connected jobs, compare recovery options and approve the right reassignment.',Icon:RefreshCw},
+ {label:'Close with evidence',title:'Make every sign-off easy to check.',description:'Reconcile the materials and service evidence, then let the customer accept the exact report.',Icon:ShieldCheck},
+];
+function Wordmark(){return <span className={s.wordmark}><svg aria-hidden="true" viewBox="0 0 32 32"><path d="M6 4h12c7 0 10 4 10 9 0 4-2 7-6 8l7 8h-9l-6-8h-1v8H6V4zm7 6v6h5c3 0 4-1 4-3s-1-3-4-3h-5z" fill="currentColor"/></svg>ivet</span>}
+function ServiceDesk(){
+ const {session}=useSession();const[jobs,setJobs]=useState<Job[]>([]),[search,setSearch]=useState(''),[priority,setPriority]=useState('all'),[loading,setLoading]=useState(false),[error,setError]=useState('');
+ const refresh=useCallback(async()=>{if(!session){setJobs([]);setError('');return}setLoading(true);try{const data=await api<Job[]|{items?:Job[];jobs?:Job[]}>('/jobs');setJobs(Array.isArray(data)?data:data.items||data.jobs||[]);setError('')}catch(e){setError((e as Error).message)}finally{setLoading(false)}},[session]);
+ useEffect(()=>{refresh()},[refresh]);
+ const filtered=jobs.filter(j=>(priority==='all'||j.priority===priority)&&[j.id,j.machine_id,j.site_id,j.technician_id||'',j.fault||''].join(' ').toLowerCase().includes(search.trim().toLowerCase()));
+ return <section id="service-desk" className={s.desk} aria-labelledby="desk-title"><div className={s.sectionHead}><div><span className={s.eyebrow}>YOUR WORKSPACE</span><h2 id="desk-title">Find the job. Keep it moving.</h2></div><Link href="/control">Full dispatch board <ArrowUpRight size={16}/></Link></div>
+  <div className={s.deskPanel}><div className={s.deskToolbar}><label className={s.search}><Search size={17}/><input aria-label="Search service jobs" placeholder="Search machine, job, site or technician…" value={search} disabled={!session} onChange={e=>setSearch(e.target.value)}/>{search&&<button onClick={()=>setSearch('')} aria-label="Clear search">×</button>}</label><label className={s.priority}>Priority<select aria-label="Filter jobs by priority" value={priority} onChange={e=>setPriority(e.target.value)} disabled={!session}><option value="all">All priorities</option><option value="P1">P1 · Urgent</option><option value="P2">P2 · Standard</option></select></label>{session&&<button className={s.refresh} aria-label="Refresh jobs" disabled={loading} onClick={refresh}><RefreshCw size={16}/></button>}</div>
+  {!session?<div className={s.empty}><LayoutDashboard size={28} strokeWidth={1.3}/><h3>Your service jobs live here.</h3><p>Sign in at the top of the page to search your jobs,<br/>check assignments and open the details.</p><span>Access follows your role and site permissions.</span></div>:error?<div className={s.empty} role="alert"><h3>We couldn’t load your jobs.</h3><p>{error}</p><button onClick={refresh}>Try again</button></div>:loading?<div className={s.empty} role="status"><p>Loading service jobs…</p></div>:!filtered.length?<div className={s.empty}><Search size={25}/><h3>{jobs.length?'No matching jobs.':'No service jobs yet.'}</h3><p>{jobs.length?'Try a different machine, technician or priority.':'Create a service request in the control room to get started.'}</p>{jobs.length>0&&<button onClick={()=>{setSearch('');setPriority('all')}}>Clear filters</button>}</div>:<><div className={s.tableWrap}><table><thead><tr><th>Equipment / job</th><th>Site</th><th>Technician</th><th>Status</th><th><span className={s.srOnly}>Open</span></th></tr></thead><tbody>{filtered.slice(0,6).map(job=><tr key={job.id}><td><strong>{job.machine_id}</strong><small>{job.id} <span className={job.priority==='P1'?s.urgent:''}>{job.priority}</span></small></td><td>{job.site_id.replace('site-','Site ').toUpperCase()}</td><td className={s.name}>{job.technician_id||'Unassigned'}</td><td><span className={s.status}>{job.state.replaceAll('_',' ')}</span></td><td><Link className={s.jobLink} href={`/control?job=${encodeURIComponent(job.id)}`} aria-label={`Open job ${job.id}`}><ArrowUpRight size={17}/></Link></td></tr>)}</tbody></table></div><div className={s.deskFooter}><span>Showing {Math.min(filtered.length,6)} of {filtered.length} matching jobs</span><Link href="/control">View all jobs <ArrowRight size={13}/></Link></div></>}
+  </div>
+ </section>
+}
+function WorkflowPreview({step}:{step:number}){return <div className={s.preview} key={step}><div className={s.previewTop}><span>M-104 / HYDRAULIC PRESS</span><small>EXAMPLE WORKFLOW</small></div>{step===0?<><div className={s.assignment}><span className={s.avatar}>R</span><div><b>Ravi</b><p>Qualified · hydraulics</p></div><Check size={18}/></div><div className={s.checkRow}><PackageCheck size={17}/><span>HS-40 seal kit</span><b>Reserved</b></div><div className={s.checkRow}><Wrench size={17}/><span>Technician time</span><b>Allocated</b></div></>:step===1?<><div className={s.issue}><span/> Ravi is unavailable</div><div className={s.assignment}><span className={s.avatar}>P</span><div><b>Priya</b><p>Qualified replacement</p></div><Check size={18}/></div><div className={s.checkRow}><span>3 connected jobs</span><b>Recovery planned</b></div><div className={s.checkRow}><span>Projected SLA misses</span><b>0</b></div></>:<><div className={s.assignment}><ShieldCheck size={31} strokeWidth={1.4}/><div><b>Ready for sign-off</b><p>Evidence reconciled</p></div></div>{['Parts issuance checked','Service photos attached','Customer acceptance recorded'].map(label=><div className={s.checkRow} key={label}><Check size={16}/><span>{label}</span></div>)}</>}<div className={s.previewFoot}>0{step+1} / 03 <span>{stages[step].label}</span></div></div>}
+export default function Landing(){
+ const[stage,setStage]=useState(0);const StageIcon=stages[stage].Icon;
+ return <div className={s.landing}><a href="#main" className={s.skip}>Skip to content</a><header className={s.nav}><Link href="/" aria-label="Rivet home"><Wordmark/></Link><nav aria-label="Main navigation"><a href="#service-desk">Service desk</a><a href="#how-it-works">How it works</a></nav><div className={s.navActions}><SessionBar/><Link className={s.navCta} href="/control">Open workspace <ArrowUpRight size={15}/></Link></div></header>
+ <main id="main"><section className={s.hero}><div className={s.heroImage} aria-hidden="true"/><div className={s.heroContent}><span className={s.heroEyebrow}>BUILT FOR INDUSTRIAL SERVICE TEAMS</span><h1>Good machines.<br/><em>Keep them running.</em></h1><p>Get the right people and parts to the job.<br/>Handle the changes. Keep a record of the work.</p><div className={s.heroActions}><Link className={s.orangeButton} href="/control">Go to the control room <ArrowUpRight size={18}/></Link><a href="#service-desk">Find a service job <ArrowRight size={16}/></a></div></div><div className={s.heroFoot}><span>PEOPLE · PARTS · PROOF</span><span>CONNECTED ACROSS SITES</span></div></section>
+ <div className={s.content}><section className={s.shortcuts} aria-label="Workspace shortcuts">{shortcuts.map(({href,title,description,Icon,number})=><Link key={href} href={href}><div><Icon size={21} strokeWidth={1.4}/><span>{number}</span></div><h2>{title} <ArrowUpRight size={15}/></h2><p>{description}</p></Link>)}</section>
+ <ServiceDesk/>
+ <section id="how-it-works" className={s.workflow}><div className={s.sectionHead}><div><span className={s.eyebrow}>THE JOB, FROM START TO SIGN-OFF</span><h2>One place for the whole service.</h2></div></div><div className={s.workflowGrid}><div className={s.workflowText}><div className={s.tabs} role="tablist" aria-label="Service workflow stages">{stages.map((item,i)=><button key={item.label} id={`stage-tab-${i}`} role="tab" aria-selected={stage===i} aria-controls="workflow-panel" tabIndex={stage===i?0:-1} onClick={()=>setStage(i)} onKeyDown={e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();const next=e.key==='Home'?0:e.key==='End'?2:(stage+(e.key==='ArrowRight'?1:2))%3;setStage(next);document.getElementById(`stage-tab-${next}`)?.focus()}}}>{item.label}</button>)}</div><div id="workflow-panel" role="tabpanel" aria-labelledby={`stage-tab-${stage}`} tabIndex={0}><StageIcon className={s.stageIcon} size={26} strokeWidth={1.3}/><h3>{stages[stage].title}</h3><p>{stages[stage].description}</p><Link href={stage===2?'/verify':'/control'}>Explore {stage===2?'verification':'the control room'} <ArrowUpRight size={15}/></Link></div></div><WorkflowPreview step={stage}/></div></section>
+ <section className={s.customerBanner}><div><ClipboardCheck size={25} strokeWidth={1.4}/><div><h2>Here to review the work?</h2><p>Check service evidence, confirm access or approve a completed job.</p></div></div><Link href="/portal">Open customer desk <ArrowUpRight size={16}/></Link></section>
+ </div></main><footer className={s.footer}><Link href="/" aria-label="Rivet home"><Wordmark/></Link><span>INDUSTRIAL SERVICE, ACCOUNTED FOR.</span><small>Development workspace · example workflow & generated industrial imagery</small></footer></div>
+}

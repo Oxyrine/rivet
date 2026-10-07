@@ -6,7 +6,8 @@ export function subscribeEvents(onEvent:(event:any)=>void,onStatus?:(connected:b
  function connect(){
   if(closed)return;
   const token=getSession()?.token;
-  socket=new WebSocket(`${location.protocol==='https:'?'wss':'ws'}://${location.host}/api/ws${token?`?token=${encodeURIComponent(token)}`:''}`);
+  if(!token){onStatus?.(false);return} // signed out or expired: polling stops too, nothing to reconnect with
+  socket=new WebSocket(`${location.protocol==='https:'?'wss':'ws'}://${location.host}/api/ws?token=${encodeURIComponent(token)}`);
   socket.onopen=()=>onStatus?.(true);
   socket.onmessage=message=>{try{onEvent(JSON.parse(message.data))}catch{}};
   socket.onclose=()=>{onStatus?.(false);if(!closed)timer=setTimeout(connect,5000)};

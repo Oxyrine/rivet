@@ -1,0 +1,76 @@
+'use client';
+import {useState} from 'react';
+import s from './plan-ranking.module.css';
+
+const inr=(p:number)=>`₹${(p/100).toLocaleString('en-IN')}`;
+const clock=(v?:string)=>v?new Date(v).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Kolkata'}):'—';
+const letter=(i:number)=>String.fromCharCode(65+i);
+type Check={ok:boolean;text:string;decisive?:boolean};
+
+/** Mirrors the solver's strict ordering, so each line names a real rule the plans were ranked by. */
+function reasons(plans:any[],i:number):Check[]{
+ const p=plans[i],ref=i===0?plans[1]:plans[0],rl=ref?letter(i===0?1:0):'',out:Check[]=[];
+ out.push({ok:p.misses_total===0,text:p.misses_total===0?'No SLA misses':`${p.misses_total} projected SLA miss${p.misses_total>1?'es':''}`});
+ out.push({ok:p.penalty_paise===0,text:p.penalty_paise===0?'No penalty exposure':`Penalty exposure ${inr(p.penalty_paise)}`});
+ if(ref){
+  // [label, mine, theirs, formatter, wording when lower, wording when higher]
+  const rules:[number,number,(n:number)=>string,string,string][]=[
+   [p.misses_total,ref.misses_total,n=>String(n),'Fewer SLA misses','More SLA misses'],
+   [p.penalty_paise,ref.penalty_paise,inr,'Lower penalty exposure','Higher penalty exposure'],
+   [p.commitments_changed,ref.commitments_changed,n=>String(n),'Fewer changes','More changes'],
+   [p.added_travel_minutes,ref.added_travel_minutes,n=>`${n} min`,'Less added travel','More added travel'],
+  ];
+  let decided=false;
+  for(const [a,b,fmt,low,high] of rules){
+   if(a===b)continue;
+   out.push({ok:a<b,decisive:!decided,text:`${a<b?low:high} than Plan ${rl} (${fmt(a)} vs ${fmt(b)})`});
+   decided=true;
+  }
+  if(!decided)out.push({ok:true,text:`Ties Plan ${rl} on every rule; ordered by continuity with technicians who know the machine`});
+ }
+ out.push({ok:!p.needs_manager,text:p.needs_manager?`Needs service-manager approval · contractor fee ${inr(p.contractor_fee_paise||0)} shown separately`:'No manager approval needed'});
+ return out;
+}
+function sentence(p:any){
+ const by:Record<string,string[]>={};
+ p.assignments.forEach((a:any)=>{(by[a.technician_name]=by[a.technician_name]||[]).push(a.job_id)});
+ const who=Object.entries(by).map(([t,j])=>`${t} takes ${j.join(' and ')}`).join('; ');
+ return `${who}. ${p.misses_total===0?'Every affected job still meets its SLA.':`${p.misses_total} job${p.misses_total>1?'s':''} would miss its SLA.`}`;
+}
+export function PlanRanking({recovery,busy,role,onApprove}:{recovery:any;busy:boolean;role:string;onApprove:(id:string)=>void}){
+ const plans:any[]=recovery.plans||[],[picked,setPicked]=useState(0),pick=Math.min(picked,Math.max(0,plans.length-1));
+ const refused=Object.values((recovery.rejected||[]).reduce((m:any,r:any)=>{
+  const k=r.candidate+'|'+r.reason;
+  (m[k]=m[k]||{candidate:r.candidate,reason:r.reason,jobs:[]}).jobs.push(r.job_id);
+  return m;
+ },{})) as any[];
+ const chosen=plans[pick],checks=chosen?reasons(plans,pick):[],canApprove=!chosen?.needs_manager||['manager','admin'].includes(role);
+ return <div className={s.wrap}>
+  {recovery.no_feasible_path&&<div className={s.none} role="alert"><b>No plan meets every SLA</b><span>{recovery.message}</span></div>}
+  {!!plans.length&&<div className={s.scroller}><table className={s.table}>
+   <thead><tr><th>Plan</th><th>SLA misses</th><th>Penalty exposure</th><th>Changes</th><th>Added travel</th></tr></thead>
+   <tbody>
+    {plans.map((p,i)=><tr key={p.id} className={`${s.row} ${i===pick?s.picked:''}`} onClick={()=>setPicked(i)} tabIndex={0} aria-selected={i===pick} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setPicked(i)}}}>
+     <td><span className={s.letter}>{letter(i)}</span><span className={s.who}><b>{i===0?'Recommended':p.needs_manager?'Contractor, needs manager':`Option ${letter(i)}`}</b><small>{p.assignments.map((a:any)=>`${a.job_id} → ${a.technician_name}`).join(' · ')}</small></span></td>
+     <td className={p.misses_total?s.bad:''}>{p.misses_total}</td>
+     <td className={p.penalty_paise?s.bad:''}>{inr(p.penalty_paise)}</td>
+     <td>{p.commitments_changed}</td>
+     <td>{p.added_travel_minutes} min</td>
+    </tr>)}
+    {refused.map((r,i)=>{
+     const jobs=[...new Set(r.jobs.filter(Boolean))];
+     return <tr key={'x'+i} className={s.refused}><td colSpan={5}><span className={s.cross}>✕</span><b>{r.candidate}</b><small>{r.reason}{jobs.length?` · ${jobs.join(', ')}`:''}</small></td></tr>;
+    })}
+   </tbody></table></div>}
+  {chosen&&<section className={s.why} aria-live="polite">
+   <h3>Why Plan {letter(pick)}?</h3>
+   <ul>{checks.map((c,i)=><li key={i} className={c.ok?s.ok:s.no}><span aria-hidden="true">{c.ok?'✓':'✕'}</span>{c.text}{c.decisive&&<em>decides the order</em>}</li>)}</ul>
+   <p className={s.plain}><span>IN PLAIN WORDS</span>{sentence(chosen)} {chosen.assignments.length>0&&`First job starts ${clock(chosen.assignments[0].planned_start)}.`}</p>
+   <p className={s.note}>{chosen.confidence}{recovery.truncated?' Search time budget reached; best feasible plans so far are shown.':''}</p>
+   <div className={s.actions}>
+    <button className={s.approve} disabled={busy||!canApprove} onClick={()=>onApprove(chosen.id)}>{chosen.needs_manager?'Approve as manager':`Approve Plan ${letter(pick)}`} →</button>
+    {!canApprove&&<small>Only a service manager can approve contractor recovery.</small>}
+   </div>
+  </section>}
+ </div>;
+}
