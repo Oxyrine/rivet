@@ -20,7 +20,7 @@ def tokens(principal):
     clock = now()
     def token(kind, minutes):
         return jwt.encode({'sub': principal['user_id'], 'kind': kind, 'iat': clock, 'exp': clock+timedelta(minutes=minutes)}, SECRET, algorithm='HS256')
-    return {'access_token': token('access', 15), 'refresh_token': token('refresh', 1440), 'token_type': 'bearer', 'principal': {k:v for k,v in principal.items() if k != 'pin'}}
+    return {'access_token': token('access', 15), 'refresh_token': token('refresh', 1440), 'token_type': 'bearer', 'principal': {k:v for k,v in principal.items() if k not in ('pin','email','phone')}}
 
 _jwks = None
 def jwks_client():

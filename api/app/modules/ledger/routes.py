@@ -49,7 +49,7 @@ def token(body:dict):
 
 @router.get('/auth/me')
 def me(p=Depends(read)):
-    return {k:v for k,v in p.items() if k!='pin'}
+    return {k:v for k,v in p.items() if k not in PRIVATE}  # never the PIN, and never the address someone signs in with
 
 @router.get('/admin/users')
 def list_users(p=Depends(require_roles('admin'))):
@@ -120,6 +120,7 @@ def delete_demo_accounts(body:dict={},p=Depends(require_roles('admin'))):
     store.mutate(fn)
     return {'removed':gone,'kept':sorted(set(emails)-set(gone))}
 
+PRIVATE=('pin','email','phone')
 _entry_hits={}
 
 def _throttle_entry(request,limit=20,window=60):
@@ -154,7 +155,7 @@ def demo_entry(body:dict,request:Request):
     user=store.read().users.get(user_id)
     if not user:raise DomainError('NOT_FOUND','That demo role does not exist on this server',status=404)
     from api.app.core.auth import demo_token
-    return JSONResponse({'access_token':demo_token(user_id),'token_type':'bearer','principal':{k:v for k,v in user.items() if k!='pin'}},headers={'Cache-Control':'no-store'})
+    return JSONResponse({'access_token':demo_token(user_id),'token_type':'bearer','principal':{k:v for k,v in user.items() if k not in PRIVATE}},headers={'Cache-Control':'no-store'})
 
 @router.post('/auth/refresh')
 def refresh(body:dict):

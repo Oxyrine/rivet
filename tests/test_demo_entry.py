@@ -33,6 +33,9 @@ def test_the_token_works_for_that_role_and_no_other(demo):
     token = enter(demo, 'ravi').json()['access_token']
     me = demo.get('/auth/me', headers=bearer(token))
     assert me.status_code == 200 and me.json()['role'] == 'technician' and me.json()['user_id'] == 'ravi' and 'pin' not in me.json()
+    link('ravi', email='ravi.private@example.com')
+    me, entry = demo.get('/auth/me', headers=bearer(token)).json(), enter(demo, 'ravi').json()
+    assert 'email' not in me and 'email' not in entry['principal'] and 'pin' not in entry['principal']  # a visitor never sees whose inbox a demo role is linked to
     assert demo.get('/jobs', headers=bearer(token)).status_code == 200
     assert demo.post('/admin/reset', headers=bearer(token)).status_code == 403  # a technician cannot reset the data
 
