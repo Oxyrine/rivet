@@ -81,6 +81,8 @@ export async function replayPendingCommands(
         type: cmd.type,
         job_id: cmd.job_id,
         payload: cmd.payload,
+        prev_hash: cmd.prev_hash,
+        hash: cmd.hash,
       })),
     };
 
@@ -103,6 +105,7 @@ export async function replayPendingCommands(
         }>;
         last_seq: number;
         sequence_gaps: number;
+        server_ts?: string;
       }>(`/devices/${deviceId}/commands`, {
         method: 'POST',
         headers,
@@ -112,6 +115,11 @@ export async function replayPendingCommands(
       if (response && response.results) {
         totalGaps = response.sequence_gaps || 0;
         await setDeviceLastKnownSeq(deviceId, response.last_seq);
+
+        if (response.server_ts) {
+          const { recordServerTime } = await import('./clock');
+          recordServerTime(response.server_ts);
+        }
 
         for (const res of response.results) {
           allResults.push(res);

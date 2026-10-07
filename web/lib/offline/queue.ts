@@ -1,8 +1,12 @@
 import { getDB, QueuedCommand, DeviceMeta } from './db';
+import { sha256 } from './hash';
+import { getNormalizedIsoTime, getClockSkewOffsetMs } from './clock';
+
 export type { QueuedCommand, DeviceMeta } from './db';
 
 const MAX_COMMANDS = 500;
 const WARNING_THRESHOLD = 0.8; // 80% warning
+const GENESIS_HASH = '0000000000000000000000000000000000000000000000000000000000000000';
 
 export interface QueueLimits {
   commandsCount: number;
@@ -13,7 +17,7 @@ export interface QueueLimits {
 
 export async function getNextDeviceSeq(deviceId: string): Promise<number> {
   const db = await getDB();
-  const meta = await db.get('meta', deviceId) as DeviceMeta | undefined;
+  const meta = (await db.get('meta', deviceId)) as DeviceMeta | undefined;
   let nextSeq = (meta?.last_seq || 0) + 1;
 
   // Double check with existing commands to guarantee monotonicity
@@ -37,7 +41,7 @@ export async function getNextDeviceSeq(deviceId: string): Promise<number> {
 
 export async function setDeviceLastKnownSeq(deviceId: string, lastSeq: number): Promise<void> {
   const db = await getDB();
-  const meta = await db.get('meta', deviceId) as DeviceMeta | undefined;
+  const meta = (await db.get('meta', deviceId)) as DeviceMeta | undefined;
   if (!meta || meta.last_seq < lastSeq) {
     await db.put('meta', {
       device_id: deviceId,
@@ -83,20 +87,48 @@ export async function enqueueCommand(params: {
   }
 
   const deviceSeq = await getNextDeviceSeq(params.device_id);
-  const idempotencyKey = params.customIdempotencyKey || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `idemp-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  const idempotencyKey =
+    params.customIdempotencyKey ||
+    (typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `idemp-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+
+  // Tier 2 #1 Device Hash Link calculation
+  const meta = (await db.get('meta', params.device_id)) as DeviceMeta | undefined;
+  const prevHash = meta?.last_hash || GENESIS_HASH;
+
+  // Normalized time with calibrated server clock skew
+  const normalizedTs = getNormalizedIsoTime();
+  const skewMs = getClockSkewOffsetMs();
+
+  const payloadObj = params.payload || {};
+  const canonicalPayload = JSON.stringify(payloadObj, Object.keys(payloadObj).sort());
+  const hashPreimage = `${prevHash}:${deviceSeq}:${params.user_id}:${params.type}:${params.job_id}:${idempotencyKey}:${canonicalPayload}`;
+  const currentHash = await sha256(hashPreimage);
 
   const cmd: QueuedCommand = {
     idempotency_key: idempotencyKey,
     device_seq: deviceSeq,
-    device_ts: new Date().toISOString(),
+    device_ts: normalizedTs,
     user_id: params.user_id,
     device_id: params.device_id,
     type: params.type,
     job_id: params.job_id,
-    payload: params.payload || {},
+    payload: payloadObj,
     status: 'queued',
     created_at: new Date().toISOString(),
+    prev_hash: prevHash,
+    hash: currentHash,
+    clock_skew_ms: skewMs,
   };
+
+  // Update meta with newest sequence and hash
+  await db.put('meta', {
+    device_id: params.device_id,
+    last_seq: deviceSeq,
+    last_sync: meta?.last_sync,
+    last_hash: currentHash,
+  });
 
   await db.put('commands', cmd);
 
@@ -117,6 +149,14 @@ export async function getQueuedCommands(deviceId?: string): Promise<QueuedComman
   }
 
   // Filter for queued commands and sort monotonically by device_seq
+  return cmds
+    .filter((c) => c.status === 'queued')
+    .sort((a, b) => a.device_seq - b.device_seq);
+}
+
+export async function getQueuedCommandsForUser(userId: string): Promise<QueuedCommand[]> {
+  const db = await getDB();
+  const cmds = await db.getAllFromIndex('commands', 'by_user', userId);
   return cmds
     .filter((c) => c.status === 'queued')
     .sort((a, b) => a.device_seq - b.device_seq);

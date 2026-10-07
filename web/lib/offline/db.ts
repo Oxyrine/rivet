@@ -15,6 +15,8 @@ export interface QueuedCommand {
   error_message?: string;
   created_at: string;
   prev_hash?: string;           // Optional Tier 2 client-side device hash chain
+  hash?: string;                // SHA-256 hash of this command linked to prev_hash
+  clock_skew_ms?: number;       // Recorded clock skew offset at enqueue time
 }
 
 export interface StoredPhoto {

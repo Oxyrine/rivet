@@ -754,6 +754,7 @@ export default function TechnicianFieldPage() {
               </div>
               <button
                 type="button"
+                data-testid="close-drawer-btn"
                 className="quiet-button"
                 style={{ fontSize: '20px', lineHeight: 1 }}
                 onClick={() => setSelectedJob(null)}
