@@ -44,10 +44,9 @@ export function Logo({ variant = 'light', ...props }: LogoProps) {
           }
         `}</style>
         <g stroke={strokeColor} strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
-          {/* Distinct, highly readable cursive R */}
           <path
             className="cursive-r-compact"
-            d="M 10,12 L 10,38 M 10,12 C 10,12 18,7 26,10 C 32,12 33,20 27,24 C 21,27 12,25 10,25 C 15,25 21,25 25,38"
+            d="M 10,12 L 10,38 M 10,12 C 16,8 28,9 28,18 C 28,24 20,24 10,24 C 15,24 20,28 25,38"
           />
         </g>
       </svg>
@@ -56,7 +55,7 @@ export function Logo({ variant = 'light', ...props }: LogoProps) {
 
   return (
     <svg
-      viewBox="0 0 114 48"
+      viewBox="0 0 126 46"
       fill="none"
       aria-label="Rivet"
       role="img"
@@ -64,7 +63,7 @@ export function Logo({ variant = 'light', ...props }: LogoProps) {
         display: 'block',
         width: 'auto',
         height: 34,
-        minWidth: 92,
+        minWidth: 104,
         overflow: 'visible',
       }}
       {...props}
@@ -72,19 +71,19 @@ export function Logo({ variant = 'light', ...props }: LogoProps) {
       <title>Rivet</title>
       <style>{`
         .rivet-cursive-word {
-          stroke-dasharray: 320;
-          stroke-dashoffset: 320;
-          animation: drawCursiveWord 1.5s cubic-bezier(0.42, 0, 0.25, 1) 0.1s forwards;
+          stroke-dasharray: 360;
+          stroke-dashoffset: 360;
+          animation: drawCursiveWord 1.6s cubic-bezier(0.42, 0, 0.25, 1) 0.1s forwards;
         }
         .rivet-cursive-crossbar {
-          stroke-dasharray: 24;
-          stroke-dashoffset: 24;
-          animation: drawCursiveCross 0.3s ease-out 1.35s forwards;
+          stroke-dasharray: 20;
+          stroke-dashoffset: 20;
+          animation: drawCursiveCross 0.3s ease-out 1.45s forwards;
         }
         .rivet-cursive-dot {
           opacity: 0;
-          transform-origin: 39px 12px;
-          animation: popCursiveDot 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) 1.45s forwards;
+          transform-origin: 38px 12px;
+          animation: popCursiveDot 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) 1.55s forwards;
         }
         @keyframes drawCursiveWord {
           to { stroke-dashoffset: 0; }
@@ -111,37 +110,35 @@ export function Logo({ variant = 'light', ...props }: LogoProps) {
       `}</style>
       <g stroke={strokeColor} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
         {/* 
-          Extremely clean, legible cursive handwriting for 'Rivet'
-          R: Stem (10,12 to 10,38), Bowl (10,12 -> 25,10 -> 26,22 -> 10,23), Leg (10,23 -> 22,38)
-          i: (22,38 -> 37,20 -> 40,38)
-          v: (40,38 -> 47,20 -> 52,38 -> 58,20 -> 61,22)
-          e: (61,22 -> 68,19 -> 71,24 -> 63,28 -> 68,38)
-          t: (68,38 -> 80,8 -> 80,36 -> 90,38)
+          Spacious, perfectly kerned cursive wordmark:
+          R: (12..28), i: (38..42), v: (54..72), e: (78..88), t: (102..114)
+          Each letter is distinctly separated with natural flowing connectors.
         */}
         <path
           className="rivet-cursive-word"
           d="
-            M 10,12 L 10,38
-            M 10,12 C 16,7 26,9 26,17 C 26,23 18,24 10,24
-            C 16,24 20,28 24,38
-            C 28,38 34,26 38,20
-            L 40,38
-            C 43,38 46,26 49,20
-            C 51,28 53,38 56,38
-            C 58,38 61,25 63,20
-            C 65,22 67,23 70,20
-            C 73,18 75,23 73,27
-            C 68,30 63,30 66,38
-            C 68,38 76,20 81,8
-            L 81,35
-            C 81,38 85,38 90,37
+            M 12,10 L 12,36
+            M 12,10 C 18,8 28,9 28,17 C 28,23 20,23 12,23
+            C 17,23 22,27 26,36
+            C 30,36 34,26 38,20
+            L 38,36
+            C 43,36 49,26 54,20
+            C 57,28 60,36 63,36
+            C 66,36 69,26 72,20
+            C 74,20 76,21 78,21
+            C 82,18 87,20 87,25
+            C 87,29 80,28 78,28
+            C 76,33 80,36 85,36
+            C 90,36 97,22 102,10
+            L 102,34
+            C 102,36 106,36 112,34
           "
         />
 
         {/* Accented Cursive Crossbar on 't' */}
         <path
           className="rivet-cursive-crossbar"
-          d="M 74,18 L 88,18"
+          d="M 95,20 L 109,20"
           stroke={accentColor}
           strokeWidth="2.8"
         />
@@ -149,7 +146,7 @@ export function Logo({ variant = 'light', ...props }: LogoProps) {
         {/* Accented Dot on 'i' */}
         <circle
           className="rivet-cursive-dot"
-          cx="39"
+          cx="38"
           cy="12"
           r="2.2"
           fill={accentColor}
