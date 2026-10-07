@@ -7,7 +7,8 @@ services:
     dockerfilePath: ./api/Dockerfile
     dockerContext: .
     region: singapore
-    plan: starter
+    # Smallest always-on paid size. The free plan sleeps when idle, which would drop the websocket and the scheduler.
+    plan: 0.5c-512mb
     healthCheckPath: /health
     numInstances: 1
     envVars:
