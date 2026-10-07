@@ -8,7 +8,7 @@ from contract.errors import DomainError
 from contract.state import emit
 from api.app.core.runtime import store
 from api.app.core.auth import require_roles, scoped_job, scoped_machine, tokens, SECRET
-from api.app.core.clock import now, iso
+from api.app.core.clock import now, iso, demo_controls
 from .domain import create_request, approve, assign, hold, release, candidates, move
 from .sync import replay, command
 from .uploads import record_upload,uploaded_content
@@ -48,6 +48,10 @@ def token(body:dict):
 @router.get('/auth/me')
 def me(p=Depends(read)):
     return {k:v for k,v in p.items() if k!='pin'}
+
+@router.get('/admin/users')
+def list_users(p=Depends(require_roles('admin'))):
+    return [{'user_id':u['user_id'],'role':u['role'],'sites':u.get('sites',[]),'technician_id':u.get('technician_id'),'email':u.get('email'),'phone':u.get('phone'),'linked':bool(u.get('email') or u.get('phone'))} for u in store.read().users.values()]
 
 @router.post('/admin/users/{ident}/link')
 def link_user(ident:str,body:dict,p=Depends(require_roles('admin'))):
@@ -241,7 +245,7 @@ def get_clock(p=Depends(read)):return {'now':store.read().now}
 
 @router.post('/admin/clock')
 def set_clock(body:dict,p=Depends(require_roles('admin'))):
-    if os.getenv('ENV','demo') not in ('demo','test'):raise DomainError('FORBIDDEN','Demo clock is disabled',status=403)
+    if not demo_controls():raise DomainError('FORBIDDEN','Demo clock is disabled',status=403)
     def fn(s):
         s.now=iso(body['set']) if 'set' in body else (now(s)+timedelta(seconds=body.get('advance',0))).isoformat()
         from api.app.core.scheduler import tick
@@ -251,5 +255,5 @@ def set_clock(body:dict,p=Depends(require_roles('admin'))):
 
 @router.post('/admin/reset')
 def reset(p=Depends(require_roles('admin'))):
-    if os.getenv('ENV','demo') not in ('demo','test'):raise DomainError('FORBIDDEN','Demo reset is disabled',status=403)
+    if not demo_controls():raise DomainError('FORBIDDEN','Demo reset is disabled',status=403)
     return store.reset()

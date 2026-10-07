@@ -5,7 +5,8 @@ import {createClient,type SupabaseClient} from '@supabase/supabase-js';
 // When they are not set, the app keeps the demo sign-in.
 const url=process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-export const hostedAuth=!!(url&&key);
+// NEXT_PUBLIC_AUTH_MODE=demo forces the built-in demo sign-in (the local, offline fallback) even when the values above are set.
+export const hostedAuth=!!(url&&key)&&process.env.NEXT_PUBLIC_AUTH_MODE!=='demo';
 
 let client:SupabaseClient|undefined;
 export function supabase():SupabaseClient{

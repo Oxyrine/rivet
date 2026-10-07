@@ -1,0 +1,8 @@
+.scroller{overflow-x:auto}
+.scroller table{min-width:640px}
+.scroller td{vertical-align:middle}
+.scroller input{min-width:220px}
+.sub{display:block;font:10px var(--mono);color:var(--muted);margin-top:3px}
+.ok{color:var(--green);background:#e9f0e2;border:1px solid #c6d4b0;border-radius:3px;padding:10px 12px;margin:0 0 14px}
+.danger{border-color:#dfafa2;color:var(--red)}
+.danger:enabled:hover{background:#f6e3dd;border-color:var(--red)}

@@ -9,7 +9,7 @@ from sqlalchemy.orm import DeclarativeBase, Session
 from contract.state import LedgerState
 from contract.canonical import canonical_json as canonical
 from contract.errors import DomainError
-from .clock import now
+from .clock import now, demo_controls
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -111,7 +111,7 @@ class Store:
                 session.execute(text('BEGIN IMMEDIATE'))
             row = session.execute(select(Snapshot).where(Snapshot.tenant_id == 'provider-demo').with_for_update()).scalar_one()
             state = LedgerState.from_dict(row.data).clone()
-            if os.getenv('ENV','demo') not in ('demo','test'):state.now=now().isoformat()
+            if not demo_controls():state.now=now().isoformat()
             try:encoded = canonical(body or {})
             except ValueError as exc:raise DomainError('INVALID_COMMAND',str(exc),status=422)
             if isinstance(encoded, bytes): encoded = encoded.decode()
@@ -140,11 +140,16 @@ class Store:
 
     def reset(self):
         with self.lock:
+            # Who is linked to which sign-in is operator data, not demo data: it survives a reset.
+            try:links={uid:{k:u[k] for k in ('email','phone') if u.get(k)} for uid,u in self.read().users.items()}
+            except Exception:links={}
             # Demo reset recreates the complete database; normal command paths cannot erase audit records.
             Base.metadata.drop_all(self.engine)
             Base.metadata.create_all(self.engine)
             self._triggers()
             state = fixture()
+            for uid, link in links.items():
+                if uid in state.users and link: state.users[uid].update(link)
             with Session(self.engine) as session, session.begin():
                 session.add(Snapshot(tenant_id=state.tenant_id, data=state.to_dict()))
                 for e in state.events: session.add(Event(event_id=e['event_id'], tenant_id=state.tenant_id, tenant_seq=e['tenant_seq'], payload=e))

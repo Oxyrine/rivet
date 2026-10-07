@@ -39,3 +39,7 @@ services:
         sync: false
       - key: EVIDENCE_BUCKET
         value: evidence
+      # Set to 1 to give admins the scripted demo clock and the data reset (Team access page). Leave unset for real use:
+      # the server then follows the real clock and a reset is refused.
+      - key: DEMO_CONTROLS
+        sync: false

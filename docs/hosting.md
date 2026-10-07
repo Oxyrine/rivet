@@ -36,6 +36,20 @@ With `ENV=production` the demo login is off. The web app emails a one-time code 
 3. In the Supabase dashboard turn off **Allow new users to sign up** once the admin account exists, and invite people from there. Without that, anyone can create a Supabase account (they still get no access in Rivet).
 4. Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` where the web app is built. Both are public. See `web/.env.example`.
 
+## Demo mode on a hosted server
+
+Signing in and demo controls are separate switches. `ENV=production` means only Supabase sign-ins are accepted. Setting `DEMO_CONTROLS=1` on top of that lets an **admin** use the scripted clock and the data reset, on the **Team access** page of the web app:
+
+- The M-104 story runs on scripted times (09:02 to 12:26). Without the switch the server follows the real clock, the seeded jobs of 7 October look overdue, and the background job drops technicians for missed check-ins on its own.
+- **Reset** restores the clean seed after a rehearsal. Who is linked to which sign-in is kept.
+- Turn the switch off for real use. Leave it unset and the clock and reset endpoints refuse every request.
+
+The same page links each person to a Supabase sign-in. For a demo with several roles, create a Supabase user per role (Authentication, Users, Add user, Auto Confirm User), then link each email to the matching person.
+
+## Local fallback
+
+The whole stack also runs on a laptop with no internet. Start the API (`ENV=demo`) and the web app with `NEXT_PUBLIC_AUTH_MODE=demo`, which forces the built-in demo sign-in even if the Supabase values are present. The `rivet-api` and `rivet-web-demo` launch entries do exactly this.
+
 ## Running on free plans
 
 Everything here has a free tier: Render, Supabase and Vercel.
