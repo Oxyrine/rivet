@@ -14,8 +14,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: API (wakes Render)
-        run: curl -fsS -m 120 --retry 3 --retry-delay 10 https://rivet-6met.onrender.com/health
+        run: curl -fsS -m 120 --retry 3 --retry-delay 10 https://rivet-1.onrender.com/health
       - name: Database (keeps Supabase active)
-        run: curl -fsS -m 60 --retry 2 https://rivet-6met.onrender.com/health/db
+        run: curl -fsS -m 60 --retry 2 https://rivet-1.onrender.com/health/db
       - name: Web app
         run: curl -fsS -m 60 -o /dev/null https://rivet-lyart.vercel.app/
