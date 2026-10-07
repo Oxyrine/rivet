@@ -1087,7 +1087,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
   gap: 18px;
-  height: clamp(520px, calc(100dvh - 275px), 900px);
+  height: clamp(520px, calc(100dvh - 260px), 900px);
   transition: grid-template-columns 0.25s ease;
 }
 

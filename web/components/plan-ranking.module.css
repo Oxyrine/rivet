@@ -75,3 +75,13 @@
 @container (min-width: 640px){
  .two{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px}
 }
+.morebtn{display:block;margin:8px 0 0;background:none;border:0;color:var(--action-blue);font-size:12.5px;font-weight:600;cursor:pointer;padding:0}
+/* One line per plan; the full assignment is in the tooltip and the "Why" panel. */
+.who small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.table td:first-child{max-width:0;width:46%}
+.wrap{padding:10px 14px}
+.cols{margin-top:8px}
+.decision{padding:12px 14px}
+.decision .plain{padding:10px 12px;margin:0 0 10px}
+.decision .actions{margin-bottom:8px}
+.decision .note{margin:0}

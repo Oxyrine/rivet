@@ -510,3 +510,9 @@ tbody tr:hover {
     gap: 12px;
   }
 }
+
+/* A narrow button squeezes its text, never its icon. */
+.primary-button svg,
+.secondary-button svg {
+  flex-shrink: 0;
+}

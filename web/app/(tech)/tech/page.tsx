@@ -452,6 +452,8 @@ export default function TechnicianFieldPage() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '8px',
             fontFamily: 'var(--mono)',
             fontSize: '12px',
           }}
@@ -481,7 +483,7 @@ export default function TechnicianFieldPage() {
         </div>
 
         {/* Technician Selector Tabs */}
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
           <button
             type="button"
             data-testid="tech-priya-btn"
@@ -573,7 +575,7 @@ export default function TechnicianFieldPage() {
       </div>
 
       {/* View Mode Navigation Tabs */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px', borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
         <button
           type="button"
           data-testid="tab-jobs"
@@ -588,7 +590,7 @@ export default function TechnicianFieldPage() {
           className={activeTab === 'sync' ? 'primary-button' : 'secondary-button'}
           onClick={() => setActiveTab('sync')}
         >
-          Sync Status Screen (Spec p.15)
+          Sync status
         </button>
         <button
           type="button"
@@ -888,7 +890,7 @@ export default function TechnicianFieldPage() {
               Record Field Action (Always Enqueues to IDB)
             </h3>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', margin: '14px 0 24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '10px', margin: '14px 0 24px' }}>
               <button
                 type="button"
                 data-testid="action-checkin"

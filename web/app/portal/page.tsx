@@ -24,7 +24,9 @@ export default function Portal() {
     const data = await api<any>('/jobs');
     const list = Array.isArray(data) ? data : data.items || data.jobs || [];
     setJobs(list);
-    if (!selected && list.length) setSelected(list[0].id);
+    // The control room links here with ?job=J-xxxx; open that job when the person can see it.
+    const wanted = new URLSearchParams(window.location.search).get('job');
+    if (!selected && list.length) setSelected(list.find((j: any) => j.id === wanted)?.id ?? list[0].id);
   };
 
   useEffect(() => {

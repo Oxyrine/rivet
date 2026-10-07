@@ -186,3 +186,20 @@
   from { transform: translateX(-100%); }
   to { transform: translateX(0); }
 }
+
+/* Phones: the site scope and the live badge crowd the bar and push the page sideways. */
+@media (max-width: 900px) {
+  .sitesScope {
+    display: none;
+  }
+  .topbarRight {
+    gap: 10px;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .liveIndicator {
+    display: none;
+  }
+}

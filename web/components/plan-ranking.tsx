@@ -59,7 +59,7 @@ function JobFollowUp({job,reason}:{job:any;reason?:string}){
 
 export function PlanRanking({recovery,busy,role,onApprove}:{recovery:any;busy:boolean;role:string;onApprove:(id:string)=>void}){
  const complete:any[]=recovery.plans||[],partialPlans:any[]=recovery.partial_plans||[];
- const plans=complete.length?complete:partialPlans,[picked,setPicked]=useState(0),pick=Math.min(picked,Math.max(0,plans.length-1));
+ const plans=complete.length?complete:partialPlans,[picked,setPicked]=useState(0),[more,setMore]=useState(false),TOP=3,pick=Math.min(picked,Math.max(0,plans.length-1));
  const diagnostics:any[]=recovery.jobs||[],total=diagnostics.length||(recovery.impact?.affected_jobs?.length??0);
  const refused=Object.values((recovery.rejected||[]).reduce((m:any,r:any)=>{
   const k=r.candidate+'|'+r.reason;
@@ -75,14 +75,15 @@ export function PlanRanking({recovery,busy,role,onApprove}:{recovery:any;busy:bo
  {!!plans.length&&<div className={s.scroller}><table className={s.table}>
    <thead><tr><th>Plan</th><th>SLA misses</th><th>Penalty exposure</th><th>Changes</th><th>Added travel</th></tr></thead>
    <tbody>
-    {plans.map((p,i)=><tr key={p.id} className={`${s.row} ${i===pick?s.picked:''}`} onClick={()=>setPicked(i)} tabIndex={0} aria-selected={i===pick} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setPicked(i)}}}>
-     <td><div className={s.plancell}><span className={s.letter}>{letter(i)}</span><span className={s.who}><b>{p.partial?`Partial · saves ${p.assignments.length} of ${total}`:i===0?'Recommended':p.needs_manager?'Contractor, needs manager':`Option ${letter(i)}`}</b><small>{p.assignments.map((a:any)=>`${a.job_id} → ${a.technician_name}`).join(' · ')}{p.partial&&p.unplaced.length?` · ${p.unplaced.map((u:any)=>u.job_id).join(', ')} left`:''}</small></span></div></td>
+    {(more?plans:plans.slice(0,TOP)).map((p,i)=><tr key={p.id} className={`${s.row} ${i===pick?s.picked:''}`} onClick={()=>setPicked(i)} tabIndex={0} aria-selected={i===pick} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setPicked(i)}}}>
+     <td><div className={s.plancell}><span className={s.letter}>{letter(i)}</span><span className={s.who}><b>{p.partial?`Partial · saves ${p.assignments.length} of ${total}`:i===0?'Recommended':p.needs_manager?'Contractor, needs manager':`Option ${letter(i)}`}</b><small title={p.assignments.map((a:any)=>`${a.job_id} → ${a.technician_name}`).join(' · ')}>{p.assignments.map((a:any)=>`${a.job_id} → ${a.technician_name}`).join(' · ')}{p.partial&&p.unplaced.length?` · ${p.unplaced.map((u:any)=>u.job_id).join(', ')} left`:''}</small></span></div></td>
      <td className={p.misses_total?s.bad:''}>{p.misses_total}</td>
      <td className={p.penalty_paise?s.bad:''}>{inr(p.penalty_paise)}</td>
      <td>{p.commitments_changed}</td>
      <td>{p.added_travel_minutes} min</td>
     </tr>)}
-   </tbody></table></div>}
+   </tbody></table>
+   {plans.length>TOP&&<button className={s.morebtn} onClick={()=>{if(more)setPicked(Math.min(pick,TOP-1));setMore(!more)}}>{more?`Show the top ${TOP} only`:`Show ${plans.length-TOP} more plans`}</button>}</div>}
   <div className={`${s.cols} ${chosen?s.two:''}`}><div className={s.main}>
   {chosen&&<section className={s.why}>
    <h3>Why Plan {letter(pick)}?</h3>
@@ -91,12 +92,12 @@ export function PlanRanking({recovery,busy,role,onApprove}:{recovery:any;busy:bo
   </div><div className={s.side}>
   {chosen&&<section className={s.decision} aria-live="polite">
    <p className={s.plain}><span>IN PLAIN WORDS</span>{sentence(chosen,total)} {chosen.assignments.length>0&&`First job starts ${clock(chosen.assignments[0].planned_start)}.`}</p>
-   <p className={s.note}>{chosen.confidence}{recovery.truncated?' Search time budget reached; best feasible plans so far are shown.':''}</p>
    <div className={s.actions}>
     <button className={s.approve} disabled={busy||!canApprove} onClick={()=>onApprove(chosen.id)}>{chosen.needs_manager?'Approve as manager':chosen.partial?`Approve partial Plan ${letter(pick)}`:`Approve Plan ${letter(pick)}`} →</button>
     {chosen.partial&&<small>Applies the jobs it places now. The rest stay flagged for follow-up.</small>}
     {!canApprove&&<small>{chosen.needs_manager?'Only a service manager can approve contractor recovery.':'Only a dispatcher can approve a plan.'}</small>}
    </div>
+   <p className={s.note}>{chosen.confidence}{recovery.truncated?' Search time budget reached; best feasible plans so far are shown.':''}</p>
   </section>}
   {!!followUps.length&&<section className={s.followup} data-testid="followups">
    <h3>{plans.length?'Needs follow-up':'Why nobody can take them'}</h3>
