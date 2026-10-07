@@ -1,11 +1,18 @@
 /* ==========================================================================
-   Design Tokens — Multi-Theme Support
-   Themes: Gradient (Default Editorial), Industrial (Rivet Amber), Dark Command
+   Claude Gradient Design Systems — Two Selectable Editorial Flavors
+   System 1 (Alpha): Command Center (Space Grotesk, Pill CTAs, Soft Stone)
+   System 2 (Beta): Inter Editorial (Inter Display, 12px Rounded CTAs, Signature Cards)
    ========================================================================== */
 
+/* --------------------------------------------------------------------------
+   System 1: Gradient Alpha (Enterprise Command & Pill CTAs)
+   -------------------------------------------------------------------------- */
 :root,
+[data-theme="gradient-alpha"],
 [data-theme="gradient"] {
-  /* Colors from Claude Gradient Design System Spec */
+  --theme-name: "Gradient Alpha (Command)";
+
+  /* Colors from Spec 1 */
   --primary: #17171c;
   --cohere-black: #000000;
   --ink: #212121;
@@ -32,7 +39,7 @@
   --on-dark: #ffffff;
   --error: #b30000;
 
-  /* Aliased Semantic Tokens */
+  /* Aliased Semantic Variables */
   --brand: #17171c;
   --brand-hover: #000000;
   --brand-accent: #ff7759;
@@ -49,10 +56,27 @@
   --critical: #b30000;
   --critical-surface: #ffebe6;
 
-  /* Typography Families */
-  --font-display: var(--font-space-grotesk), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-body: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-mono: var(--font-ibm-plex-mono), "SF Mono", Consolas, monospace;
+  /* Signature Surfaces */
+  --signature-hero-card: #17171c;
+  --signature-hero-text: #ffffff;
+  --signature-card-bg: #eeece7;
+  --signature-card-text: #212121;
+
+  /* Typography Scale */
+  --font-display: var(--font-space-grotesk), -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: var(--font-inter), -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), monospace;
+
+  --tracking-hero: -1.92px;
+  --tracking-section: -1.2px;
+  --tracking-heading: -0.48px;
+  --tracking-body: 0;
+  --tracking-mono: 0.28px;
+
+  --weight-display: 400;
+  --weight-heading: 500;
+  --weight-body: 400;
+  --weight-button: 500;
 
   /* Radius Scale */
   --radius-xs: 4px;
@@ -62,8 +86,11 @@
   --radius-xl: 30px;
   --radius-pill: 32px;
   --radius-full: 9999px;
+
   --radius: var(--radius-sm);
   --radius-button: var(--radius-pill);
+  --radius-card: var(--radius-md);
+  --radius-input: var(--radius-xs);
 
   /* Spacing Scale */
   --space-xxs: 2px;
@@ -76,124 +103,119 @@
   --space-section: 80px;
 
   /* Elevation */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.12);
-  --shadow-drawer: -12px 0 40px rgba(0, 0, 0, 0.15);
 }
 
-[data-theme="industrial"] {
-  --primary: #b8491f;
-  --cohere-black: #111613;
-  --ink: #202824;
-  --deep-green: #26704a;
-  --dark-navy: #192520;
-  --canvas: #f4f5f3;
+/* --------------------------------------------------------------------------
+   System 2: Gradient Beta (Inter Editorial & Signature Cards)
+   -------------------------------------------------------------------------- */
+[data-theme="gradient-beta"],
+[data-theme="editorial"] {
+  --theme-name: "Gradient Beta (Editorial)";
+
+  /* Colors from Spec 2 */
+  --primary: #181d26;
+  --primary-active: #0d1218;
+  --cohere-black: #0d1218;
+  --ink: #181d26;
+  --body: #333840;
+  --deep-green: #0a2e0e;
+  --dark-navy: #181d26;
+  --canvas: #ffffff;
   --surface: #ffffff;
-  --surface-sunken: #eaede7;
-  --soft-stone: #e8eae3;
-  --pale-green: #eaf3ed;
-  --pale-blue: #eaf1f8;
-  --hairline: #dde2dd;
-  --border-light: #d6dcd6;
-  --card-border: #dde2dd;
-  --muted: #5b655f;
-  --slate: #66736c;
-  --body-muted: #5b655f;
-  --action-blue: #1c64c7;
-  --focus-blue: #b8491f;
-  --coral: #b8491f;
-  --coral-soft: #f2c7b8;
-  --form-focus: #b8491f;
+  --surface-sunken: #f8fafc;
+  --soft-stone: #f5e9d4;
+  --pale-green: #eef8f2;
+  --pale-blue: #f0f4fa;
+  --hairline: #dddddd;
+  --border-light: #e0e2e6;
+  --card-border: #e0e2e6;
+  --border-strong: #9297a0;
+  --muted: #41454d;
+  --slate: #5e6470;
+  --body-muted: #333840;
+  --action-blue: #1b61c9;
+  --focus-blue: #458fff;
+  --coral: #aa2d00;
+  --coral-soft: #fcab79;
+  --form-focus: #458fff;
   --on-primary: #ffffff;
   --on-dark: #ffffff;
-  --error: #b33332;
+  --error: #b30000;
 
-  --brand: #b8491f;
-  --brand-hover: #a03d16;
-  --brand-accent: #b8491f;
-  --brand-on-dark: #e8a58d;
-  --ink-2: #5b655f;
-  --ink-3: #828e86;
-  --line: #dde2dd;
-  --line-subtle: #e5eae5;
-  --line-control: #cdd4cd;
-  --positive: #26704a;
-  --positive-surface: #eaf3ed;
-  --warning: #8a5a13;
-  --warning-surface: #f9f2e3;
-  --critical: #b33332;
-  --critical-surface: #f9e8e8;
+  /* Signature Surfaces from Spec 2 */
+  --signature-coral: #aa2d00;
+  --signature-forest: #0a2e0e;
+  --signature-cream: #f5e9d4;
+  --signature-peach: #fcab79;
+  --signature-mint: #a8d8c4;
+  --signature-yellow: #f4d35e;
+  --signature-mustard: #d9a441;
 
-  --font-display: var(--font-barlow-condensed), Impact, sans-serif;
-  --font-body: var(--font-inter), Arial, sans-serif;
-  --font-mono: var(--font-ibm-plex-mono), Consolas, monospace;
+  /* Aliased Semantic Variables */
+  --brand: #181d26;
+  --brand-hover: #0d1218;
+  --brand-accent: #aa2d00;
+  --brand-on-dark: #fcab79;
+  --ink-2: #333840;
+  --ink-3: #41454d;
+  --line: #dddddd;
+  --line-subtle: #f8fafc;
+  --line-control: #dddddd;
+  --positive: #006400;
+  --positive-surface: #eef8f2;
+  --warning: #aa2d00;
+  --warning-surface: #fdf2ed;
+  --critical: #b30000;
+  --critical-surface: #faebeb;
 
-  --radius-xs: 2px;
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-xl: 12px;
-  --radius-pill: 16px;
-  --radius-full: 9999px;
-  --radius: var(--radius-sm);
-  --radius-button: var(--radius-sm);
-}
+  --signature-hero-card: #aa2d00;
+  --signature-hero-text: #ffffff;
+  --signature-card-bg: #f8fafc;
+  --signature-card-text: #181d26;
 
-[data-theme="dark"] {
-  --primary: #ffffff;
-  --cohere-black: #000000;
-  --ink: #f0f4f1;
-  --deep-green: #0a4034;
-  --dark-navy: #050b12;
-  --canvas: #0c100e;
-  --surface: #141a17;
-  --surface-sunken: #090c0a;
-  --soft-stone: #1b2320;
-  --pale-green: #112a20;
-  --pale-blue: #101c2e;
-  --hairline: #222d28;
-  --border-light: #283630;
-  --card-border: #1e2823;
-  --muted: #83928a;
-  --slate: #94a39b;
-  --body-muted: #9ba8a0;
-  --action-blue: #4d93ff;
-  --focus-blue: #60a5fa;
-  --coral: #ff7759;
-  --coral-soft: #ffad9b;
-  --form-focus: #b580cf;
-  --on-primary: #121714;
-  --on-dark: #ffffff;
-  --error: #e04b4b;
-
-  --brand: #ff7759;
-  --brand-hover: #ff8c73;
-  --brand-accent: #ff7759;
-  --brand-on-dark: #ffad9b;
-  --ink-2: #8a9b92;
-  --ink-3: #5f7067;
-  --line: #232f29;
-  --line-subtle: #19221e;
-  --line-control: #2c3c34;
-  --positive: #34a86b;
-  --positive-surface: #102d1e;
-  --warning: #d98e18;
-  --warning-surface: #2d210b;
-  --critical: #e04b4b;
-  --critical-surface: #301111;
-
-  --font-display: var(--font-space-grotesk), sans-serif;
-  --font-body: var(--font-inter), sans-serif;
+  /* Typography Scale */
+  --font-display: var(--font-inter), -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: var(--font-inter), -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: var(--font-ibm-plex-mono), monospace;
 
-  --radius-xs: 4px;
-  --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 18px;
-  --radius-xl: 24px;
-  --radius-pill: 32px;
+  --tracking-hero: 0;
+  --tracking-section: 0;
+  --tracking-heading: 0;
+  --tracking-body: 0;
+  --tracking-mono: 0.16px;
+
+  --weight-display: 400;
+  --weight-heading: 475;
+  --weight-body: 400;
+  --weight-button: 500;
+
+  /* Radius Scale from Spec 2 */
+  --radius-xs: 2px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 9999px;
   --radius-full: 9999px;
+
   --radius: var(--radius-sm);
-  --radius-button: var(--radius-pill);
+  --radius-button: var(--radius-lg); /* 12px for primary CTAs in Spec 2 */
+  --radius-card: var(--radius-md); /* 10px for content cards */
+  --radius-input: var(--radius-sm); /* 6px for text inputs */
+
+  /* Spacing Scale */
+  --space-xxs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-xxl: 48px;
+  --space-section: 96px;
+
+  /* Elevation */
+  --shadow-sm: none;
+  --shadow-md: none;
 }

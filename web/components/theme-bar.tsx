@@ -1,24 +1,29 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Sparkles, Factory, Moon } from 'lucide-react';
+import { Sparkles, Layers } from 'lucide-react';
 import s from './theme-bar.module.css';
 
-export type Theme = 'gradient' | 'industrial' | 'dark';
+export type Theme = 'gradient-alpha' | 'gradient-beta';
 
 export function ThemeBar() {
-  const [theme, setTheme] = useState<Theme>('gradient');
+  const [theme, setTheme] = useState<Theme>('gradient-alpha');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     const saved = localStorage.getItem('rivet-theme') as Theme | null;
-    if (saved && (saved === 'gradient' || saved === 'industrial' || saved === 'dark')) {
+    if (saved && (saved === 'gradient-alpha' || saved === 'gradient-beta')) {
       setTheme(saved);
       document.documentElement.setAttribute('data-theme', saved);
     } else {
       const current = document.documentElement.getAttribute('data-theme') as Theme | null;
-      if (current) setTheme(current);
+      if (current === 'gradient-beta') {
+        setTheme('gradient-beta');
+      } else {
+        setTheme('gradient-alpha');
+        document.documentElement.setAttribute('data-theme', 'gradient-alpha');
+      }
     }
   }, []);
 
@@ -31,45 +36,35 @@ export function ThemeBar() {
   };
 
   if (!mounted) {
-    return (
-      <div className={s.themeBarSkeleton} aria-hidden="true" />
-    );
+    return <div className={s.themeBarSkeleton} aria-hidden="true" />;
   }
 
   return (
-    <div className={s.themeBar} role="group" aria-label="Theme selector">
-      <span className={s.label}>Theme:</span>
+    <div className={s.themeBar} role="group" aria-label="Gradient design system switcher">
+      <span className={s.label}>Design System:</span>
+
       <button
         type="button"
-        className={`${s.themeBtn} ${theme === 'gradient' ? s.active : ''}`}
-        onClick={() => switchTheme('gradient')}
-        aria-pressed={theme === 'gradient'}
-        title="Claude Gradient Editorial Theme (Clean Canvas, Crisp Display & Pill CTAs)"
+        className={`${s.themeBtn} ${theme === 'gradient-alpha' ? s.active : ''}`}
+        onClick={() => switchTheme('gradient-alpha')}
+        aria-pressed={theme === 'gradient-alpha'}
+        title="System 1: Command Center — Space Grotesk (-1.9px tracking), Pill CTAs (32px), Soft Stone & Pale Green"
       >
         <Sparkles size={13} aria-hidden="true" />
-        <span>Gradient</span>
+        <span className={s.btnText}>System 1 · Command (Space Grotesk / Pill)</span>
+        <span className={s.btnTextShort}>Sys 1 (Pill)</span>
       </button>
 
       <button
         type="button"
-        className={`${s.themeBtn} ${theme === 'industrial' ? s.active : ''}`}
-        onClick={() => switchTheme('industrial')}
-        aria-pressed={theme === 'industrial'}
-        title="Industrial Warm Theme (Rivet Amber, Technical Mono & Compact Cards)"
+        className={`${s.themeBtn} ${theme === 'gradient-beta' ? s.active : ''}`}
+        onClick={() => switchTheme('gradient-beta')}
+        aria-pressed={theme === 'gradient-beta'}
+        title="System 2: Editorial — Pure Inter (0 tracking, weight 400/475), 12px Rounded CTAs, Signature Coral & Cream"
       >
-        <Factory size={13} aria-hidden="true" />
-        <span>Industrial</span>
-      </button>
-
-      <button
-        type="button"
-        className={`${s.themeBtn} ${theme === 'dark' ? s.active : ''}`}
-        onClick={() => switchTheme('dark')}
-        aria-pressed={theme === 'dark'}
-        title="Dark Command Theme (Deep Navy/Green & High Contrast Indicators)"
-      >
-        <Moon size={13} aria-hidden="true" />
-        <span>Dark</span>
+        <Layers size={13} aria-hidden="true" />
+        <span className={s.btnText}>System 2 · Editorial (Inter / 12px Round)</span>
+        <span className={s.btnTextShort}>Sys 2 (12px)</span>
       </button>
     </div>
   );
