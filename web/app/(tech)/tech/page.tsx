@@ -4,6 +4,10 @@ import { useSession } from '@/lib/api';
 import apiClient from '@/lib/client';
 import { MOCK_SHIFTS, ShiftJob, ShiftCommitment, ShiftCacheResponse } from '@/lib/mock-shifts';
 import { JobCard } from './components/job-card';
+import { registerServiceWorker } from '@/lib/offline/sw-register';
+import { storeShiftCache, getCachedShift, checkStaleStatus, StaleStatus } from '@/lib/offline/cache';
+import { getQueuedCommands, QueuedCommand, getQueueLimits } from '@/lib/offline/queue';
+import { executeTechnicianAction } from '@/lib/offline/actions';
 import {
   User,
   Smartphone,
@@ -13,21 +17,57 @@ import {
   AlertCircle,
   Wrench,
   ShieldAlert,
-  ArrowRight,
-  ChevronRight,
-  ListTodo
+  ListTodo,
+  Wifi,
+  WifiOff,
+  Database,
+  Layers,
+  ArrowUpRight,
+  Camera,
+  Barcode,
+  ClipboardList,
+  LogOut,
+  LogIn,
+  AlertTriangle
 } from 'lucide-react';
 
 export default function TechnicianFieldPage() {
   const { session, login } = useSession();
-  const [selectedTech, setSelectedTech] = useState<'priya' | 'ravi'>('priya');
+  const [selectedTech, setSelectedTech] = useState<'priya' | 'ravi'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('rivet.active-tech');
+      if (saved === 'ravi' || saved === 'priya') return saved;
+    }
+    return 'priya';
+  });
   const [shiftData, setShiftData] = useState<ShiftCacheResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [dataSource, setDataSource] = useState<'live-mock' | 'fixture-mock'>('fixture-mock');
   const [selectedJob, setSelectedJob] = useState<ShiftJob | null>(null);
   const [syncStatus, setSyncStatus] = useState<string>('Online · Shift cached');
+  const [isOnline, setIsOnline] = useState<boolean>(true);
+  const [queuedCmds, setQueuedCmds] = useState<QueuedCommand[]>([]);
+  const [staleInfo, setStaleInfo] = useState<StaleStatus>({ isStale: false });
+  const [actionNotice, setActionNotice] = useState<string>('');
 
-  // If session is already a technician, sync selection
+  // Register Service Worker
+  useEffect(() => {
+    registerServiceWorker();
+    setIsOnline(typeof navigator !== 'undefined' ? navigator.onLine : true);
+
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Update session based on selection
   useEffect(() => {
     if (session?.user_id === 'ravi') {
       setSelectedTech('ravi');
@@ -36,12 +76,40 @@ export default function TechnicianFieldPage() {
     }
   }, [session]);
 
+  // Refresh Queued Commands from IndexedDB
+  const refreshQueue = useCallback(async () => {
+    try {
+      const deviceId = `device-${selectedTech}`;
+      const cmds = await getQueuedCommands(deviceId);
+      console.log(`[RIVET] refreshQueue for ${deviceId}: count = ${cmds.length}`);
+      setQueuedCmds(cmds);
+    } catch (err) {
+      console.error('[RIVET] refreshQueue error:', err);
+    }
+  }, [selectedTech]);
+
+  useEffect(() => {
+    refreshQueue();
+    const handleQueueChange = () => refreshQueue();
+    window.addEventListener('rivet:queue-change', handleQueueChange);
+    return () => window.removeEventListener('rivet:queue-change', handleQueueChange);
+  }, [refreshQueue]);
+
+  // Load shift and store in IndexedDB cache
   const loadShift = useCallback(async (techId: 'priya' | 'ravi') => {
     setLoading(true);
     const deviceId = `device-${techId}`;
 
+    // First check local IndexedDB cache
+    const localCached = await getCachedShift(techId);
+    if (localCached) {
+      setShiftData(localCached as unknown as ShiftCacheResponse);
+      const stale = checkStaleStatus(localCached.cached_at);
+      setStaleInfo(stale);
+    }
+
     try {
-      // First try fetching through openapi-fetch client from the mock backend
+      // Fetch through API client from mock backend
       const response = await apiClient.GET('/devices/{ident}/shift-cache', {
         params: { path: { ident: deviceId } },
       });
@@ -51,11 +119,13 @@ export default function TechnicianFieldPage() {
         setShiftData(data);
         setDataSource('live-mock');
         setSyncStatus(`Connected to backend mock · ${new Date().toLocaleTimeString()}`);
+        await storeShiftCache(techId, deviceId, data);
+        setStaleInfo(checkStaleStatus(data.cached_at));
         setLoading(false);
         return;
       }
     } catch {
-      // Fallback to local fixture mock
+      // Offline or backend unreachable, fallback to fixture mock
     }
 
     // Fallback: Read directly from mock fixtures
@@ -64,6 +134,8 @@ export default function TechnicianFieldPage() {
       setShiftData(mock);
       setDataSource('fixture-mock');
       setSyncStatus(`Fixture mock loaded · ${new Date().toLocaleTimeString()}`);
+      await storeShiftCache(techId, deviceId, mock);
+      setStaleInfo(checkStaleStatus(mock.cached_at));
     }
     setLoading(false);
   }, []);
@@ -75,11 +147,32 @@ export default function TechnicianFieldPage() {
   const handleSwitchTech = async (tech: 'priya' | 'ravi') => {
     setSelectedTech(tech);
     setSelectedJob(null);
-    // Optionally log in via demo OTP to authenticate session
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('rivet.active-tech', tech);
+    }
     try {
       await login(tech, '246810');
     } catch {
-      // Ignore login errors in mock mode
+      // ignore
+    }
+  };
+
+  // Perform action using the unified offline-first action dispatcher
+  const performAction = async (actionType: string, payload: Record<string, any> = {}) => {
+    if (!selectedJob) return;
+    const deviceId = `device-${selectedTech}`;
+
+    try {
+      const cmd = await executeTechnicianAction(
+        { userId: selectedTech, deviceId, jobId: selectedJob.id },
+        actionType,
+        payload
+      );
+      setActionNotice(`Queued action #${cmd.device_seq}: ${actionType}`);
+      setTimeout(() => setActionNotice(''), 3500);
+      await refreshQueue();
+    } catch (err: any) {
+      alert(`Action error: ${err.message}`);
     }
   };
 
@@ -90,6 +183,39 @@ export default function TechnicianFieldPage() {
 
   return (
     <div style={{ maxWidth: '980px', margin: '0 auto', paddingBottom: '60px' }}>
+      {/* 2-Hour Stale Banner */}
+      {staleInfo.isStale && (
+        <div
+          data-testid="stale-banner"
+          style={{
+            background: 'var(--accent)',
+            color: '#fff',
+            padding: '10px 16px',
+            marginBottom: '16px',
+            borderRadius: '3px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontFamily: 'var(--mono)',
+            fontSize: '12px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <AlertTriangle size={16} />
+            <b>SHIFT DATA STALE</b>
+            <span>&middot; Last sync was {staleInfo.hoursAgo || 'over 2'} hours ago. Reconnect to refresh.</span>
+          </div>
+          <button
+            type="button"
+            className="quiet-button"
+            style={{ color: '#fff', padding: '2px 8px', textDecoration: 'underline' }}
+            onClick={() => loadShift(selectedTech)}
+          >
+            Refresh Now
+          </button>
+        </div>
+      )}
+
       {/* Top Header / Technician Switcher */}
       <div className="page-heading">
         <div>
@@ -102,6 +228,7 @@ export default function TechnicianFieldPage() {
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <button
             type="button"
+            data-testid="tech-priya-btn"
             className={selectedTech === 'priya' ? 'primary-button' : 'secondary-button'}
             onClick={() => handleSwitchTech('priya')}
             style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
@@ -112,6 +239,7 @@ export default function TechnicianFieldPage() {
           </button>
           <button
             type="button"
+            data-testid="tech-ravi-btn"
             className={selectedTech === 'ravi' ? 'primary-button' : 'secondary-button'}
             onClick={() => handleSwitchTech('ravi')}
             style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
@@ -131,47 +259,49 @@ export default function TechnicianFieldPage() {
         </div>
       </div>
 
-      {/* Technician Profile & Sync Status Bar */}
-      <div className="panel" style={{ padding: '16px 20px', marginBottom: '20px', background: 'var(--panel-alt)' }}>
+      {/* Offline Status & Live Queue Bar */}
+      <div
+        data-testid="offline-sync-strip"
+        className="panel"
+        style={{
+          padding: '14px 18px',
+          marginBottom: '16px',
+          background: isOnline ? 'var(--panel-alt)' : '#fff3cd',
+          borderLeft: isOnline ? '4px solid var(--green)' : '4px solid var(--accent)',
+        }}
+      >
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '14px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div
-              style={{
-                width: '42px',
-                height: '42px',
-                borderRadius: '50%',
-                background: 'var(--accent)',
-                color: '#fff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 600,
-                fontSize: '16px',
-              }}
-            >
-              {selectedTech === 'priya' ? 'PS' : 'RK'}
-            </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <b style={{ fontSize: '15px' }}>{selectedTech === 'priya' ? 'Priya Sharma' : 'Ravi Kumar'}</b>
-                <span className="badge green">ON SHIFT</span>
-                <span className="badge" style={{ fontFamily: 'var(--mono)', fontSize: '10px' }}>
-                  device-{selectedTech}
-                </span>
-              </div>
-              <small style={{ color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-                <Smartphone size={12} /> Registered Device &middot; Scoped to Aster Works Site A
-              </small>
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {isOnline ? (
+              <span className="badge green" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <Wifi size={13} /> ONLINE
+              </span>
+            ) : (
+              <span className="badge amber" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <WifiOff size={13} /> OFFLINE
+              </span>
+            )}
+            <span style={{ fontFamily: 'var(--mono)', fontSize: '13px', fontWeight: 600 }}>
+              <span data-testid="queue-count">{queuedCmds.length}</span> actions queued
+            </span>
+            <span style={{ color: 'var(--muted)', fontSize: '12px' }}>
+              &middot; Device: device-{selectedTech}
+            </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '12px', fontFamily: 'var(--mono)' }}>
-            <span style={{ color: 'var(--muted)' }}>SOURCE: {dataSource.toUpperCase()}</span>
-            <span className="badge amber" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <CheckCircle2 size={12} /> {syncStatus}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '12px', fontFamily: 'var(--mono)' }}>
+            <span style={{ color: 'var(--muted)' }}>ONE CODE PATH VIA INDEXEDDB</span>
+            <span className="badge" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Database size={12} /> IDB ACTIVE
             </span>
           </div>
         </div>
+
+        {actionNotice && (
+          <div data-testid="action-notice" style={{ marginTop: '10px', fontSize: '12px', color: 'var(--accent)', fontWeight: 500 }}>
+            &check; {actionNotice}
+          </div>
+        )}
       </div>
 
       {/* Shift Overview Metrics */}
@@ -187,12 +317,9 @@ export default function TechnicianFieldPage() {
           <span>{p1Jobs.length > 0 ? 'Urgent response window active' : 'All jobs within standard SLAs'}</span>
         </div>
         <div className="stat-card">
-          <small>TOTAL SHIFT TIME</small>
-          <h2>
-            {currentJobs.reduce((acc, j) => acc + (j.duration_minutes || 0), 0)}
-            <span style={{ fontSize: '18px', fontWeight: 400 }}> min</span>
-          </h2>
-          <span>Across all reserved machine slots</span>
+          <small>QUEUED OFFLINE ACTIONS</small>
+          <h2>{queuedCmds.length}</h2>
+          <span>Stored in IndexedDB commands store</span>
         </div>
       </div>
 
@@ -203,7 +330,7 @@ export default function TechnicianFieldPage() {
             <ListTodo size={18} /> Shift Job Queue ({currentJobs.length})
           </h2>
           <span style={{ fontSize: '12px', color: 'var(--muted)', fontFamily: 'var(--mono)' }}>
-            CHRONOLOGICAL ORDER
+            CLICK JOB TO TEST OFFLINE ACTIONS
           </span>
         </div>
 
@@ -214,20 +341,21 @@ export default function TechnicianFieldPage() {
             No jobs assigned for this shift.
           </div>
         ) : (
-          <div>
+          <div data-testid="job-list">
             {currentJobs.map((job) => (
-              <JobCard
-                key={job.id}
-                job={job}
-                commitments={currentCommitments}
-                onSelect={(j) => setSelectedJob(j)}
-              />
+              <div key={job.id} data-testid={`job-${job.id}`}>
+                <JobCard
+                  job={job}
+                  commitments={currentCommitments}
+                  onSelect={(j) => setSelectedJob(j)}
+                />
+              </div>
             ))}
           </div>
         )}
       </div>
 
-      {/* Job Details Drawer / Inspection Modal */}
+      {/* Job Details Drawer & Offline Action Controls */}
       {selectedJob && (
         <div
           className="overlay"
@@ -242,9 +370,10 @@ export default function TechnicianFieldPage() {
           onClick={() => setSelectedJob(null)}
         >
           <aside
+            data-testid="job-drawer"
             style={{
               width: '100%',
-              maxWidth: '520px',
+              maxWidth: '560px',
               background: 'var(--panel)',
               height: '100%',
               padding: '28px',
@@ -255,7 +384,7 @@ export default function TechnicianFieldPage() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
               <div>
-                <span className="eyebrow" style={{ marginBottom: '4px' }}>JOB INSPECTION</span>
+                <span className="eyebrow" style={{ marginBottom: '4px' }}>JOB INSPECTION &middot; FIELD ACTIONS</span>
                 <h2 style={{ margin: 0, fontSize: '22px' }}>{selectedJob.id} &middot; {selectedJob.machine_id}</h2>
                 <p style={{ margin: '4px 0 0', fontSize: '13px' }}>
                   {selectedJob.fault.replace('_', ' ')} &middot; {selectedJob.site_id.toUpperCase()}
@@ -274,53 +403,115 @@ export default function TechnicianFieldPage() {
             <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
               <span className={`badge ${selectedJob.priority === 'P1' ? 'amber' : 'green'}`}>{selectedJob.priority} PRIORITY</span>
               <span className="badge">{selectedJob.state.toUpperCase()}</span>
+              <span className="badge" style={{ fontFamily: 'var(--mono)' }}>SEQ: {queuedCmds.length}</span>
             </div>
 
-            <h3 style={{ fontSize: '14px', textTransform: 'uppercase', color: 'var(--muted)', fontFamily: 'var(--mono)', borderBottom: '1px solid var(--border)', paddingBottom: '6px' }}>
-              Commitment Schedule
+            {/* Offline Action Buttons (Exercising the 1 Code Path) */}
+            <h3 style={{ fontSize: '13px', textTransform: 'uppercase', color: 'var(--accent)', fontFamily: 'var(--mono)', borderBottom: '1px solid var(--border)', paddingBottom: '6px' }}>
+              Record Field Action (Always Enqueues to IDB)
             </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '20px', fontSize: '13px' }}>
-              <div>
-                <small style={{ color: 'var(--muted)', display: 'block', fontSize: '10px', fontFamily: 'var(--mono)' }}>PLANNED START</small>
-                <b>{new Date(selectedJob.planned_start).toLocaleTimeString()}</b>
-              </div>
-              <div>
-                <small style={{ color: 'var(--muted)', display: 'block', fontSize: '10px', fontFamily: 'var(--mono)' }}>SLA DEADLINE</small>
-                <b style={{ color: 'var(--accent)' }}>{new Date(selectedJob.deadline).toLocaleTimeString()}</b>
-              </div>
-              <div>
-                <small style={{ color: 'var(--muted)', display: 'block', fontSize: '10px', fontFamily: 'var(--mono)' }}>ESTIMATED DURATION</small>
-                <b>{selectedJob.duration_minutes} minutes</b>
-              </div>
-              <div>
-                <small style={{ color: 'var(--muted)', display: 'block', fontSize: '10px', fontFamily: 'var(--mono)' }}>TECHNICIAN TIME HELD</small>
-                <b>7 slots (105 min)</b>
-              </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', margin: '14px 0 24px' }}>
+              <button
+                type="button"
+                data-testid="action-checkin"
+                className="secondary-button"
+                onClick={() => performAction('CheckIn', { gps: { lat_e6: 19076000, lng_e6: 72877000 }, arrival_code: null })}
+              >
+                <LogIn size={14} /> 1. Check In
+              </button>
+              <button
+                type="button"
+                data-testid="action-startwork"
+                className="secondary-button"
+                onClick={() => performAction('StartWork', {})}
+              >
+                <Wrench size={14} /> 2. Start Work
+              </button>
+              <button
+                type="button"
+                data-testid="action-scanpart"
+                className="secondary-button"
+                onClick={() => performAction('PartScanned', { resource: 'HS-40', quantity: 1, source: `job:${selectedJob.id}:reserved` })}
+              >
+                <Barcode size={14} /> 3. Scan Part
+              </button>
+              <button
+                type="button"
+                data-testid="action-logtask"
+                className="secondary-button"
+                onClick={() => performAction('TaskLogged', { task: 'Seal replaced', checklist: ['Depressurize', 'Remove seal'] })}
+              >
+                <ClipboardList size={14} /> 4. Log Task
+              </button>
+              <button
+                type="button"
+                data-testid="action-reading"
+                className="secondary-button"
+                onClick={() => performAction('ReadingRecorded', { gauge: 'pressure', value: 180, unit: 'bar' })}
+              >
+                <Clock size={14} /> 5. Record Reading
+              </button>
+              <button
+                type="button"
+                data-testid="action-evidence"
+                className="secondary-button"
+                onClick={() => performAction('EvidenceAttached', { photo_id: `photo-${Date.now()}`, type: 'after_repair' })}
+              >
+                <Camera size={14} /> 6. Attach Photo
+              </button>
+              <button
+                type="button"
+                data-testid="action-submitreport"
+                className="secondary-button"
+                onClick={() => performAction('SubmitReport', { tasks_completed: ['repaired'], parts_claimed: ['HS-40'] })}
+              >
+                <CheckCircle2 size={14} /> 7. Submit Report
+              </button>
+              <button
+                type="button"
+                data-testid="action-checkout"
+                className="secondary-button"
+                onClick={() => performAction('CheckOut', { notes: 'Repair finished' })}
+              >
+                <LogOut size={14} /> 8. Check Out
+              </button>
             </div>
 
-            <h3 style={{ fontSize: '14px', textTransform: 'uppercase', color: 'var(--muted)', fontFamily: 'var(--mono)', borderBottom: '1px solid var(--border)', paddingBottom: '6px' }}>
-              Associated Commitments
-            </h3>
+            {/* Dropout Button */}
             <div style={{ marginBottom: '24px' }}>
-              {currentCommitments
-                .filter((c) => c.job_id === selectedJob.id)
-                .map((c) => (
-                  <div key={c.id} className="panel" style={{ padding: '12px', marginBottom: '8px', fontSize: '12px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                      <b>{c.type}</b>
-                      <span className="badge green">{c.state}</span>
-                    </div>
-                    <div style={{ color: 'var(--muted)', fontFamily: 'var(--mono)', fontSize: '11px' }}>
-                      ID: {c.id} &middot; Owner: {c.owner || 'System'}
-                    </div>
-                  </div>
-                ))}
+              <button
+                type="button"
+                data-testid="action-dropout"
+                className="quiet-button"
+                style={{ width: '100%', border: '1px solid var(--accent)', color: 'var(--accent)', justifyContent: 'center' }}
+                onClick={() => performAction('ReportDropout', { reason: 'vehicle_breakdown' })}
+              >
+                <AlertCircle size={14} /> Report Vehicle Dropout
+              </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '30px' }}>
-              <div style={{ padding: '12px', background: 'var(--panel-alt)', borderRadius: '3px', fontSize: '12px', color: 'var(--muted)' }}>
-                Offline queue & command pipeline enabled. All actions will route through IndexedDB.
-              </div>
+            {/* Queued Commands for this Device */}
+            <h3 style={{ fontSize: '13px', textTransform: 'uppercase', color: 'var(--muted)', fontFamily: 'var(--mono)', borderBottom: '1px solid var(--border)', paddingBottom: '6px' }}>
+              Pending Commands in Queue ({queuedCmds.length})
+            </h3>
+            <div style={{ maxHeight: '200px', overflowY: 'auto', marginTop: '10px' }}>
+              {queuedCmds.length === 0 ? (
+                <p style={{ fontSize: '12px', color: 'var(--muted)' }}>Queue is empty.</p>
+              ) : (
+                queuedCmds.map((cmd) => (
+                  <div key={cmd.idempotency_key} style={{ padding: '8px 10px', background: 'var(--panel-alt)', marginBottom: '6px', fontSize: '11px', fontFamily: 'var(--mono)', borderRadius: '2px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <b>#{cmd.device_seq} {cmd.type}</b>
+                      <span className="badge amber">{cmd.status.toUpperCase()}</span>
+                    </div>
+                    <span style={{ color: 'var(--muted)', fontSize: '10px' }}>Key: {cmd.idempotency_key.slice(0, 18)}...</span>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div style={{ marginTop: '24px' }}>
               <button
                 type="button"
                 className="primary-button"

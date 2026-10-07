@@ -1,0 +1,16 @@
+{
+  "name": "Rivet Field App",
+  "short_name": "Rivet Field",
+  "description": "Evidence-preserving offline field execution app",
+  "start_url": "/tech",
+  "display": "standalone",
+  "background_color": "#eeece5",
+  "theme_color": "#252c28",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
