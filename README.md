@@ -120,7 +120,7 @@ The demo scenario, with the times the scripted clock uses. P1 request, 4-hour SL
 | --- | --- | --- |
 | `/` | Everyone | Landing page with a live service desk search over jobs, machines and technicians. |
 | `/control` | Coordinator, manager, auditor (read-only), admin | Dispatch board, risk radar, schedule solver, map of sites, billing adapter panel, job dossier drawer. |
-| `/portal` | Customer supervisor and requester | Request service, confirm access and permits, review the evidence, accept or dispute. |
+| `/portal` | Customer supervisor and requester | Report a fault on any of the site's machines, confirm access and permits, review the evidence, accept or dispute. |
 | `/passport` | Staff and customers | A machine's service history with chain head and verify, share and export. |
 | `/verify` | Anyone | Pin the provider key, open a signed record, remember verified heads. See [the verifier](#the-customer-verifier). |
 | `/gate` | Site supervisor | Enrol the plant gate key and show the rotating arrival QR. |
@@ -300,7 +300,7 @@ Open http://localhost:3000/control, choose **Sign in**, then either click one of
 
 ### Replay the M-104 story by hand
 
-1. Sign in as **coordinator** and click **New M-104 Request**. In the drawer, assign Ravi.
+1. Sign in as **coordinator** and click **New request**. The form is preset to M-104 and a hydraulic leak, which is the demo story; any machine you can see and either modelled fault can be reported. In the drawer that opens, assign Ravi.
 2. Open the **Schedule Solver** tab, pick Ravi and press **Report Dropout**. Read the impact graph, then the recovery plans.
 3. Approve Plan A. Priya takes J-2231.
 4. As an **admin**, use **Team access** to move the scripted clock (09:02 to 12:26) and to reset the demo data afterwards.
@@ -350,7 +350,7 @@ cd web ; npm run typecheck ; npm run build
 
 Or `make thesis`, `make test-ledger`, `make test-exceptions`, `make test-proof`, `make test-sync` for one area at a time.
 
-**121 backend tests** are collected; 118 run in a few seconds and the other three (the history seeder and the demo runner) take longer. Next.js type checking and the production build pass. Playwright specs for the field app, the report screen, sync and conflict screens, the map and the billing panel are in `web/e2e/`; they need `npx playwright install` and a running API, and have not been run in CI.
+**125 backend tests** are collected; 122 run in a few seconds and the other three (the history seeder and the demo runner) take longer. Next.js type checking and the production build pass. Playwright specs for the field app, the report screen, sync and conflict screens, the map and the billing panel are in `web/e2e/`; they need `npx playwright install` and a running API, and have not been run in CI.
 
 | What is proven | Where |
 | --- | --- |

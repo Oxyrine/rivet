@@ -8,6 +8,7 @@ import { DISPATCHERS } from '../../lib/roles';
 import { Plus, Wrench, Box, Route, Check, AlertTriangle, ArrowRight, ShieldCheck, RefreshCw } from 'lucide-react';
 import { CommitmentGraph } from '../../components/commitment-graph';
 import { PlanRanking } from '../../components/plan-ranking';
+import { RequestForm } from '../../components/request-form';
 import { RiskRadar } from '../../components/risk-radar';
 import { ReconciliationTable } from '../../components/reconciliation-table';
 import { Button } from '../../components/ui/button';
@@ -84,6 +85,7 @@ export default function ControlRoom() {
   const [filter, setFilter] = useState('all');
   const [tab, setTab] = useState('impact');
   const [lens, setLens] = useState<'risk' | 'recovery'>('risk');
+  const [composing, setComposing] = useState(false);
   const [tech, setTech] = useState('ravi');
   const [request, setRequest] = useState<ServiceRequest | null>(null);
   const [candidate, setCandidate] = useState('');
@@ -197,28 +199,6 @@ export default function ControlRoom() {
     if (result) setRecovery(null);
   }
 
-  async function create() {
-    const result = await action(
-      () =>
-        api('/requests', {
-          method: 'POST',
-          body: JSON.stringify({
-            machine_id: 'M-104',
-            fault: 'hydraulic_leak',
-            source: 'control-room',
-            description: 'Hydraulic pressure dropped below operating threshold',
-          }),
-        }),
-      'M-104 service request validated and initialized.'
-    );
-    if (result) {
-      const all = await api<any>('/jobs');
-      const list = Array.isArray(all) ? all : all.items || all.jobs || [];
-      const job = list.find((j: Job) => j.id === result.job_id);
-      if (job) await openJob(job);
-    }
-  }
-
   const riskOf = new Map(risk.map(r => [r.job_id, r]));
   const visible = jobs.filter(
     j =>
@@ -241,10 +221,30 @@ export default function ControlRoom() {
             {online ? 'LIVE STREAM' : 'AUTO-REFRESH'}
           </span>
         </div>
-        <button disabled={busy || !canAct} onClick={create} className={s.primary} title={canAct ? undefined : 'Your role can view requests but not create them'}>
-          <Plus size={15} aria-hidden="true" /> New M-104 Request
+        <button disabled={busy || !canAct} onClick={() => setComposing(!composing)} className={s.primary} aria-expanded={composing} title={canAct ? undefined : 'Your role can view requests but not create them'}>
+          <Plus size={15} aria-hidden="true" /> New request
         </button>
       </header>
+
+      {composing && canAct && (
+        <section className={s.panel} style={{ padding: '16px 20px', marginBottom: '16px' }} aria-label="New service request">
+          <h2 style={{ fontSize: '16px', marginBottom: '4px' }}>New service request</h2>
+          <p className={s.muted} style={{ fontSize: '13px', margin: '0 0 8px' }}>Pick the machine and the fault. The request is checked against the contract, skills, parts and tools, then opens in the job drawer for assignment.</p>
+          <RequestForm
+            onError={setError}
+            onDone={async (result, text) => {
+              setComposing(false);
+              setError('');
+              setNotice(text);
+              await load();
+              const all = await api<any>('/jobs');
+              const list = Array.isArray(all) ? all : all.items || all.jobs || [];
+              const job = list.find((j: Job) => j.id === result.job_id);
+              if (job) await openJob(job);
+            }}
+          />
+        </section>
+      )}
 
       {!session && (
         <div className={s.empty}>
@@ -358,7 +358,7 @@ export default function ControlRoom() {
             </table>
             {!visible.length && (
               <div className={s.empty}>
-                {session ? 'No jobs match this filter. Click "New M-104 Request" to dispatch.' : 'Operations telemetry will appear after sign-in.'}
+                {session ? 'No jobs match this filter. Click "New request" to dispatch.' : 'Operations telemetry will appear after sign-in.'}
               </div>
             )}
           </div>

@@ -6,6 +6,7 @@ import { ShieldCheck, ArrowUpRight, AlertTriangle, CheckCircle2, Lock } from 'lu
 import { api, useSession } from '@/lib/api';
 import { ReconciliationTable } from '@/components/reconciliation-table';
 import { StatusLabel } from '@/components/ui/status-label';
+import { RequestForm } from '@/components/request-form';
 
 export default function Portal() {
   const { session } = useSession();
@@ -93,10 +94,17 @@ export default function Portal() {
               </option>
             ))}
           </select>
-          <button className="primary-button" onClick={() => act('/requests', { machine_id: 'M-104', fault: 'hydraulic_leak', description: 'Urgent hydraulic leak' })}>
-            Request M-104 service
-          </button>
         </div>
+        <h3 style={{ margin: '16px 0 8px', fontSize: '15px' }}>Report a fault</h3>
+        <p className="muted" style={{ marginBottom: '8px', fontSize: '13px' }}>Choose the machine and the fault. A coordinator reviews the request, or it is approved automatically when a qualified technician, the parts and the tools are all available.</p>
+        <RequestForm
+          onError={text => say(text, true)}
+          onDone={async (result, text) => {
+            await refresh();
+            setSelected(result.job_id);
+            say(text, false);
+          }}
+        />
       </div>
 
       {j && (

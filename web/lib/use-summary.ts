@@ -24,16 +24,19 @@ export interface DashboardSummary {
   }[];
   machines?: {
     id: string;
+    name?: string;
     site_id: string;
+    eligible?: boolean;
   }[];
 }
 
 let cachedSummary: DashboardSummary | null = null;
+let cachedFor = ''; // whose summary this is: another role must never see it
 let lastFetch = 0;
 
 export function useSummary() {
   const { session } = useSession();
-  const [summary, setSummary] = useState<DashboardSummary | null>(cachedSummary);
+  const [summary, setSummary] = useState<DashboardSummary | null>(cachedFor === session?.user_id ? cachedSummary : null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -44,7 +47,7 @@ export function useSummary() {
     }
     const nowTime = Date.now();
     // Cache for 30 seconds unless forced
-    if (!force && cachedSummary && nowTime - lastFetch < 30000) {
+    if (!force && cachedSummary && cachedFor === session.user_id && nowTime - lastFetch < 30000) {
       setSummary(cachedSummary);
       return;
     }
@@ -53,6 +56,7 @@ export function useSummary() {
     try {
       const data = await api<DashboardSummary>('/dashboard/summary');
       cachedSummary = data;
+      cachedFor = session.user_id;
       lastFetch = Date.now();
       setSummary(data);
       setError('');
