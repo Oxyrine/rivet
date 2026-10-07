@@ -63,7 +63,9 @@ def rls_statements():
     return [f'ALTER TABLE {table} ENABLE ROW LEVEL SECURITY' for table in APP_TABLES]
 
 def fixture():
-    return LedgerState.from_dict(json.loads((ROOT / 'contract/fixtures/m104.json').read_text(encoding='utf-8')))
+    # RIVET_FIXTURE points at a baked seed (see scripts/bake_fixture.py); the shipped M-104 seed is the default.
+    path = Path(os.getenv('RIVET_FIXTURE') or ROOT / 'contract/fixtures/m104.json')
+    return LedgerState.from_dict(json.loads(path.read_text(encoding='utf-8')))
 
 class Store:
     def __init__(self, url=None):
