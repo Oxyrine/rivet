@@ -221,11 +221,15 @@ def approve_plan(state, plan_id, role, actor):
             if c.get('job_id') == job['id'] and c.get('type') in {'TECH_ASSIGN', 'TECHNICIAN_TIME', 'TIME_HOLD', 'TECH_TIME'} and c.get('state') in ACTIVE:
                 source = c.get('reservation_account', f"job:{job['id']}:allocated")
                 target = c.get('source', f"tech:{job.get('technician_id')}:{new.now[:10]}:free")
+                owner = new.technicians.get(c.get('owner'), {})
+                # A technician who dropped out cannot work these slots, so they never return to free.
+                if owner and not owner.get('available', True): target = f"tech:{c['owner']}:{new.now[:10]}:unavailable"
                 quantity = c.get('quantity', 0)
                 if quantity and new.balances.get(source+'|TIME', 0) >= quantity:
                     move(new, source, target, 'TIME', quantity, actor)
                 c['state'] = 'RELEASED'
         old = job.get('technician_id'); tid = assignment['technician_id']
+        if old and old != tid and old not in job.setdefault('reassigned_from', []): job['reassigned_from'].append(old)
         quantity = (job.get('duration_minutes', 60)+14)//15
         source, destination = f'tech:{tid}:{new.now[:10]}:free', f"job:{job['id']}:allocated"
         move(new, source, destination, 'TIME', quantity, actor)

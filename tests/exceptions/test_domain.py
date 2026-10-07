@@ -133,3 +133,13 @@ def test_joint_solver_matches_exhaustive_independent_oracle_100_seeds():
         expected=exhaustive_schedule_oracle(state,ordered)
         result=recovery(state,'dropped')
         assert result['plans'] and rank_key(result['plans'][0]) == expected, seed
+
+
+def test_recovery_records_origin_and_parks_dropped_time_as_unavailable():
+    new, _, result = dropout(scenario(), 'ravi')
+    applied, _, _ = approve_plan(new, result['plans'][0]['id'], 'coordinator', 'coordinator')
+    assert applied.jobs['J-2231']['reassigned_from'] == ['ravi']
+    date = applied.now[:10]
+    assert applied.balances.get(f'tech:ravi:{date}:unavailable|TIME', 0) > 0
+    assert applied.balances[f'tech:ravi:{date}:free|TIME'] == new.balances[f'tech:ravi:{date}:free|TIME']
+    assert invariants(applied)

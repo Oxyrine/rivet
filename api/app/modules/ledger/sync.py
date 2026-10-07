@@ -30,8 +30,10 @@ def presence(state, job, payload):
 def command(state, device, cmd, principal):
     job=state.jobs.get(cmd['job_id']);payload=cmd.get('payload',{});kind=cmd['type'];actor=principal['user_id']
     if not job or job['site_id'] not in principal['sites']:raise DomainError('NOT_FOUND','Job outside your scope',status=404)
-    if kind not in ('EvidenceAttached','TaskLogged','ReadingRecorded') and job.get('technician_id')!=principal.get('technician_id'):
-        # Facts remain linked to the old job; only state-changing actions are refused.
+    if job.get('technician_id')!=principal.get('technician_id'):
+        # Only a technician the job moved away from may leave facts, and they stay pending evidence:
+        # they never change the job's own tasks, checklist, parts or status.
+        if principal.get('technician_id') not in job.get('reassigned_from',[]):raise DomainError('NOT_FOUND','Job outside your scope',status=404)
         if payload:
             saved={'id':'pending-'+cmd['idempotency_key'],'job_id':job['id'],'payload':payload,'actor':actor,'pending':True}
             state.evidence[saved['id']]=saved;job['evidence'].append(saved['id'])
@@ -109,7 +111,8 @@ def replay(state, device_id, commands, principal):
         except DomainError as exc:outcome={'idempotency_key':key,'status':'rejected',**exc.as_dict()}
         history[key]=outcome;device['last_seq']=seq;results.append(outcome);count+=1
     keys={r['idempotency_key'] for r in results}
+    contiguous=str(device['last_seq']+1) in pending  # the next command is here: leftovers only wait for the per-request rate limit
     for cmd in commands:
-        if cmd['idempotency_key'] not in keys:results.append({'idempotency_key':cmd['idempotency_key'],'status':'held_gap','expected_seq':device['last_seq']+1})
+        if cmd['idempotency_key'] not in keys:results.append({'idempotency_key':cmd['idempotency_key'],'status':'deferred' if contiguous else 'held_gap','expected_seq':device['last_seq']+1})
     device['last_sync']=state.now
-    return {'results':results,'last_seq':device['last_seq'],'sequence_gaps':len(pending)}
+    return {'results':results,'last_seq':device['last_seq'],'sequence_gaps':0 if contiguous else len(pending)}

@@ -24,7 +24,7 @@ def test_gap_then_duplicate_replay():
 def test_stale_assignment_preserves_evidence_and_permit_gate():
     s,p=setup();r=replay(s,'device-ravi',[cmd(1,'StartWork')],p)
     assert r['results'][0]['code']=='PERMIT_PENDING'
-    s.jobs['J-2231']['technician_id']='priya'
+    s.jobs['J-2231'].update(technician_id='priya',reassigned_from=['ravi'])
     r=replay(s,'device-ravi',[cmd(2,'PartScanned',resource='HS-40',quantity=1)],p)
     assert r['results'][0]['code']=='JOB_REASSIGNED' and s.jobs['J-2231']['evidence']
     invariants(s)
@@ -41,3 +41,27 @@ def test_signed_arrival_requires_site_gps_and_rejects_expired_window():
     assert presence(s,s.jobs['J-2231'],{'arrival_code':code,'gps':{'lat_e6':0,'lng_e6':0}})=='weak'
     s.now=(datetime.fromisoformat(s.now)+timedelta(seconds=61)).isoformat()
     with pytest.raises(DomainError):presence(s,s.jobs['J-2231'],{'arrival_code':code})
+
+
+def test_reassigned_technician_facts_are_evidence_not_job_state():
+    s,p=setup();job=s.jobs['J-2231'];job['technician_id']='priya';job['reassigned_from']=['ravi']
+    out=replay(s,'device-ravi',[cmd(1,'TaskLogged',checklist=['isolate'])],p)['results'][0]
+    assert out['code']=='JOB_REASSIGNED'
+    assert job['checklist']==[] and job['tasks']==[] and job['evidence']
+    invariants(s)
+
+def test_unrelated_technician_cannot_write_to_a_job():
+    s,p=setup();job=s.jobs['J-2231'];job['technician_id']='priya'
+    for seq,kind in enumerate(('TaskLogged','ReadingRecorded','EvidenceAttached'),1):
+        out=replay(s,'device-ravi',[cmd(seq,kind,checklist=['isolate'])],p)['results'][0]
+        assert out['status']=='rejected' and out['code']=='NOT_FOUND',kind
+    assert job['checklist']==[] and job['evidence']==[] and not job.get('readings')
+
+def test_rate_limited_commands_are_deferred_not_reported_as_gaps():
+    s,p=setup()
+    out=replay(s,'device-ravi',[cmd(n) for n in range(1,13)],p)
+    statuses=[r['status'] for r in out['results']]
+    assert statuses.count('accepted')==10 and statuses.count('deferred')==2 and 'held_gap' not in statuses
+    assert out['sequence_gaps']==0
+    final=replay(s,'device-ravi',[cmd(11),cmd(12)],p)
+    assert [r['status'] for r in final['results']]==['accepted','accepted']

@@ -99,7 +99,7 @@ def telemetry(body:dict,p=Depends(require_roles('coordinator','admin'))):
             if previous and previous.get('state') in ('closed','awaiting_acceptance','closure_blocked'):
                 return domain.fix_failed(s,previous['id'],p['user_id'])
             return create_request(s,{'machine_id':machine_id,'fault':'hydraulic_leak','source':'simulated telemetry'})
-        j=next((j for j in reversed(list(s.jobs.values())) if j['machine_id']==machine_id and j['state']!='cancelled'),None)
+        j=next((j for j in reversed(list(s.jobs.values())) if j['machine_id']==machine_id and j['state'] not in ('cancelled','closed')),None)
         normal=body.get('status')=='running' and isinstance(body.get('pressure_bar'),int) and 120<=body['pressure_bar']<=160
         return domain.machine_running(s,j['id'],'simulated telemetry',p['user_id']) if j and normal else {'recorded':True,'fix_confirmed':False}
     return store.mutate(action,key=f"telemetry:{body.get('reading_id')}",body=body)

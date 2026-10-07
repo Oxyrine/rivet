@@ -107,3 +107,46 @@ def test_storekeeper_issue_scope_uses_source_warehouse():
     result=d.store_issue(s,j['id'],{'resource':'HS-40','quantity':1},s.users['storekeeper'])
     assert result['quantity']==1;assert s.balances['job:J-2240:issued|HS-40']==1
     assert s.users['storekeeper']['sites']==['site-b'];assert j['site_id']=='site-a'
+
+
+def test_closed_job_sla_is_immutable_after_acceptance():
+    s=state();clean(s);j=s.jobs['J-2240']
+    s.now='2026-10-07T06:50:00+00:00';d.check_out(s,'J-2240',{},'priya')
+    s.now='2026-10-07T07:00:00+00:00';d.machine_running(s,'J-2240','simulated telemetry','system')
+    d.accept(s,'J-2240',{'pin':'4826','device_id':'device-supervisor','report_hash':j['report_hash']},s.users['supervisor'])
+    sealed=(j['restored_at'],dict(j['sla']),len(s.events))
+    s.now='2026-10-07T18:00:00+00:00';d.machine_running(s,'J-2240','simulated telemetry','system')
+    assert (j['restored_at'],j['sla'])==sealed[:2] and len(s.events)==sealed[2]
+
+def test_telemetry_reading_does_not_touch_a_closed_job():
+    from fastapi.testclient import TestClient
+    from api.app.main import app
+    from api.app.core.runtime import store
+    store.reset()
+    def close_it(t):
+        t.jobs.pop('J-2253')  # leave J-2240 as the machine's only (and latest) job
+        t.jobs['J-2240'].update(state='closed',acceptance='Verified',restored_at='2026-10-07T06:50:00+00:00',checkout_at='2026-10-07T06:50:00+00:00',sla={'met':True})
+        t.now='2026-10-07T18:00:00+00:00'
+    store.mutate(close_it)
+    machine=store.read().jobs['J-2240']['machine_id']
+    with TestClient(app) as c:
+        h={'Authorization':'Bearer '+c.post('/auth/token',json={'user_id':'coordinator','otp':'246810'}).json()['access_token']}
+        r=c.post('/telemetry',json={'machine_id':machine,'reading_id':'later-1','status':'running','pressure_bar':140},headers=h)
+        assert r.status_code<300,r.text
+    assert store.read().jobs['J-2240']['sla']=={'met':True}
+
+def test_van_clearance_requires_a_van_issue_not_a_job_issue():
+    s=state();tech='priya';s.jobs['J-2240']['technician_id']=tech
+    s.events=[e for e in s.events if not(e['type']=='StoreIssued' and e['payload'].get('resource')=='O-RING')]
+    emit(s,'StoreIssued',s.jobs['J-2240']['machine_id'],{'job_id':'J-2240','resource':'O-RING','quantity':4,'technician_id':tech},'storekeeper')
+    d.submit_report(s,'J-2240',{'parts':{'HS-40':1,'O-RING':2},'checklist':s.metadata['required_checklist']},tech)
+    v=d.explain_variance(s,'J-2240',{'part':'O-RING','reason':'Used van stock'},tech)
+    assert not v['auto'] and v['requires_manager']
+
+def test_issued_but_unreported_part_can_be_closed_with_manager_signoff():
+    s=state();d.submit_report(s,'J-2240',{'parts':{},'checklist':s.metadata['required_checklist']},'priya')
+    assert s.jobs['J-2240']['reconciliation']['outcome']=='Unexplained'
+    v=d.explain_variance(s,'J-2240',{'part':'HS-40','reason':'Issued part returned to store'},'priya')
+    assert v['requires_manager'] and not v['approved'] and s.jobs['J-2240']['reconciliation']['outcome']=='Unexplained'
+    v=d.explain_variance(s,'J-2240',{'part':'HS-40','reason':'Issued part returned to store'},'manager',manager=True)
+    assert v['approved'] and s.jobs['J-2240']['reconciliation']['outcome']=='Explained variance'

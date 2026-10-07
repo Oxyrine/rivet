@@ -67,6 +67,14 @@ def candidates(state, job):
         result.append({**tech,'eligible':not reasons,'reason_codes':reasons})
     return sorted(result,key=lambda t:(not t['eligible'],t.get('travel_minutes',0),t['id']))
 
+def contention(state, parts, job_id):
+    lines=[]
+    for resource in parts:
+        left=sum(v for k,v in state.balances.items() if k.startswith('store:') and k.endswith(':available|'+resource))
+        holders=sorted({c['job_id'] for c in state.commitments.values() if c.get('resource')==resource and c.get('state') in ('HELD','ACTIVE') and c.get('job_id')!=job_id and str(c.get('source','')).startswith('store:')})
+        lines.append(f"{resource}: {left} left"+(' after '+', '.join(f"{h}'s hold" for h in holders) if holders else ''))
+    return '; '.join(lines)
+
 def create_request(state, command):
     machine=state.machines.get(command['machine_id'])
     if not machine or not machine.get('eligible'): raise DomainError('MACHINE_INELIGIBLE','Machine is not covered')
@@ -77,7 +85,7 @@ def create_request(state, command):
     parts=command.get('planned_parts', {'HS-40':1} if command.get('fault','hydraulic_leak')=='hydraulic_leak' else {})
     job={'id':job_id,'request_id':ident,'machine_id':machine['id'],'site_id':machine['site_id'],'priority':command.get('priority',machine['contract_id']),'fault':command.get('fault','hydraulic_leak'),'created_at':state.now,'deadline':(now(state)+timedelta(minutes=contract['resolution_minutes'])).isoformat(),'state':'pending_approval','technician_id':None,'duration_minutes':state.metadata['durations'].get(command.get('fault','hydraulic_leak'),60),'planned_parts':parts,'issued_parts':{},'evidence':[],'tasks':[],'checklist':[],'acceptance':'Pending','on_site':False}
     state.jobs[job_id]=job
-    checks={'eligible':True,'skills':any(c['eligible'] for c in candidates(state,job)),'parts':all(state.balances.get('store:site-b:available|'+r,0)>=q for r,q in parts.items()),'tools':state.balances.get('store:site-b:available|JACK',0)>0,'priority':job['priority'],'site_id':machine['site_id'],'contention':"HS-40: 1 left after J-2240's hold"}
+    checks={'eligible':True,'skills':any(c['eligible'] for c in candidates(state,job)),'parts':all(state.balances.get('store:site-b:available|'+r,0)>=q for r,q in parts.items()),'tools':state.balances.get('store:site-b:available|JACK',0)>0,'priority':job['priority'],'site_id':machine['site_id'],'contention':contention(state,parts,job_id)}
     request={'id':ident,'job_id':job_id,'machine_id':machine['id'],'source':command.get('source','portal'),'description':command.get('description',''),'state':'pending_approval','validation':checks}
     state.requests[ident]=request;machine['status']='Fault detected'
     emit(state,'RequestCreated',machine['id'],request,command.get('actor','system'));emit(state,'SlaStarted',machine['id'],{'job_id':job_id,'contract':contract},command.get('actor','system'))

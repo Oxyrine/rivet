@@ -21,7 +21,7 @@ def reconcile(s, job_id):
         store_records=[e for e in s.events if e['type']=='StoreIssued' and e['payload'].get('job_id')==job_id and e['payload'].get('resource')==part]
         issued=sum(e['payload']['quantity'] for e in store_records)
         v = s.variances.get(f'{job_id}:{part}', {})
-        explained = v.get('approved') and v.get('quantity') == max(0, claim-issued)
+        explained = v.get('approved') and v.get('quantity') == claim-issued
         unconfirmed=not store_records and part in j.get('planned_parts',{}) and not explained
         label = 'Unconfirmed' if unconfirmed else 'Clean' if claim == issued else 'Explained variance' if explained else 'Unexplained'
         unresolved |= label == 'Unexplained'
@@ -112,6 +112,7 @@ def store_issue(s,job_id,payload,principal):
     return {'job_id':job_id,'resource':resource,'quantity':quantity,'issued_parts':j['issued_parts']}
 
 def service_restored(s,j,actor):
+    if j.get('state')=='closed':return  # acceptance seals the outcome; later readings cannot move the clock
     checkout=instant(j['checkout_at']); running=instant(j['machine_running_at'])
     if running<checkout:
         j.pop('restored_at',None);j.pop('sla',None);j['fix_source']='unconfirmed';return
@@ -122,7 +123,9 @@ def service_restored(s,j,actor):
     job_event(s,j,'ServiceRestored',{'started_at':j['created_at'],'restored_at':stop,'sla':j['sla'],'contract':contract,'pauses':pauses},actor)
 
 def machine_running(s,job_id,source,actor):
-    j=s.jobs[job_id]; j.update(machine_running_at=s.now,fix_source=source)
+    j=s.jobs[job_id]
+    if j.get('state')=='closed':return j
+    j.update(machine_running_at=s.now,fix_source=source)
     s.machines[j['machine_id']]['status']='Running'
     job_event(s,j,'MachineRunning',{'source':source},actor)
     if j.get('checkout_at'): service_restored(s,j,actor)
@@ -137,14 +140,15 @@ def fix_failed(s,job_id,actor):
 
 def explain_variance(s,job_id,payload,actor,manager=False):
     j=s.jobs[job_id]; part=payload['part']; quantity=j.get('report',{}).get('parts',{}).get(part,0)-j.get('issued_parts',{}).get(part,0)
-    if quantity<=0: raise DomainError('NO_VARIANCE','No positive consumption variance for this part')
+    if quantity==0: raise DomainError('NO_VARIANCE','Reported and issued quantities already agree')
     key=f'{job_id}:{part}'
     if s.variances.get(key,{}).get('approved'): return s.variances[key]
     tech=j.get('technician_id'); reason=payload.get('reason'); balance=f'van:{tech}:stock|{part}'
     week=instant(s.now).isocalendar()[:2]
     count=sum(1 for v in s.variances.values() if v.get('technician_id')==tech and v.get('auto') and instant(v['at']).isocalendar()[:2]==week)
-    backing=any(e['type']=='StoreIssued' and e['payload'].get('technician_id')==tech and e['payload'].get('resource')==part for e in s.events)
-    auto=reason=='Used van stock' and backing and s.balances.get(balance,0)>=quantity and count<3
+    # Van stock enters only through a store issue into the van (no job attached), never a job issue.
+    backing=any(e['type']=='StoreIssued' and not e['payload'].get('job_id') and e['payload'].get('technician_id')==tech and e['payload'].get('resource')==part for e in s.events)
+    auto=quantity>0 and reason=='Used van stock' and backing and s.balances.get(balance,0)>=quantity and count<3
     if auto:
         from api.app.modules.ledger.domain import move
         move(s,f'van:{tech}:stock',f'job:{job_id}:consumed',part,quantity,actor)

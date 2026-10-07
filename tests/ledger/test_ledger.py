@@ -47,3 +47,13 @@ def test_persistence_idempotency_and_immutable_journal(tmp_path):
         with store.engine.begin() as conn:conn.execute(text("UPDATE event SET tenant_seq=99"))
     with pytest.raises(Exception):
         with store.engine.begin() as conn:conn.execute(text("DELETE FROM ledger_entry"))
+
+
+def test_contention_line_is_computed_from_the_ledger():
+    from api.app.core.runtime import fixture
+    from api.app.modules.ledger.domain import create_request
+    state=fixture();line=create_request(state,{'machine_id':'M-104'})['validation']['contention']
+    assert line=="HS-40: 1 left after J-2240's hold"
+    for key in [k for k in state.balances if k.startswith('store:') and k.endswith('|HS-40')]:state.balances[key]=0
+    state.jobs.pop('J-2231');state.requests.clear();state.metadata['next_request']=2231
+    assert create_request(state,{'machine_id':'M-104'})['validation']['contention']=="HS-40: 0 left after J-2240's hold"
