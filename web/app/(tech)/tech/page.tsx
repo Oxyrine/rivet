@@ -5,6 +5,7 @@ import apiClient from '@/lib/client';
 import { MOCK_SHIFTS, ShiftJob, ShiftCommitment, ShiftCacheResponse } from '@/lib/mock-shifts';
 import { JobCard } from './components/job-card';
 import { SyncScreen } from './components/sync-screen';
+import { ConflictScreen, ConflictCode } from './components/conflict-screen';
 import { registerServiceWorker } from '@/lib/offline/sw-register';
 import { storeShiftCache, getCachedShift, checkStaleStatus, StaleStatus } from '@/lib/offline/cache';
 import { getQueuedCommands, QueuedCommand, getQueueLimits, QueueLimits } from '@/lib/offline/queue';
@@ -54,8 +55,9 @@ export default function TechnicianFieldPage() {
   const [isIOS, setIsIOS] = useState<boolean>(false);
   const [limits, setLimits] = useState<QueueLimits>({ commandsCount: 0, maxCommands: 500, isWarning: false, isFull: false });
   const [syncResult, setSyncResult] = useState<SyncResultSummary | null>(null);
-  const [activeTab, setActiveTab] = useState<'jobs' | 'sync'>('jobs');
+  const [activeTab, setActiveTab] = useState<'jobs' | 'sync' | 'conflicts'>('jobs');
   const [syncScreenMode, setSyncScreenMode] = useState<'offline' | 'complete' | 'conflict'>('offline');
+  const [activeConflictCode, setActiveConflictCode] = useState<ConflictCode>('JOB_REASSIGNED');
 
   // Register Service Worker & Replay Listeners
   useEffect(() => {
@@ -181,12 +183,12 @@ export default function TechnicianFieldPage() {
 
   // Perform action using the unified offline-first action dispatcher
   const performAction = async (actionType: string, payload: Record<string, any> = {}) => {
-    if (!selectedJob) return;
+    const jobId = selectedJob ? selectedJob.id : (currentJobs[0]?.id || 'GENERAL');
     const deviceId = `device-${selectedTech}`;
 
     try {
       const cmd = await executeTechnicianAction(
-        { userId: selectedTech, deviceId, jobId: selectedJob.id },
+        { userId: selectedTech, deviceId, jobId },
         actionType,
         payload
       );
@@ -414,6 +416,14 @@ export default function TechnicianFieldPage() {
         >
           Sync Status Screen (Spec p.15)
         </button>
+        <button
+          type="button"
+          data-testid="tab-conflicts"
+          className={activeTab === 'conflicts' ? 'primary-button' : 'secondary-button'}
+          onClick={() => setActiveTab('conflicts')}
+        >
+          Conflict Center
+        </button>
       </div>
 
       {activeTab === 'jobs' ? (
@@ -469,7 +479,7 @@ export default function TechnicianFieldPage() {
             )}
           </div>
         </>
-      ) : (
+      ) : activeTab === 'sync' ? (
         /* Sync Screen Tab (Spec p.15) */
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -535,6 +545,56 @@ export default function TechnicianFieldPage() {
               const res = await replayPendingCommands(`device-${selectedTech}`, session?.token);
               setSyncScreenMode('complete');
             }}
+          />
+        </div>
+      ) : (
+        /* Conflict Center Tab (Spec p.14-15) */
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <div>
+              <span className="section-title">REPLAY CONFLICT & REJECTION RESOLUTION</span>
+              <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--muted)' }}>
+                Demonstrate each rejection code and evidence preservation
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              {(['JOB_REASSIGNED', 'PART_CONFLICT', 'VAN_STOCK', 'JOB_CANCELLED', 'EVIDENCE_MISSING'] as ConflictCode[]).map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  data-testid={`btn-select-conflict-${c.toLowerCase()}`}
+                  className={activeConflictCode === c ? 'primary-button' : 'secondary-button'}
+                  style={{ padding: '6px 10px', fontSize: '11px' }}
+                  onClick={() => setActiveConflictCode(c)}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <ConflictScreen
+            code={activeConflictCode}
+            jobId={selectedJob?.id || 'J-2236'}
+            data={{
+              reassignedTo: 'Priya',
+              reassignedAt: '10:15',
+              taskLogsCount: 4,
+              photosCount: 3,
+              partScansCount: 2,
+              heldForJob: 'J-2240',
+              partNumber: 'HS-40',
+              vanCovered: true,
+              vanQuantity: 2,
+              cancellationReason: 'Plant scheduled maintenance postponed.',
+              missingItems: [
+                'Before-repair photo of seal leak',
+                'Calibrated pressure reading (180 bar target)',
+                'Plant gate arrival timestamp confirmation'
+              ],
+            }}
+            onViewEvidence={() => alert('Viewing preserved evidence: 4 task logs, 3 photos, 2 part scans.')}
+            onReportDropout={() => performAction('ReportDropout', { reason: 'vehicle_breakdown' })}
           />
         </div>
       )}
