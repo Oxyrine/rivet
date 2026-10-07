@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '@/lib/api';
 import { Activity, Receipt, Anchor, Power, CheckCircle2, Clock } from 'lucide-react';
 
@@ -37,6 +37,8 @@ export function AdapterPanel() {
   const [invoices, setInvoices] = useState<DraftInvoice[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [notice, setNotice] = useState<string>('');
+  // The invoice feed reads the adapter's local SQLite file, so a deployed site has none.
+  const localFeed = useRef(true);
 
   const loadAdapters = useCallback(async () => {
     try {
@@ -50,14 +52,14 @@ export function AdapterPanel() {
   }, []);
 
   const loadInvoices = useCallback(async () => {
+    if (!localFeed.current) return;
     try {
-      const res = await fetch('/api/adapters/billing/invoices');
-      const data = await res.json();
+      const data = await api<{ invoices?: DraftInvoice[] }>('/adapters/billing/invoices');
       if (Array.isArray(data.invoices)) {
         setInvoices(data.invoices);
       }
-    } catch {
-      // ignore
+    } catch (err: any) {
+      if (err?.status === 404) localFeed.current = false;
     }
   }, []);
 
@@ -82,7 +84,7 @@ export function AdapterPanel() {
       });
 
       // 2. Trigger adapter sync / poll pass
-      await fetch('/api/adapters/billing/invoices', { method: 'POST' });
+      if (localFeed.current) await api('/adapters/billing/invoices', { method: 'POST' }).catch(() => undefined);
 
       // 3. Reload state
       await loadAdapters();

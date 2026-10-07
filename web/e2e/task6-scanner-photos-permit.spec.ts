@@ -2,11 +2,23 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Task 6: Photos, Scanner, Gate Arrival & Permit Lockout', () => {
   test('Step 1 & 2: Gate arrival code generation, scanning, and strong presence check-in', async ({ page }) => {
-    // 1. Visit Gate page and enroll site-a gate identity
+    // 1. Sign in as the site supervisor, then visit the Gate page and enroll the site-a gate identity
+    const authRes = await page.request.post('http://127.0.0.1:8000/auth/token', {
+      data: { user_id: 'supervisor', otp: '246810' },
+    });
+    const authData = await authRes.json();
+    await page.addInitScript((token) => {
+      localStorage.setItem('rivet.session', JSON.stringify({
+        user_id: 'supervisor',
+        role: 'supervisor',
+        token,
+        sites: ['site-a'],
+      }));
+    }, authData.access_token);
     await page.goto('/gate');
     await expect(page.locator('h1')).toContainText('Gate arrival verification');
 
-    // Click "Activate this gate" (automatically signs in as supervisor if needed and enrolls)
+    // Click "Activate this gate" (generates this device's key and enrolls its public half)
     const enrollBtn = page.locator('[data-testid="btn-enroll-gate"]');
     await enrollBtn.click();
 
