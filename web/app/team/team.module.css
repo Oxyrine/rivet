@@ -1,8 +1,49 @@
-.scroller{overflow-x:auto}
-.scroller table{min-width:640px}
-.scroller td{vertical-align:middle}
-.scroller input{min-width:220px}
-.sub{display:block;font:10px var(--mono);color:var(--muted);margin-top:3px}
-.ok{color:var(--green);background:#e9f0e2;border:1px solid #c6d4b0;border-radius:3px;padding:10px 12px;margin:0 0 14px}
-.danger{border-color:#dfafa2;color:var(--red)}
-.danger:enabled:hover{background:#f6e3dd;border-color:var(--red)}
+.scroller {
+  overflow-x: auto;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  margin-bottom: 20px;
+}
+
+.scroller table {
+  min-width: 680px;
+  margin: 0;
+}
+
+.scroller td {
+  vertical-align: middle;
+}
+
+.scroller input {
+  min-width: 220px;
+}
+
+.sub {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-2);
+  margin-top: 3px;
+  text-transform: uppercase;
+}
+
+.ok {
+  color: var(--positive);
+  background: var(--positive-surface);
+  border: 1px solid rgba(0, 135, 90, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  margin: 0 0 18px;
+  font-size: 14px;
+}
+
+.danger {
+  border-color: var(--critical);
+  color: var(--critical);
+}
+
+.danger:enabled:hover {
+  background: var(--critical-surface);
+  border-color: var(--critical);
+}

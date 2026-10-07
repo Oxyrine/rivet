@@ -1,28 +1,165 @@
-.wrap{display:grid;gap:14px}
-.empty{color:var(--muted);font-size:13px;margin:0}
-.error{color:#a53423;margin:0}
-.blocked{border:1px solid #dfafa2;background:#fff0e9;color:#a53423;border-radius:3px;padding:14px 16px;display:grid;gap:4px;font-size:13px}
-.scroller{overflow-x:auto}
-.table{min-width:680px;border:1px solid var(--border)}
-.table th{background:var(--panel-alt)}
-.table td{vertical-align:top;line-height:1.5}
-.table td small{display:block;font:10px var(--mono);color:var(--muted);margin-top:3px}
-.table td b{font-weight:600}
-.reason{color:#7a5a1e}
-.mark{display:inline-flex;align-items:center;gap:7px;font:11px var(--mono);white-space:nowrap}
-.mark i{font-style:normal;display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;font-weight:700}
-.good .mark{color:var(--green)}
-.good .mark i{background:#e2eadb}
-.warn .mark{color:#8a5a14}
-.warn .mark i{background:#f3e7d2}
-.bad .mark{color:var(--red)}
-.bad .mark i{background:#f6e3dd}
-tr.bad td{background:#fdf6f3}
-.foot{display:flex;flex-wrap:wrap;gap:8px 22px;align-items:center;font:11px var(--mono);color:var(--muted);border-top:1px solid var(--border);padding-top:12px}
-.foot b{font-weight:600;color:var(--text)}
-.foot b.good{color:var(--green)}
-.foot b.warn{color:#8a5a14}
-.foot b.bad,.foot .bad{color:var(--red)}
-.outcome{padding:5px 9px;border-radius:2px;background:#e1e5db;color:#53634b;text-transform:uppercase;letter-spacing:.6px}
-.outcome[data-outcome='Explained variance']{background:#f3e7d2;color:#8a5a14}
-.outcome[data-outcome='Unexplained']{background:#f6e3dd;color:var(--red)}
+.wrap {
+  display: grid;
+  gap: 16px;
+}
+
+.empty {
+  color: var(--ink-2);
+  font-size: 13.5px;
+  margin: 0;
+}
+
+.error {
+  color: var(--critical);
+  margin: 0;
+}
+
+.blocked {
+  border: 1px solid rgba(179, 0, 0, 0.25);
+  background: var(--critical-surface);
+  color: var(--critical);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  display: grid;
+  gap: 4px;
+  font-size: 13.5px;
+}
+
+.scroller {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.table {
+  min-width: 680px;
+  margin: 0;
+}
+
+.table th {
+  background: var(--surface-sunken);
+}
+
+.table td {
+  vertical-align: top;
+  line-height: 1.5;
+}
+
+.table td small {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-2);
+  margin-top: 3px;
+}
+
+.table td b {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.reason {
+  color: var(--warning);
+}
+
+.mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.mark i {
+  font-style: normal;
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-weight: 700;
+}
+
+.good .mark {
+  color: var(--positive);
+}
+
+.good .mark i {
+  background: var(--positive-surface);
+}
+
+.warn .mark {
+  color: var(--warning);
+}
+
+.warn .mark i {
+  background: var(--warning-surface);
+}
+
+.bad .mark {
+  color: var(--critical);
+}
+
+.bad .mark i {
+  background: var(--critical-surface);
+}
+
+tr.bad td {
+  background: var(--critical-surface);
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink-2);
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+
+.foot b {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.foot b.good {
+  color: var(--positive);
+}
+
+.foot b.warn {
+  color: var(--warning);
+}
+
+.foot b.bad,
+.foot .bad {
+  color: var(--critical);
+}
+
+.outcome {
+  padding: 5px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunken);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  border: 1px solid var(--line);
+}
+
+.outcome[data-outcome='Explained variance'] {
+  background: var(--warning-surface);
+  color: var(--warning);
+  border-color: rgba(183, 110, 0, 0.2);
+}
+
+.outcome[data-outcome='Unexplained'] {
+  background: var(--critical-surface);
+  color: var(--critical);
+  border-color: rgba(179, 0, 0, 0.2);
+}

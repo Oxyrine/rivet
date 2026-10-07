@@ -1,13 +1,20 @@
 import type { Metadata, Viewport } from 'next';
-import { Barlow_Condensed, IBM_Plex_Mono, IBM_Plex_Sans } from 'next/font/google';
+import { Space_Grotesk, Inter, IBM_Plex_Mono, Barlow_Condensed } from 'next/font/google';
 import './tokens.css';
 import './globals.css';
 import { AppShell } from '@/components/app-shell';
 
-const barlowCondensed = Barlow_Condensed({
+const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
-  weight: ['600'],
-  variable: '--font-barlow-condensed',
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-space-grotesk',
+  display: 'swap',
+});
+
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-inter',
   display: 'swap',
 });
 
@@ -18,10 +25,10 @@ const ibmPlexMono = IBM_Plex_Mono({
   display: 'swap',
 });
 
-const ibmPlexSans = IBM_Plex_Sans({
+const barlowCondensed = Barlow_Condensed({
   subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  variable: '--font-ibm-plex-sans',
+  weight: ['600'],
+  variable: '--font-barlow-condensed',
   display: 'swap',
 });
 
@@ -37,7 +44,21 @@ export const viewport: Viewport = {
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${barlowCondensed.variable} ${ibmPlexMono.variable} ${ibmPlexSans.variable}`}>
+    <html lang="en" className={`${spaceGrotesk.variable} ${inter.variable} ${ibmPlexMono.variable} ${barlowCondensed.variable}`} data-theme="gradient" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                const savedTheme = localStorage.getItem('rivet-theme');
+                if (savedTheme) {
+                  document.documentElement.setAttribute('data-theme', savedTheme);
+                }
+              } catch (e) {}
+            `,
+          }}
+        />
+      </head>
       <body>
         <a href="#main-content" className="skip-link">Skip to main content</a>
         <AppShell>{children}</AppShell>

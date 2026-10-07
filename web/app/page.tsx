@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ArrowUpRight, ArrowRight, Check, Search, LayoutDashboard, ClipboardCheck, Fingerprint, ScanLine, PackageCheck, Wrench, RefreshCw, ShieldCheck } from 'lucide-react';
 import { SessionBar } from '@/components/session-bar';
 import { Logo } from '@/components/logo';
+import { ThemeBar } from '@/components/theme-bar';
 import { api, useSession } from '@/lib/api';
 import s from './landing.module.css';
 
@@ -266,6 +267,7 @@ export default function Landing() {
           <a href="#how-it-works">How it works</a>
         </nav>
         <div className={s.navActions}>
+          <ThemeBar />
           <SessionBar />
           <Link href="/control" passHref>
             <Button variant="primary" style={{background: 'var(--surface)', color: 'var(--ink)'}}>Open workspace <ArrowUpRight size={15} /></Button>

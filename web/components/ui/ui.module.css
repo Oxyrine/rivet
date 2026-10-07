@@ -4,27 +4,36 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 8px 16px;
-  border-radius: 4px;
+  padding: 10px 20px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 500;
-  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: all 0.16s ease-in-out;
+  text-decoration: none;
+  white-space: nowrap;
 }
 
 .button:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 .primary {
-  background: var(--brand);
-  color: #FFFFFF;
-  border: 1px solid var(--brand);
+  background: var(--primary);
+  color: var(--on-primary);
+  border: 1px solid var(--primary);
 }
 
 .primary:hover:not(:disabled) {
   background: var(--brand-hover);
   border-color: var(--brand-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .secondary {
@@ -35,6 +44,8 @@
 
 .secondary:hover:not(:disabled) {
   background: var(--surface-sunken);
+  border-color: var(--ink-3);
+  color: var(--ink);
 }
 
 .quiet {
@@ -64,28 +75,32 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-family: var(--font-ibm-plex-mono), monospace;
-  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  font-size: 11px;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  border: 1px solid var(--line);
 }
 
 .statusPositive {
   color: var(--positive);
-  background: color-mix(in srgb, var(--positive) 8%, white);
+  background: var(--positive-surface);
+  border-color: rgba(0, 135, 90, 0.2);
 }
 
 .statusWarning {
   color: var(--warning);
-  background: color-mix(in srgb, var(--warning) 8%, white);
+  background: var(--warning-surface);
+  border-color: rgba(183, 110, 0, 0.2);
 }
 
 .statusCritical {
   color: var(--critical);
-  background: color-mix(in srgb, var(--critical) 8%, white);
+  background: var(--critical-surface);
+  border-color: rgba(179, 0, 0, 0.2);
 }
 
 .statusNeutral {
@@ -106,9 +121,11 @@
 }
 
 .sectionTitle {
-  font-size: 20px;
+  font-family: var(--font-display);
+  font-size: 24px;
   font-weight: 600;
   color: var(--ink);
+  letter-spacing: -0.3px;
 }
 
 .sectionDescription {

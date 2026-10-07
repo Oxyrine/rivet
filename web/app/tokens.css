@@ -1,17 +1,199 @@
-:root {
-  --canvas: #F4F5F3;
-  --surface: #FFFFFF;
-  --surface-sunken: #EEF0ED;
-  --ink: #202824;
-  --ink-2: #5B655F;
-  --line: #DDE2DD;
-  --line-control: #7D8780;
-  --brand: #B8491F;
-  --brand-hover: #9E3D1A;
-  --brand-on-dark: #E8884C;
-  --positive: #26704A;
-  --warning: #8A5A13;
-  --critical: #B33332;
+/* ==========================================================================
+   Design Tokens — Multi-Theme Support
+   Themes: Gradient (Default Editorial), Industrial (Rivet Amber), Dark Command
+   ========================================================================== */
 
-  /* Status label tinted backgrounds will be computed in components */
+:root,
+[data-theme="gradient"] {
+  /* Colors from Claude Gradient Design System Spec */
+  --primary: #17171c;
+  --cohere-black: #000000;
+  --ink: #212121;
+  --deep-green: #003c33;
+  --dark-navy: #071829;
+  --canvas: #ffffff;
+  --surface: #ffffff;
+  --surface-sunken: #f8f8f6;
+  --soft-stone: #eeece7;
+  --pale-green: #edfce9;
+  --pale-blue: #f1f5ff;
+  --hairline: #d9d9dd;
+  --border-light: #e5e7eb;
+  --card-border: #f2f2f2;
+  --muted: #93939f;
+  --slate: #75758a;
+  --body-muted: #616161;
+  --action-blue: #1863dc;
+  --focus-blue: #4c6ee6;
+  --coral: #ff7759;
+  --coral-soft: #ffad9b;
+  --form-focus: #9b60aa;
+  --on-primary: #ffffff;
+  --on-dark: #ffffff;
+  --error: #b30000;
+
+  /* Aliased Semantic Tokens */
+  --brand: #17171c;
+  --brand-hover: #000000;
+  --brand-accent: #ff7759;
+  --brand-on-dark: #ffad9b;
+  --ink-2: #616161;
+  --ink-3: #93939f;
+  --line: #e5e7eb;
+  --line-subtle: #f2f2f2;
+  --line-control: #d9d9dd;
+  --positive: #00875a;
+  --positive-surface: #edfce9;
+  --warning: #b76e00;
+  --warning-surface: #fff8e6;
+  --critical: #b30000;
+  --critical-surface: #ffebe6;
+
+  /* Typography Families */
+  --font-display: var(--font-space-grotesk), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-body: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), "SF Mono", Consolas, monospace;
+
+  /* Radius Scale */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-xl: 30px;
+  --radius-pill: 32px;
+  --radius-full: 9999px;
+  --radius: var(--radius-sm);
+  --radius-button: var(--radius-pill);
+
+  /* Spacing Scale */
+  --space-xxs: 2px;
+  --space-xs: 6px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-xxl: 32px;
+  --space-section: 80px;
+
+  /* Elevation */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.12);
+  --shadow-drawer: -12px 0 40px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="industrial"] {
+  --primary: #b8491f;
+  --cohere-black: #111613;
+  --ink: #202824;
+  --deep-green: #26704a;
+  --dark-navy: #192520;
+  --canvas: #f4f5f3;
+  --surface: #ffffff;
+  --surface-sunken: #eaede7;
+  --soft-stone: #e8eae3;
+  --pale-green: #eaf3ed;
+  --pale-blue: #eaf1f8;
+  --hairline: #dde2dd;
+  --border-light: #d6dcd6;
+  --card-border: #dde2dd;
+  --muted: #5b655f;
+  --slate: #66736c;
+  --body-muted: #5b655f;
+  --action-blue: #1c64c7;
+  --focus-blue: #b8491f;
+  --coral: #b8491f;
+  --coral-soft: #f2c7b8;
+  --form-focus: #b8491f;
+  --on-primary: #ffffff;
+  --on-dark: #ffffff;
+  --error: #b33332;
+
+  --brand: #b8491f;
+  --brand-hover: #a03d16;
+  --brand-accent: #b8491f;
+  --brand-on-dark: #e8a58d;
+  --ink-2: #5b655f;
+  --ink-3: #828e86;
+  --line: #dde2dd;
+  --line-subtle: #e5eae5;
+  --line-control: #cdd4cd;
+  --positive: #26704a;
+  --positive-surface: #eaf3ed;
+  --warning: #8a5a13;
+  --warning-surface: #f9f2e3;
+  --critical: #b33332;
+  --critical-surface: #f9e8e8;
+
+  --font-display: var(--font-barlow-condensed), Impact, sans-serif;
+  --font-body: var(--font-inter), Arial, sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), Consolas, monospace;
+
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-pill: 16px;
+  --radius-full: 9999px;
+  --radius: var(--radius-sm);
+  --radius-button: var(--radius-sm);
+}
+
+[data-theme="dark"] {
+  --primary: #ffffff;
+  --cohere-black: #000000;
+  --ink: #f0f4f1;
+  --deep-green: #0a4034;
+  --dark-navy: #050b12;
+  --canvas: #0c100e;
+  --surface: #141a17;
+  --surface-sunken: #090c0a;
+  --soft-stone: #1b2320;
+  --pale-green: #112a20;
+  --pale-blue: #101c2e;
+  --hairline: #222d28;
+  --border-light: #283630;
+  --card-border: #1e2823;
+  --muted: #83928a;
+  --slate: #94a39b;
+  --body-muted: #9ba8a0;
+  --action-blue: #4d93ff;
+  --focus-blue: #60a5fa;
+  --coral: #ff7759;
+  --coral-soft: #ffad9b;
+  --form-focus: #b580cf;
+  --on-primary: #121714;
+  --on-dark: #ffffff;
+  --error: #e04b4b;
+
+  --brand: #ff7759;
+  --brand-hover: #ff8c73;
+  --brand-accent: #ff7759;
+  --brand-on-dark: #ffad9b;
+  --ink-2: #8a9b92;
+  --ink-3: #5f7067;
+  --line: #232f29;
+  --line-subtle: #19221e;
+  --line-control: #2c3c34;
+  --positive: #34a86b;
+  --positive-surface: #102d1e;
+  --warning: #d98e18;
+  --warning-surface: #2d210b;
+  --critical: #e04b4b;
+  --critical-surface: #301111;
+
+  --font-display: var(--font-space-grotesk), sans-serif;
+  --font-body: var(--font-inter), sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), monospace;
+
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-pill: 32px;
+  --radius-full: 9999px;
+  --radius: var(--radius-sm);
+  --radius-button: var(--radius-pill);
 }
