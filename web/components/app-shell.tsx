@@ -7,6 +7,7 @@ import { Menu, X, Radio } from 'lucide-react';
 import { SessionBar } from '@/components/session-bar';
 import { Navigation } from '@/components/navigation';
 import { Logo } from '@/components/logo';
+import { DemoBanner, DemoPill } from '@/components/demo-notice';
 import { useSummary } from '@/lib/use-summary';
 import { useSession } from '@/lib/api';
 import { canOpen, destinationsFor, homeFor, roleLabel } from '@/lib/roles';
@@ -37,6 +38,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   if (pathname === '/') {
     return (
       <div className="homepage-wrapper">
+        <DemoBanner />
         {children}
       </div>
     );
@@ -72,6 +74,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       )}
       
       <div className="workspace-shell">
+        <DemoBanner />
         <header className="topbar">
           <div className={s.topbarLeft}>
             <button
@@ -87,6 +90,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className={s.topbarRight}>
+            <DemoPill />
             <div className={s.liveIndicator}>
               <span className={s.liveDot} />
               <span>LIVE TELEMETRY</span>

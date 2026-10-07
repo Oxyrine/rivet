@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSession } from '@/lib/api';
+import { getSession, useSession } from '@/lib/api';
 import apiClient from '@/lib/client';
 import { MOCK_SHIFTS, ShiftJob, ShiftCommitment, ShiftCacheResponse } from '@/lib/mock-shifts';
 import { JobCard } from './components/job-card';
@@ -48,6 +48,8 @@ export default function TechnicianFieldPage() {
   const { session, login } = useSession();
   const [selectedTech, setSelectedTech] = useState<'priya' | 'ravi'>(() => {
     if (typeof window !== 'undefined') {
+      const own = getSession()?.user_id; // a signed-in technician starts on their own shift
+      if (own === 'ravi' || own === 'priya') return own;
       const saved = localStorage.getItem('rivet.active-tech');
       if (saved === 'ravi' || saved === 'priya') return saved;
     }
@@ -193,8 +195,10 @@ export default function TechnicianFieldPage() {
 
   // Reload when the person signs in, so a signed-in technician replaces the fixture shift.
   useEffect(() => {
+    // A technician's session can only read their own shift; wait for the tab to follow the sign-in instead of asking for someone else's.
+    if (session?.role === 'technician' && (session.user_id === 'ravi' || session.user_id === 'priya') && session.user_id !== selectedTech) return;
     loadShift(selectedTech);
-  }, [selectedTech, loadShift, session?.token]);
+  }, [selectedTech, loadShift, session?.token, session?.role, session?.user_id]);
 
   const handleSwitchTech = async (tech: 'priya' | 'ravi') => {
     setSelectedTech(tech);

@@ -303,7 +303,9 @@
 }
 
 .tableWrap {
+  position: relative; /* keeps the table's visually hidden text inside the scroll area */
   overflow-x: auto;
+  max-width: 100%;
 }
 
 .tableWrap table {
@@ -895,4 +897,29 @@
   .hero h1 em {
     white-space: normal;
   }
+}
+
+/* Phones: the hero already has the control-room button, so the top bar keeps only the logo and sign-in. */
+@media (max-width: 550px) {
+  .nav {
+    gap: 12px;
+  }
+  .navWorkspaceButton {
+    display: none;
+  }
+}
+
+/* The how-it-works tabs scroll instead of pushing the page wider than the screen. */
+.workflowGrid > * {
+  min-width: 0;
+}
+
+.tabs {
+  overflow-x: auto;
+}
+
+.tab,
+.activeTab {
+  white-space: nowrap;
+  flex-shrink: 0;
 }

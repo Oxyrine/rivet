@@ -95,17 +95,6 @@ def provision(emails, client=None):
     return results
 
 
-def entry_link(email, client=None):
-    """A one-time Supabase login token for a demo account, so the browser can sign in without a password."""
-    client = client or admin_client()
-    base, headers = _admin()
-    response = client.post(f'{base}/generate_link', json={'type': 'magiclink', 'email': email}, headers=headers)
-    body = response.json() if response.status_code == 200 else {}
-    if not body.get('hashed_token'):
-        raise DomainError('ENTRY_UNAVAILABLE', 'The demo sign-in could not be prepared. Ask an administrator to create the demo logins again.', status=502)
-    return {'token_hash': body['hashed_token'], 'verification_type': body.get('verification_type', 'magiclink')}
-
-
 def remove(emails, client=None):
     """Delete the accounts. Returns the user ids whose account is gone (or never existed)."""
     client = client or admin_client()

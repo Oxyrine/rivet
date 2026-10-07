@@ -234,6 +234,7 @@ export default function Team() {
           One real sign-in for each role the demo walks through (coordinator, manager, supervisor, customer, storekeeper, auditor, and technicians ravi and priya),
           linked to its person automatically. They use plus-addresses of your own inbox, so a password reset can only reach you.
           Creating again gives every login a new password. Anyone already linked to a real address is left alone.
+          These are optional: while demo mode is on, the Sign in menu already lets anyone enter as these roles without an account.
         </p>
         <div className="toolbar">
           <button className="primary-button" disabled={!!busy} onClick={createLogins}>

@@ -292,7 +292,7 @@ In a second terminal:
 
 Not on Windows? `make api` starts the API (`uvicorn api.app.main:app --port 8000`), and `npm run dev` in `web/` starts the app. Set `ENV=demo` and `NEXT_PUBLIC_AUTH_MODE=demo` so the built-in demo sign-in is used even if Supabase values are present.
 
-Open http://localhost:3000/control, choose **Sign in**, then either click one of the **Enter as…** buttons or select a role, press **Request code** and **Continue** (demo mode fills the development code `246810`).
+Open http://localhost:3000/control, choose **Sign in**, then either click one of the **Enter as…** buttons (the menu carries a demo-only notice) or select a role, press **Request code** and **Continue** (demo mode fills the development code `246810`).
 
 - The API's interactive docs are at http://127.0.0.1:8000/docs.
 - Local data persists in `data/local-demo.db` and startup does not reset it. Keep the signing key when you keep the database, because customers pin its public key. Private evidence and signing keys are excluded from Git.
@@ -402,8 +402,8 @@ The split in production: **Render** runs the FastAPI container (one instance, be
 | `SUPABASE_SERVICE_KEY` | API only | Server-side admin access (evidence storage, demo accounts). Never in the browser. |
 | `BOOTSTRAP_ADMIN_EMAIL` | API | The address that maps to the `admin` user, so a fresh deployment cannot lock itself out. |
 | `EVIDENCE_BUCKET` | API | Storage bucket name, `evidence`. |
-| `DEMO_CONTROLS` | API | `1` gives admins the scripted clock, data reset and demo logins. Leave unset for real use. |
-| `DEMO_ENTER_ADMIN` | API | `1` adds Admin to the one-click demo entry. Unset it afterwards. |
+| `DEMO_CONTROLS` | API | `1` puts the site in demo mode: anyone can enter as the demo roles from the Sign in menu (no account), with a demo-only notice, and admins get the scripted clock and data reset. Demo phase only; leave unset for real use. |
+| `DEMO_ENTER_ADMIN` | API | `1` adds Admin to the open demo entry. Unset it afterwards. |
 | `RIVET_FIXTURE` | API | Path to a baked seed, so **Reset** restores history too. |
 | `API_URL` | Web, **at build time** | Where the Next.js proxy forwards `/api`. Next.js bakes rewrite targets into the build. |
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Web | Public values; see `web/.env.example`. |
@@ -419,7 +419,7 @@ A `keep-warm` GitHub Action pings the API, database and web app every five minut
 - **Database.** On Postgres, startup enables row-level security with no policies on every Rivet table, so Supabase's public REST keys cannot read them. The audit tables (events and ledger entries) are append-only, enforced by database triggers on both SQLite and Postgres.
 - **Evidence.** Files go to a private bucket and are checked against the ledger hash on every read.
 - **Idempotency.** Retried commands cannot double-apply.
-- **Demo mode.** One-click entry works only while `DEMO_CONTROLS=1`, never offers a real person's account, hands out a one-time Supabase token instead of a password, and is limited to 20 attempts a minute per address. Demo passwords are random, shown once and never stored.
+- **Demo mode is open by design.** While `DEMO_CONTROLS=1`, anyone who can open the site can enter as a demo role from the Sign in menu. The menu, a banner and a "DEMO ONLY" badge say so on every page. Demo tokens last 8 hours, name one role, are signed with the server's secret, stop working the moment the switch is turned off, exclude admin unless `DEMO_ENTER_ADMIN=1`, and are limited to 20 attempts a minute per address. Real Supabase sign-ins are unchanged. Turn the switch off when the demo phase ends.
 - **Privacy.** The audit trail stores only a hash of an email address. Technician location is recorded only at check-in, check-out and en route.
 
 ## Limits, and where the deck and the code differ

@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { api } from '@/lib/api';
+import { api, useSession } from '@/lib/api';
 import { Activity, Receipt, Anchor, Power, CheckCircle2, Clock } from 'lucide-react';
 
 export interface InvoiceLine {
@@ -39,6 +39,7 @@ export function AdapterPanel() {
   const [notice, setNotice] = useState<string>('');
   // The invoice feed reads the adapter's local SQLite file, so a deployed site has none.
   const localFeed = useRef(true);
+  const { session } = useSession();
 
   const loadAdapters = useCallback(async () => {
     try {
@@ -64,6 +65,7 @@ export function AdapterPanel() {
   }, []);
 
   useEffect(() => {
+    if (!session) return; // signed out: nothing to read, and every poll would be a 401
     loadAdapters();
     loadInvoices();
     const interval = setInterval(() => {
@@ -71,7 +73,7 @@ export function AdapterPanel() {
       loadInvoices();
     }, 3000);
     return () => clearInterval(interval);
-  }, [loadAdapters, loadInvoices]);
+  }, [loadAdapters, loadInvoices, session]);
 
   const toggleBilling = async () => {
     setLoading(true);

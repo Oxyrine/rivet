@@ -6,6 +6,7 @@ import { ownsPage, homeFor } from '@/lib/roles';
 import { api, useSession } from '@/lib/api';
 import { hostedAuth, supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
+import { DemoNotice } from '@/components/demo-notice';
 
 const ENTRY_ORDER = ['coordinator', 'manager', 'supervisor', 'requester', 'storekeeper', 'auditor', 'ravi', 'priya', 'admin'];
 const ENTRY_LABELS: Record<string, string> = {
@@ -84,22 +85,24 @@ function HostedSignIn({ adopt, onDone }: { adopt: (token: string) => Promise<unk
   const enter = async (userId: string) => {
     setEntering(userId); setError('');
     try {
-      const link = await api<{ token_hash: string; verification_type: string }>('/auth/demo-entry', { method: 'POST', body: JSON.stringify({ user_id: userId }) });
-      const { data, error } = await supabase().auth.verifyOtp({ token_hash: link.token_hash, type: link.verification_type as 'email' });
-      if (error || !data.session) throw error ?? new Error('The demo sign-in was not accepted.');
-      await finish(data.session.access_token);
+      const entry = await api<{ access_token: string }>('/auth/demo-entry', { method: 'POST', body: JSON.stringify({ user_id: userId }) });
+      // A leftover real sign-in would otherwise be sent instead of the demo token.
+      await supabase().auth.signOut({ scope: 'local' });
+      await adopt(entry.access_token);
+      onDone();
     } catch (err) { setError((err as Error).message); }
     finally { setEntering(''); }
   };
   
   return (
     <form className="login-popover panel" style={{position: 'absolute', right: 0, top: '48px', width: '344px', zIndex: 50, background: 'var(--surface)', padding: '24px', borderRadius: '8px', boxShadow: '0 12px 35px rgba(32,40,36,0.15)', border: '1px solid var(--line)'}} onSubmit={e => { e.preventDefault(); void (useCode ? (sent ? verify() : send()) : withPassword()); }}>
-      <h3 style={{marginBottom: '16px'}}>Sign in to your workspace</h3>
+      <h3 style={{marginBottom: '12px'}}>Sign in to your workspace</h3>
+      {entryRoles.length > 0 && <DemoNotice />}
       <DemoEntry roles={entryRoles} busy={entering} onEnter={enter} />
-      {entryRoles.length > 0 && <div style={{fontSize: '12px', color: 'var(--ink-2)', margin: '4px 0 12px'}}>Or sign in with your email</div>}
-      <label style={{display: 'block', marginBottom: '12px', fontSize: '12px', color: 'var(--ink-2)'}}>Work email<input type="email" required autoComplete="username" value={email} disabled={useCode && sent} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" style={{marginTop: '6px'}}/></label>
-      {!useCode && <label style={{display: 'block', marginBottom: '16px', fontSize: '12px', color: 'var(--ink-2)'}}>Password<input type="password" required autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} style={{marginTop: '6px'}}/></label>}
-      {useCode && sent && <label style={{display: 'block', marginBottom: '16px', fontSize: '12px', color: 'var(--ink-2)'}}>6-digit code<input value={code} onChange={e => setCode(e.target.value)} placeholder="123456" inputMode="numeric" autoComplete="one-time-code" maxLength={8} required autoFocus style={{marginTop: '6px'}}/></label>}
+      {entryRoles.length > 0 && <div style={{fontSize: '12px', color: 'var(--ink-2)', margin: '4px 0 12px'}}>Team members: sign in with your email</div>}
+      <label style={{display: 'block', marginBottom: '12px', fontSize: '12px', color: 'var(--ink-2)'}}>Work email<input type="email" required autoComplete="username" value={email} disabled={useCode && sent} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" style={{marginTop: '6px', display: 'block', width: '100%'}}/></label>
+      {!useCode && <label style={{display: 'block', marginBottom: '16px', fontSize: '12px', color: 'var(--ink-2)'}}>Password<input type="password" required autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} style={{marginTop: '6px', display: 'block', width: '100%'}}/></label>}
+      {useCode && sent && <label style={{display: 'block', marginBottom: '16px', fontSize: '12px', color: 'var(--ink-2)'}}>6-digit code<input value={code} onChange={e => setCode(e.target.value)} placeholder="123456" inputMode="numeric" autoComplete="one-time-code" maxLength={8} required autoFocus style={{marginTop: '6px', display: 'block', width: '100%'}}/></label>}
       {useCode && sent && <Button type="button" variant="quiet" disabled={busy} onClick={() => { setSent(false); setCode(''); setError(''); }}>Use a different email</Button>}
       {error && <div role="alert" style={{padding: '12px', background: 'var(--surface-sunken)', color: 'var(--critical)', borderRadius: '4px', marginBottom: '16px', fontSize: '13px'}}>{error}</div>}
       <div style={{display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px'}}>
@@ -150,7 +153,8 @@ export function SessionBar() {
           catch (err) { setError((err as Error).message); }
           finally { setBusy(false); }
         }}>
-          <h3 style={{marginBottom: '16px'}}>Sign in to your workspace</h3>
+          <h3 style={{marginBottom: '12px'}}>Sign in to your workspace</h3>
+          <DemoNotice />
           <DemoEntry
             roles={ENTRY_ORDER}
             busy={entering}
@@ -163,12 +167,12 @@ export function SessionBar() {
           />
           <div style={{fontSize: '12px', color: 'var(--ink-2)', margin: '4px 0 12px'}}>Or use a one-time code</div>
           <label style={{display: 'block', marginBottom: '12px', fontSize: '12px', color: 'var(--ink-2)'}}>Demo account
-            <select value={user} onChange={e => setUser(e.target.value)} style={{marginTop: '6px'}}>
+            <select value={user} onChange={e => setUser(e.target.value)} style={{marginTop: '6px', display: 'block', width: '100%'}}>
               {['coordinator', 'manager', 'supervisor', 'requester', 'ravi', 'priya', 'storekeeper', 'auditor', 'admin'].map(u => <option key={u}>{u}</option>)}
             </select>
           </label>
           <label style={{display: 'block', marginBottom: '16px', fontSize: '12px', color: 'var(--ink-2)'}}>One-time code
-            <input value={otp} onChange={e => setOtp(e.target.value)} placeholder="Enter your OTP" inputMode="numeric" autoComplete="one-time-code" style={{marginTop: '6px'}}/>
+            <input value={otp} onChange={e => setOtp(e.target.value)} placeholder="Enter your OTP" inputMode="numeric" autoComplete="one-time-code" style={{marginTop: '6px', display: 'block', width: '100%'}}/>
           </label>
           <div style={{marginBottom: '16px'}}>
             <Button type="button" variant="quiet" disabled={busy} onClick={async () => {

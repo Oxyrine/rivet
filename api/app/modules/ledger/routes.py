@@ -139,21 +139,22 @@ def demo_entry_options():
     if not _entry_open():return {'enabled':False,'roles':[]}
     from . import demo_accounts
     s=store.read()
-    roles=[{'user_id':u,'role':s.users[u]['role']} for u in demo_accounts.entry_users() if u in s.users and demo_accounts.is_demo_email(s.users[u].get('email'))]
+    roles=[{'user_id':u,'role':s.users[u]['role']} for u in demo_accounts.entry_users() if u in s.users]
     return {'enabled':bool(roles),'roles':roles}
 
 @router.post('/auth/demo-entry')
 def demo_entry(body:dict,request:Request):
-    """One-click sign-in for a demo account: a one-time Supabase token, only while demo controls are on. A real person's account is never offered."""
+    """Sign in as a demo role with one click, for a demo only: anyone who can open the site may use it, and it exists only while DEMO_CONTROLS is on.
+    No account is involved. The token names a demo role and the server accepts it for that role alone (admin needs DEMO_ENTER_ADMIN)."""
     if not _entry_open():raise DomainError('FORBIDDEN','Demo entry is off on this server',status=403)
     _throttle_entry(request)
     from . import demo_accounts
     user_id=str(body.get('user_id') or '')
     if user_id not in demo_accounts.entry_users():raise DomainError('FORBIDDEN','That role is not available for demo entry',status=403)
     user=store.read().users.get(user_id)
-    if not user or not demo_accounts.is_demo_email(user.get('email')):
-        raise DomainError('NOT_READY','Demo logins are not set up yet. An administrator can create them on the Team access page.',status=409)
-    return JSONResponse(demo_accounts.entry_link(user['email']),headers={'Cache-Control':'no-store'})
+    if not user:raise DomainError('NOT_FOUND','That demo role does not exist on this server',status=404)
+    from api.app.core.auth import demo_token
+    return JSONResponse({'access_token':demo_token(user_id),'token_type':'bearer','principal':{k:v for k,v in user.items() if k!='pin'}},headers={'Cache-Control':'no-store'})
 
 @router.post('/auth/refresh')
 def refresh(body:dict):

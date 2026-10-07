@@ -1,5 +1,5 @@
 import os
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 import jwt
 from fastapi import Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -30,6 +30,27 @@ def jwks_client():
         _jwks = jwt.PyJWKClient(os.environ['SUPABASE_URL'].rstrip('/') + '/auth/v1/.well-known/jwks.json', cache_keys=True, lifespan=3600)
     return _jwks
 
+def demo_open():
+    """A hosted server an operator has put into demo mode: visitors may enter as the demo roles without an account."""
+    return hosted() and os.getenv('DEMO_CONTROLS') == '1'
+
+def demo_token(user_id, hours=8):
+    """A short-lived token for a demo role. It uses the real clock: the scripted demo clock may sit far from it."""
+    issued = datetime.now(timezone.utc)
+    return jwt.encode({'sub': user_id, 'kind': 'demo', 'iat': issued, 'exp': issued + timedelta(hours=hours)}, SECRET, algorithm='HS256')
+
+def demo_user(token):
+    """The demo role a demo token names, None when the token is not one of ours (Supabase then decides)."""
+    try:
+        payload = jwt.decode(token, SECRET, algorithms=['HS256'])
+    except Exception:
+        return None
+    from api.app.modules.ledger.demo_accounts import entry_users
+    user = store.read().users.get(payload.get('sub'))
+    if payload.get('kind') != 'demo' or not user or payload['sub'] not in entry_users():
+        raise unauthenticated()
+    return user.copy()
+
 def unauthenticated(message='Token is expired or invalid'):
     return DomainError('UNAUTHENTICATED', message, status=401)
 
@@ -56,6 +77,8 @@ def supabase_user(claims):
 def identify(token):
     """The single place a bearer token becomes a Rivet user (HTTP, websocket and idempotency all use it)."""
     if hosted():
+        if demo_open() and (user := demo_user(token)):
+            return user
         return supabase_user(supabase_claims(token))
     try:
         payload = jwt.decode(token, SECRET, algorithms=['HS256'])

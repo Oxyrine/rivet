@@ -46,9 +46,15 @@ Signing in and demo controls are separate switches. `ENV=production` means only 
 
 The same page links each person to a Supabase sign-in, and can create the demo sign-ins itself.
 
-**Demo logins.** With `DEMO_CONTROLS=1` and `SUPABASE_SERVICE_KEY` set on the API, the Team access page has a **Demo logins** panel. *Create demo logins* makes one real Supabase account per demo role (coordinator, manager, supervisor, requester, storekeeper, auditor, and technicians ravi and priya) and links each to its person. The accounts are plus-addresses of the administrator's own inbox (for example `you+rivet-ravi@gmail.com`), so a password reset can only reach the administrator. Passwords are random and shown once, never stored; running it again rotates them. A person who already has a real address linked is skipped. Sign in with the email and password from the top bar. After the demo, press *Remove demo logins* (or turn `DEMO_CONTROLS` off) so no shared passwords stay live.
+**Open demo entry.** With `DEMO_CONTROLS=1`, the Sign in menu shows a "Demo only" notice and *Enter as...* buttons for the demo roles (coordinator, manager, site supervisor, customer, storekeeper, auditor, and technicians Ravi and Priya). Nobody types a password and no account has to exist. This is for the demo phase only and is deliberately open: **anyone who can open the site can enter as these roles**, and a "DEMO ONLY" badge and banner stay on every page while it is on. Details:
 
-**One-click entry.** Once the logins exist, the Sign in menu shows *Enter as...* buttons for them, so nobody types a password on stage. The server hands the browser a one-time Supabase token for the demo account (no password involved). It only works while `DEMO_CONTROLS=1`, never offers a real person's account, and is rate limited to 20 tries a minute per address. Admin is left out because an admin can reset data and create accounts; set `DEMO_ENTER_ADMIN=1` on the API to add it, and unset it afterwards. While `DEMO_CONTROLS=1` is on, anyone who opens the site can enter as these demo roles, so keep it on only for the demo and turn it off afterwards.
+- The server hands the browser a short-lived token (8 hours) that names a demo role. It is accepted for that role alone, signed with `JWT_SECRET`, and works only while `DEMO_CONTROLS=1`. Turn the switch off and every demo session stops working at once.
+- Admin is left out because an admin can reset data. Set `DEMO_ENTER_ADMIN=1` to add it, and unset it afterwards.
+- Real sign-ins are unaffected: staff still sign in with their linked email and password or a code, and the API still verifies Supabase tokens exactly as before.
+- Entry is limited to 20 tries a minute per address.
+- Everyone shares one set of sample data. Use **Reset** on the Team page to restore it, and turn `DEMO_CONTROLS` off when the demo phase is over.
+
+**Demo logins (optional).** The Team access page can also create one real Supabase account per demo role (plus-addresses of the administrator's own inbox, random passwords shown once, never stored) and remove them again. Open entry above does not need them. They are useful if you want a role to sign in with a real password.
 
 ## Local fallback
 
