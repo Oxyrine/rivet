@@ -32,9 +32,9 @@ export function Logo({ variant = 'light', ...props }: LogoProps) {
         <title>Rivet</title>
         <style>{`
           .cursive-r-compact {
-            stroke-dasharray: 140;
-            stroke-dashoffset: 140;
-            animation: drawCompactR 1s cubic-bezier(0.42, 0, 0.25, 1) 0.1s forwards;
+            stroke-dasharray: 120;
+            stroke-dashoffset: 120;
+            animation: drawCompactR 0.9s cubic-bezier(0.42, 0, 0.25, 1) 0.1s forwards;
           }
           @keyframes drawCompactR {
             to { stroke-dashoffset: 0; }
@@ -43,10 +43,14 @@ export function Logo({ variant = 'light', ...props }: LogoProps) {
             .cursive-r-compact { stroke-dashoffset: 0 !important; animation: none !important; }
           }
         `}</style>
-        <g stroke={strokeColor} strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
+        <g stroke={strokeColor} strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
           <path
             className="cursive-r-compact"
-            d="M 10,12 L 10,38 M 10,12 C 16,8 28,9 28,18 C 28,24 20,24 10,24 C 15,24 20,28 25,38"
+            d="
+              M 12,10 L 10,34
+              M 10,34 C 11,24 13,10 20,7 C 27,4 34,7 34,15 C 34,22 26,23 15,23
+              C 20,23 24,28 28,34
+            "
           />
         </g>
       </svg>
@@ -55,25 +59,25 @@ export function Logo({ variant = 'light', ...props }: LogoProps) {
 
   return (
     <svg
-      viewBox="0 0 126 46"
+      viewBox="0 0 118 44"
       fill="none"
       aria-label="Rivet"
       role="img"
       style={{
         display: 'block',
         width: 'auto',
-        height: 34,
-        minWidth: 104,
+        height: 32,
+        minWidth: 98,
         overflow: 'visible',
       }}
       {...props}
     >
       <title>Rivet</title>
       <style>{`
-        .rivet-cursive-word {
-          stroke-dasharray: 360;
-          stroke-dashoffset: 360;
-          animation: drawCursiveWord 1.6s cubic-bezier(0.42, 0, 0.25, 1) 0.1s forwards;
+        .rivet-cursive-main {
+          stroke-dasharray: 380;
+          stroke-dashoffset: 380;
+          animation: drawCursiveRivet 1.6s cubic-bezier(0.42, 0, 0.25, 1) 0.1s forwards;
         }
         .rivet-cursive-crossbar {
           stroke-dasharray: 20;
@@ -82,10 +86,10 @@ export function Logo({ variant = 'light', ...props }: LogoProps) {
         }
         .rivet-cursive-dot {
           opacity: 0;
-          transform-origin: 38px 12px;
+          transform-origin: 35px 13px;
           animation: popCursiveDot 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) 1.55s forwards;
         }
-        @keyframes drawCursiveWord {
+        @keyframes drawCursiveRivet {
           to { stroke-dashoffset: 0; }
         }
         @keyframes drawCursiveCross {
@@ -96,7 +100,7 @@ export function Logo({ variant = 'light', ...props }: LogoProps) {
           to { opacity: 1; transform: scale(1); }
         }
         @media (prefers-reduced-motion: reduce) {
-          .rivet-cursive-word,
+          .rivet-cursive-main,
           .rivet-cursive-crossbar {
             stroke-dashoffset: 0 !important;
             animation: none !important;
@@ -108,47 +112,45 @@ export function Logo({ variant = 'light', ...props }: LogoProps) {
           }
         }
       `}</style>
-      <g stroke={strokeColor} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-        {/* 
-          Spacious, perfectly kerned cursive wordmark:
-          R: (12..28), i: (38..42), v: (54..72), e: (78..88), t: (102..114)
-          Each letter is distinctly separated with natural flowing connectors.
-        */}
+      <g stroke={strokeColor} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+        {/* Continuous calligraphic handwriting path for 'Rivet' */}
         <path
-          className="rivet-cursive-word"
+          className="rivet-cursive-main"
           d="
-            M 12,10 L 12,36
-            M 12,10 C 18,8 28,9 28,17 C 28,23 20,23 12,23
-            C 17,23 22,27 26,36
-            C 30,36 34,26 38,20
-            L 38,36
-            C 43,36 49,26 54,20
-            C 57,28 60,36 63,36
-            C 66,36 69,26 72,20
-            C 74,20 76,21 78,21
-            C 82,18 87,20 87,25
-            C 87,29 80,28 78,28
-            C 76,33 80,36 85,36
-            C 90,36 97,22 102,10
-            L 102,34
-            C 102,36 106,36 112,34
+            M 12,10 L 10,34
+            M 10,34 C 11,24 13,10 20,7 C 27,4 34,7 34,15 C 34,22 26,23 15,23
+            C 19,23 23,28 26,34
+            C 29,34 32,26 35,20
+            L 35,34
+            C 38,34 43,26 47,20
+            C 49,27 52,34 55,34
+            C 58,34 62,26 64,20
+            C 66,19 68,22 70,26
+            C 71,29 71,34 74,34
+            C 76,30 79,20 83,20
+            C 85,20 86,23 85,26
+            C 83,28 77,29 76,31
+            C 75,33 77,34 81,34
+            C 86,34 92,20 95,8
+            L 95,32
+            C 95,34 98,34 104,31
           "
         />
 
         {/* Accented Cursive Crossbar on 't' */}
         <path
           className="rivet-cursive-crossbar"
-          d="M 95,20 L 109,20"
+          d="M 89,18 L 101,18"
           stroke={accentColor}
-          strokeWidth="2.8"
+          strokeWidth="2.6"
         />
 
         {/* Accented Dot on 'i' */}
         <circle
           className="rivet-cursive-dot"
-          cx="38"
-          cy="12"
-          r="2.2"
+          cx="35"
+          cy="13"
+          r="2"
           fill={accentColor}
           stroke="none"
         />
