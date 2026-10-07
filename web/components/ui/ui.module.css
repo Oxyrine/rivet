@@ -1,0 +1,118 @@
+/* Button */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.primary {
+  background: var(--brand);
+  color: #FFFFFF;
+  border: 1px solid var(--brand);
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--brand-hover);
+  border-color: var(--brand-hover);
+}
+
+.secondary {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line-control);
+}
+
+.secondary:hover:not(:disabled) {
+  background: var(--surface-sunken);
+}
+
+.quiet {
+  background: transparent;
+  color: var(--ink-2);
+  border: 1px solid transparent;
+}
+
+.quiet:hover:not(:disabled) {
+  color: var(--ink);
+  background: var(--surface-sunken);
+}
+
+.danger {
+  background: var(--critical);
+  color: #FFFFFF;
+  border: 1px solid var(--critical);
+}
+
+.danger:hover:not(:disabled) {
+  background: #902928;
+  border-color: #902928;
+}
+
+/* StatusLabel */
+.statusLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.statusPositive {
+  color: var(--positive);
+  background: color-mix(in srgb, var(--positive) 8%, white);
+}
+
+.statusWarning {
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 8%, white);
+}
+
+.statusCritical {
+  color: var(--critical);
+  background: color-mix(in srgb, var(--critical) 8%, white);
+}
+
+.statusNeutral {
+  color: var(--ink-2);
+  background: var(--surface-sunken);
+}
+
+/* SectionHeader */
+.sectionHeader {
+  margin-bottom: 24px;
+}
+
+.sectionHeaderTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.sectionTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.sectionDescription {
+  margin-top: 4px;
+  color: var(--ink-2);
+  font-size: 14px;
+}

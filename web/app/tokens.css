@@ -1,0 +1,17 @@
+:root {
+  --canvas: #F4F5F3;
+  --surface: #FFFFFF;
+  --surface-sunken: #EEF0ED;
+  --ink: #202824;
+  --ink-2: #5B655F;
+  --line: #DDE2DD;
+  --line-control: #7D8780;
+  --brand: #B8491F;
+  --brand-hover: #9E3D1A;
+  --brand-on-dark: #E8884C;
+  --positive: #26704A;
+  --warning: #8A5A13;
+  --critical: #B33332;
+
+  /* Status label tinted backgrounds will be computed in components */
+}

@@ -1,11 +1,45 @@
 'use client';
-import {usePathname} from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { Menu } from 'lucide-react';
 import { SessionBar } from '@/components/session-bar';
 import { Navigation } from '@/components/navigation';
-export function AppShell({children}:{children:React.ReactNode}) {
-  const pathname=usePathname();
-  if(pathname==='/')return <>{children}</>;
-  return <div className="app-shell"><aside className="sidebar"><Link href="/" className="brand" aria-label="Rivet home"><div className="brand-full" aria-hidden="true"><svg viewBox="0 0 215 56" fill="none"><path d="M 17 12 C 14 8, 20 4, 26 4.5 C 29 4.8, 28 8, 25 11 C 22 14, 21 21, 20 28 C 19 35, 17.5 42, 15.5 44 C 14 44.5, 13 43, 14 40 C 15.5 34, 18 22, 20.5 15 C 21.5 12, 20 8, 17 12 Z" fill="#e8884c"/><path d="M 18 24 C 21 16, 28 6.5, 38 5.5 C 47 4.5, 54 9, 53.5 17.5 C 53 25, 46 29.5, 36 29.5 C 30 29.5, 25 27, 21 23 C 24 25, 29 27, 35 27 C 43 27, 49 22.5, 48.5 17 C 48 11.5, 43 8.5, 36 9 C 29 9.5, 22 15, 18 24 Z" fill="#e8884c"/><path d="M 32 27 C 30 28, 29 30, 31 32 C 34 35, 38.5 39.5, 46 42.5 C 64 48.5, 110 49, 156 47.8 C 179 47.2, 199 44.5, 208 41 C 210 40, 208.5 38.5, 206.5 39.5 C 198 42.8, 178 45.2, 155 45.8 C 111 47, 66 46.5, 48 40.5 C 41.5 38, 37.5 33.5, 34.5 29 C 36 28.5, 35 26.8, 32 27 Z" fill="#e8884c"/><text x="56" y="26" fill="#f7f6f0" fontFamily="'IBM Plex Sans', -apple-system, sans-serif" fontSize="22" fontWeight="700" letterSpacing="-0.5px">ivet</text><text x="57" y="38.5" fill="#9da597" fontFamily="'IBM Plex Mono', monospace" fontSize="7.5" fontWeight="600" letterSpacing="1.3px">BUILT FOR THE FIELD</text></svg></div><div className="brand-compact" aria-hidden="true"><svg viewBox="0 0 54 50" fill="none"><path d="M 14 12 C 11 8, 17 4, 23 4.5 C 26 4.8, 25 8, 22 11 C 19 14, 18 21, 17 28 C 16 35, 14.5 42, 12.5 44 C 11 44.5, 10 43, 11 40 C 12.5 34, 15 22, 17.5 15 C 18.5 12, 17 8, 14 12 Z" fill="#e8884c"/><path d="M 15 24 C 18 16, 25 6.5, 35 5.5 C 44 4.5, 51 9, 50.5 17.5 C 50 25, 43 29.5, 33 29.5 C 27 29.5, 22 27, 18 23 C 21 25, 26 27, 32 27 C 40 27, 46 22.5, 45.5 17 C 45 11.5, 40 8.5, 33 9 C 26 9.5, 19 15, 15 24 Z" fill="#e8884c"/><path d="M 29 27 C 27 28, 26 30, 28 32 C 31 35, 35.5 39.5, 43 42.5 C 48 44.5, 51 45, 53 43 C 54 42, 53 41, 51 40.5 C 45 39, 39.5 34.5, 33.5 29 C 34 28.5, 32 26.8, 29 27 Z" fill="#e8884c"/></svg></div></Link><div className="nav-label">OPERATIONS / INDEX</div><Navigation/><div className="sidebar-bottom"><div className="rail-drawing" aria-hidden="true"><svg viewBox="0 0 180 110" fill="none"><path d="M15 85h150M30 85V25h120v60M45 25v14h90V25M65 39v25h50V39M56 70h68v15M90 8v17M48 15h84M12 95h156" stroke="currentColor"/><circle cx="151" cy="43" r="13" stroke="currentColor"/><path d="m151 43 6-6M151 56v29M79 49h22M90 42v14" stroke="currentColor"/></svg></div><span className="rail-caption">KEEP GOOD MACHINES RUNNING.</span><div className="rail-footer">INDUSTRIAL SERVICES <span>R / 01</span></div></div></aside><div className="workspace"><header className="topbar"><span className="breadcrumb">FIELD OPERATIONS <span>/</span> SERVICE NETWORK</span><SessionBar/></header><main>{children}</main></div></div>;
+import { Logo } from '@/components/logo';
+import { useSummary } from '@/lib/use-summary';
+import s from './shell.module.css';
+
+export function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const { summary } = useSummary();
+  
+  if (pathname === '/') return <>{children}</>;
+  
+  const siteScope = summary?.sites?.map(s => s.name).join(', ') || 'All sites';
+
+  return (
+    <div className="app-shell">
+      <aside className="sidebar">
+        <Link href="/" className={s.brandLink} aria-label="Rivet home">
+          <Logo variant="dark" />
+        </Link>
+        <Navigation />
+      </aside>
+      
+      <div className="workspace">
+        <header className="topbar">
+          <div className={s.topbarLeft}>
+            <button className={s.menuButton} aria-label="Open menu">
+              <Menu size={20} />
+            </button>
+            <span className={s.sitesScope}>
+              Sites: {siteScope}
+            </span>
+          </div>
+          <SessionBar />
+        </header>
+        <main>{children}</main>
+      </div>
+    </div>
+  );
 }
 

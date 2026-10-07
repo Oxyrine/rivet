@@ -1,0 +1,79 @@
+.brandLink {
+  display: block;
+  margin-bottom: 48px;
+  padding: 0 8px;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.navGroup {
+  margin-top: auto;
+}
+
+.navGroupTitle {
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 11px;
+  color: var(--ink-2);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 32px 8px 12px;
+}
+
+.navLink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 4px;
+  color: #bac1b4;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.navLink:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--surface);
+}
+
+.navLinkActive {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.navLinkActive:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.topbarLeft {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 14px;
+}
+
+.sitesScope {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+/* Mobile Menu Button */
+.menuButton {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--ink);
+  padding: 8px;
+  cursor: pointer;
+}
+
+@media (max-width: 900px) {
+  .menuButton {
+    display: block;
+  }
+}
