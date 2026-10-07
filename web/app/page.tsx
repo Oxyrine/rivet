@@ -18,7 +18,7 @@ const stages=[
  {label:'Handle a change',title:'See the impact before you change the plan.',description:'Trace a dropout through connected jobs, compare recovery options and approve the right reassignment.',Icon:RefreshCw},
  {label:'Close with evidence',title:'Make every sign-off easy to check.',description:'Reconcile the materials and service evidence, then let the customer accept the exact report.',Icon:ShieldCheck},
 ];
-function Wordmark(){return <span className={s.wordmark}><svg aria-hidden="true" viewBox="0 0 32 32"><path d="M6 4h12c7 0 10 4 10 9 0 4-2 7-6 8l7 8h-9l-6-8h-1v8H6V4zm7 6v6h5c3 0 4-1 4-3s-1-3-4-3h-5z" fill="currentColor"/></svg>ivet</span>}
+function Wordmark(){return <span className={s.wordmark}><span className={s.wordmarkBadge} aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M6 4h7c3.3 0 5.5 1.8 5.5 4.5 0 2.1-1.3 3.6-3.4 4.1l3.9 7.4h-3.8l-3.3-6.6H9.2V20H6V4zm3.2 2.7v4.6h3.6c1.5 0 2.5-.8 2.5-2.3 0-1.4-1-2.3-2.5-2.3H9.2z" fill="currentColor"/></svg></span><span className={s.wordmarkTitle}>RIVET</span></span>}
 function ServiceDesk(){
  const {session}=useSession();const[jobs,setJobs]=useState<Job[]>([]),[search,setSearch]=useState(''),[priority,setPriority]=useState('all'),[loading,setLoading]=useState(false),[error,setError]=useState('');
  const refresh=useCallback(async()=>{if(!session){setJobs([]);setError('');return}setLoading(true);try{const data=await api<Job[]|{items?:Job[];jobs?:Job[]}>('/jobs');setJobs(Array.isArray(data)?data:data.items||data.jobs||[]);setError('')}catch(e){setError((e as Error).message)}finally{setLoading(false)}},[session]);
