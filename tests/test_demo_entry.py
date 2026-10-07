@@ -12,7 +12,9 @@ def demo(hosted, monkeypatch):
     monkeypatch.setenv('DEMO_CONTROLS', '1')
     monkeypatch.delenv('DEMO_ENTER_ADMIN', raising=False)
     routes._entry_hits.clear()
-    return hosted
+    yield hosted
+    # reset keeps email links on purpose, so leave none behind for the tests that run after this one
+    store.mutate(lambda s: [u.pop('email', None) for u in s.users.values()])
 
 
 def enter(client, user_id, **headers):
