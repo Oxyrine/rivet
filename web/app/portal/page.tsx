@@ -32,6 +32,14 @@ export default function Portal() {
 
   useEffect(() => {
     if (session) refresh().catch(e => setMessage(e.message));
+    else {
+      // Signed out (or switched role): nothing from the last person stays on screen.
+      setJobs([]);
+      setDetail(null);
+      setSelected('');
+      setRecon(null);
+      setPin('');
+    }
   }, [session]);
 
   useEffect(() => {
@@ -65,6 +73,11 @@ export default function Portal() {
       setBusy(false);
     }
   };
+
+  // The server lets only the site supervisor (and an admin) accept a report, dispute a line or confirm the machine runs.
+  // A requester can raise requests and confirm access, so those controls say so instead of failing when clicked.
+  const canSignOff = ['supervisor', 'admin'].includes(session?.role ?? '');
+  const supervisorOnly = 'Only the site supervisor can do this';
 
   const stateLabel: Record<string, string> = { PROPOSED: 'Awaiting your confirmation', HELD: 'Confirmed', FULFILLED: 'Fulfilled' };
 
@@ -150,10 +163,11 @@ export default function Portal() {
             ))}
             <div className="toolbar" style={{ marginTop: '16px' }}>
               <button className="secondary-button" disabled={busy} onClick={() => act(`/pauses/pause:${selected}/confirm`, {}, 'Permit pause confirmed.', 'No permit pause is recorded yet. One starts when the technician waits on the permit.')}>Confirm recorded permit pause</button>
-              <button className="secondary-button" disabled={busy || !!j.machine_running_at} onClick={() => act(`/jobs/${selected}/machine-running`, {}, 'Machine running confirmed.')}>Confirm machine running</button>
+              <button className="secondary-button" disabled={busy || !canSignOff || !!j.machine_running_at} title={canSignOff ? undefined : supervisorOnly} onClick={() => act(`/jobs/${selected}/machine-running`, {}, 'Machine running confirmed.')}>Confirm machine running</button>
             </div>
             <p className="muted" style={{ fontSize: '13px', marginTop: '12px' }}>
               Machine running: {j.machine_running_at ? `confirmed ${new Date(j.machine_running_at).toLocaleString()}` : 'not confirmed yet'}
+              {!canSignOff && !j.machine_running_at && ' · the site supervisor confirms this'}
             </p>
           </section>
 
@@ -169,33 +183,44 @@ export default function Portal() {
               </div>
             )}
 
-            <div style={{ margin: '20px 0', padding: '16px', background: 'var(--surface-sunken)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', marginBottom: '16px', fontWeight: 500 }}>
-                <input type="checkbox" checked={presence} onChange={e => setPresence(e.target.checked)} />
-                <span>I confirm the technician was present at this site.</span>
-              </label>
-
-              <div className="toolbar">
-                <input
-                  type="password"
-                  inputMode="numeric"
-                  placeholder="Supervisor PIN (e.g. 246810)"
-                  value={pin}
-                  onChange={e => setPin(e.target.value)}
-                  style={{ width: '220px' }}
-                />
-                <button
-                  className="primary-button"
-                  disabled={!j.report_hash || blocked}
-                  onClick={() => act(`/jobs/${selected}/accept`, { pin, device_id: session?.device_id, report_hash: j.report_hash, confirm_presence: presence })}
-                >
-                  <ShieldCheck size={16} /> Accept this exact report
-                </button>
+            {canSignOff ? (
+              <div style={{ margin: '20px 0', padding: '16px', background: 'var(--surface-sunken)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', marginBottom: '16px', fontWeight: 500 }}>
+                  <input type="checkbox" checked={presence} onChange={e => setPresence(e.target.checked)} />
+                  <span>I confirm the technician was present at this site.</span>
+                </label>
+  
+                <div className="toolbar">
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    placeholder="Supervisor PIN"
+                    value={pin}
+                    onChange={e => setPin(e.target.value)}
+                    style={{ width: '220px' }}
+                  />
+                  <button
+                    className="primary-button"
+                    disabled={!j.report_hash || blocked}
+                    onClick={() => act(`/jobs/${selected}/accept`, { pin, device_id: session?.device_id, report_hash: j.report_hash, confirm_presence: presence })}
+                  >
+                    <ShieldCheck size={16} /> Accept this exact report
+                  </button>
+                  <Link className="secondary-button" href={`/verify?job=${selected}`}>
+                    Check signed history
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div data-testid="supervisor-only" style={{ margin: '20px 0', padding: '16px', background: 'var(--surface-sunken)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)' }}>
+                <p style={{ margin: '0 0 12px' }}>
+                  <strong>Accepting a report is done by the site supervisor.</strong> You can follow the evidence here and check the signed history.
+                </p>
                 <Link className="secondary-button" href={`/verify?job=${selected}`}>
                   Check signed history
                 </Link>
               </div>
-            </div>
+            )}
 
             {blocked && (
               <div role="status" className="error-banner" style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
@@ -215,13 +240,14 @@ export default function Portal() {
             <p className="muted" style={{ marginBottom: '16px' }}>
               Only the named lines are held. Other invoice lines remain payable.
             </p>
+            {!canSignOff && <p className="muted" style={{ fontSize: '13px', marginBottom: '12px' }}>Disputes are raised by the site supervisor.</p>}
             <div className="toolbar">
-              <select value={line} onChange={e => setLine(e.target.value)} aria-label="Select line to dispute">
+              <select value={line} disabled={!canSignOff} onChange={e => setLine(e.target.value)} aria-label="Select line to dispute">
                 {['labour', 'sla', 'presence', 'fix', ...Object.keys(j.report?.parts || {})].map(x => (
                   <option key={x} value={x}>{x}</option>
                 ))}
               </select>
-              <button className="secondary-button" onClick={() => act(`/jobs/${selected}/dispute`, { lines: [line], reason: 'Customer requests review' })}>
+              <button className="secondary-button" disabled={busy || !canSignOff} title={canSignOff ? undefined : supervisorOnly} onClick={() => act(`/jobs/${selected}/dispute`, { lines: [line], reason: 'Customer requests review' })}>
                 Dispute selected line
               </button>
             </div>

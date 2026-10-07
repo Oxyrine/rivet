@@ -80,3 +80,12 @@ def test_the_auditor_reads_everything_but_changes_nothing(client):
     assert client.get('/dashboard/summary', headers=headers).status_code == 200
     assert client.post('/requests', json={'machine_id': 'M-104', 'fault': 'hydraulic_leak'}, headers=headers).status_code == 403
     assert client.post('/admin/clock', json={'advance': 60}, headers=headers).status_code == 403
+
+
+def test_only_the_supervisor_can_accept_dispute_or_confirm_the_machine_runs(client):
+    """The portal shows these controls to a requester as unavailable; this is the rule behind that."""
+    requester, supervisor = sign_in(client, 'requester'), sign_in(client, 'supervisor')
+    for path, body in (('/jobs/J-2236/accept', {}), ('/jobs/J-2236/dispute', {'lines': ['labour']}), ('/jobs/J-2236/machine-running', {})):
+        assert client.post(path, json=body, headers=requester).status_code == 403, path
+    assert client.post('/jobs/J-2236/dispute', json={'lines': ['labour']}, headers=supervisor).status_code == 200
+    assert client.post('/customer-commitments/time:J-2236/confirm', json={}, headers=requester).status_code != 403  # requesters still confirm access and permits

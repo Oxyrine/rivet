@@ -120,7 +120,7 @@ The demo scenario, with the times the scripted clock uses. P1 request, 4-hour SL
 | --- | --- | --- |
 | `/` | Everyone | Landing page with a live service desk search over jobs, machines and technicians. |
 | `/control` | Coordinator, manager, auditor (read-only), admin | Dispatch board, risk radar, schedule solver, map of sites, billing adapter panel, job dossier drawer. |
-| `/portal` | Customer supervisor and requester | Report a fault on any of the site's machines, confirm access and permits, review the evidence, accept or dispute. |
+| `/portal` | Customer supervisor and requester | Report a fault on any of the site's machines, confirm access and permits, review the evidence. Only the supervisor accepts a report or disputes a line. |
 | `/passport` | Staff and customers | A machine's service history with chain head and verify, share and export. |
 | `/verify` | Anyone | Pin the provider key, open a signed record, remember verified heads. See [the verifier](#the-customer-verifier). |
 | `/gate` | Site supervisor | Enrol the plant gate key and show the rotating arrival QR. |
@@ -330,8 +330,8 @@ python -m adapters.billing.main --poll   # run the billing adapter against the A
 | coordinator | Control room | Dispatch, requests, recovery plans | Everything |
 | manager | Control room | The same, plus approvals that need a manager | Everything |
 | auditor | Control room (read-only) | Nothing | Reads the whole record |
-| supervisor (customer site lead) | Customer approvals | Confirms access and permits, accepts reports, enrols the gate | Customer view |
-| requester (customer) | Customer approvals | Requests service, confirms, disputes | Customer view |
+| supervisor (customer site lead) | Customer approvals | Confirms access and permits and that the machine runs, accepts reports, disputes lines, enrols the gate | Customer view |
+| requester (customer) | Customer approvals | Requests service, confirms access and permits | Customer view |
 | storekeeper | Service records | Issues parts through the API | No jobs (no stores screen yet) |
 | technician | Field app | Own job actions, report, evidence | Own jobs only, no dispatcher ranking |
 
@@ -350,7 +350,7 @@ cd web ; npm run typecheck ; npm run build
 
 Or `make thesis`, `make test-ledger`, `make test-exceptions`, `make test-proof`, `make test-sync` for one area at a time.
 
-**125 backend tests** are collected; 122 run in a few seconds and the other three (the history seeder and the demo runner) take longer. Next.js type checking and the production build pass. Playwright specs for the field app, the report screen, sync and conflict screens, the map and the billing panel are in `web/e2e/`; they need `npx playwright install` and a running API, and have not been run in CI.
+**126 backend tests** are collected; 123 run in a few seconds and the other three (the history seeder and the demo runner) take longer. Next.js type checking and the production build pass. Playwright specs for the field app, the report screen, sync and conflict screens, the map and the billing panel are in `web/e2e/`; they need `npx playwright install` and a running API, and have not been run in CI.
 
 | What is proven | Where |
 | --- | --- |
