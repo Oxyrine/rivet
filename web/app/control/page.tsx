@@ -9,6 +9,9 @@ import { CommitmentGraph } from '../../components/commitment-graph';
 import { PlanRanking } from '../../components/plan-ranking';
 import { ReconciliationTable } from '../../components/reconciliation-table';
 import { Button } from '../../components/ui/button';
+import { AdapterPanel } from './components/adapter-panel';
+import { StatusChip } from '../../components/status-chip';
+import { MapView } from '../../components/map';
 
 type TechnicianCandidate = {
   id: string;
@@ -496,6 +499,9 @@ export default function ControlRoom() {
         </aside>
       </div>
 
+      <MapView />
+      <AdapterPanel />
+
       {/* Slide-out Job Inspection Drawer */}
       {selected && (
         <div className={s.overlay} onClick={dismiss}>
@@ -511,7 +517,7 @@ export default function ControlRoom() {
 
             <div style={{ display: 'flex', gap: '8px', margin: '12px 0 20px' }}>
               <span className={selected.priority === 'P1' ? s.priority : s.neutral}>{selected.priority}</span>
-              <span className={s.state}>{selected.state.replaceAll('_', ' ')}</span>
+              <StatusChip job={selected} size="md" />
             </div>
 
             <h3>Service Window Telemetry</h3>

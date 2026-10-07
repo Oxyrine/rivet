@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ClipboardCheck, Fingerprint, ScanLine, BadgeCheck, UsersRound } from 'lucide-react';
+import { LayoutDashboard, ClipboardCheck, Fingerprint, ScanLine, BadgeCheck, UsersRound, Wrench } from 'lucide-react';
 import { useSession } from '../lib/api';
 import s from './shell.module.css';
 
@@ -11,6 +11,7 @@ const destinations = [
   { href: '/passport', label: 'Machine passports', Icon: BadgeCheck },
   { href: '/verify', label: 'Service records', Icon: Fingerprint },
   { href: '/gate', label: 'Site arrival', Icon: ScanLine },
+  { href: '/tech', label: 'Field app', Icon: Wrench },
 ];
 
 const adminOnly = [
