@@ -1,0 +1,36 @@
+# Render blueprint for the Rivet API. The database, login and evidence photos live on Supabase.
+# Run exactly one instance: the 60-second scheduler and the websocket both run inside the process.
+services:
+  - type: web
+    name: rivet-api
+    runtime: docker
+    dockerfilePath: ./api/Dockerfile
+    dockerContext: .
+    region: singapore
+    plan: starter
+    healthCheckPath: /health
+    numInstances: 1
+    envVars:
+      # Anything other than demo/test makes sign-in fail closed (503) until Supabase Auth is wired in.
+      - key: ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      # Supabase Postgres connection string (session pooler). Rivet adds the psycopg driver name itself.
+      - key: DATABASE_URL
+        sync: false
+      # base64 of 32 random bytes; generate once, back it up, never change it (see docs/hosting.md).
+      - key: RIVET_SIGNING_KEY
+        sync: false
+      - key: RIVET_KEY_ID
+        value: k-2026-01
+      # Comma-separated web origins, for example https://rivet.example.com
+      - key: CORS_ORIGINS
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      # Server-side only. Never put this in the web app or a browser.
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: EVIDENCE_BUCKET
+        value: evidence

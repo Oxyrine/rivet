@@ -31,12 +31,12 @@ def reconcile(s, job_id):
     rows.append({'check': 'Mandatory checklist', 'missing': missing, 'outcome': 'Unexplained' if missing else 'Clean', 'strength': 'technician report'})
     required = {'before_photo', 'after_photo'}
     evidence_types=set()
-    from api.app.modules.ledger.uploads import data_dir
+    from api.app.core.storage import evidence_store
     for identifier in j.get('evidence',[]):
         evidence=s.evidence.get(identifier,{})
         if evidence.get('job_id')!=job_id or not evidence.get('authentic') or not evidence.get('sha256'):continue
-        path=data_dir()/evidence['sha256']
-        if path.is_file() and sha256(path.read_bytes()).hexdigest()==evidence['sha256']:
+        content=evidence_store().get(evidence['sha256'])
+        if content is not None and sha256(content).hexdigest()==evidence['sha256']:
             evidence_types.add(evidence.get('type'))
     missing_photos = sorted(required-evidence_types)
     unresolved |= bool(missing_photos)

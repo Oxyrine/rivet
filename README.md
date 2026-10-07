@@ -19,6 +19,8 @@ In a second terminal, run `./scripts/run-local.ps1 web`. Open http://localhost:3
 
 The API runs at http://127.0.0.1:8000 and interactive API documentation at `/docs`. Local data persists in `data/local-demo.db`; startup does not reset it. Private evidence and signing keys are excluded from Git. Keep the signing key when keeping the database, because customers pin its public key.
 
+To host the API on Render with Supabase for the database, login and evidence photos, see [docs/hosting.md](docs/hosting.md).
+
 `docker compose up --build` supplies PostgreSQL, API and web services with persistent database, evidence and key volumes. Docker was unavailable on the build machine, so this path is supplied but unverified. These are development configurations, not a production deployment.
 
 ## Implemented

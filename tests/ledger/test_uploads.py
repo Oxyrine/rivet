@@ -20,7 +20,8 @@ def test_upload_retries_signature_hash_and_private_scope(monkeypatch,tmp_path):
     with pytest.raises(DomainError):record_upload(s,{**body,'content_base64':base64.b64encode(PNG+b'other').decode()},p)
     with pytest.raises(DomainError):attach_uploaded(s,'J-2231',{'photo_id':'photo-a','type':'after_photo'},'ravi')
     with pytest.raises(DomainError):uploaded_content(s,'photo-a',s.users['priya'])
-    path,_=uploaded_content(s,'photo-a',p);path.write_bytes(b'corrupted')
+    content,_=uploaded_content(s,'photo-a',p);assert content==PNG
+    (tmp_path/'evidence'/record['sha256']).write_bytes(b'corrupted')
     with pytest.raises(DomainError):uploaded_content(s,'photo-a',p)
 
 def test_missing_or_invalid_upload_cannot_authenticate_photo(monkeypatch,tmp_path):

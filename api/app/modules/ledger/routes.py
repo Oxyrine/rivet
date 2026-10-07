@@ -11,7 +11,8 @@ from api.app.core.clock import now, iso
 from .domain import create_request, approve, assign, hold, release, candidates, move
 from .sync import replay, command
 from .uploads import record_upload,uploaded_content
-from fastapi.responses import FileResponse
+from fastapi.responses import Response
+from urllib.parse import quote
 
 router=APIRouter()
 read= require_roles()
@@ -24,8 +25,8 @@ def upload_evidence(body:dict,p=Depends(require_roles('technician','coordinator'
 
 @router.get('/evidence/uploads/{ident}')
 def evidence_file(ident:str,p=Depends(read)):
-    path,record=uploaded_content(store.read(),ident,p)
-    return FileResponse(path,media_type=record['content_type'],filename=record['filename'],headers={'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'})
+    content,record=uploaded_content(store.read(),ident,p)
+    return Response(content,media_type=record['content_type'],headers={'Content-Disposition':"attachment; filename*=UTF-8''"+quote(record['filename']),'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'})
 
 def mutate(fn, body, principal, key=None):
     return store.mutate(fn,key=principal['user_id']+':'+key if key else None,body=body)

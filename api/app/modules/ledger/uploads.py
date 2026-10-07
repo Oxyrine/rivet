@@ -6,13 +6,8 @@ import re
 from pathlib import Path
 from contract.errors import DomainError
 from contract.state import emit
-from api.app.core.runtime import ROOT
 from api.app.core.auth import scoped_job
-
-def data_dir():
-    directory=Path(os.getenv('EVIDENCE_DIR',str(ROOT/'data/evidence')))
-    directory.mkdir(parents=True,exist_ok=True)
-    return directory
+from api.app.core.storage import evidence_store
 
 def content_type(content):
     if content.startswith(b'\x89PNG\r\n\x1a\n'):return 'image/png',10*1024*1024
@@ -41,12 +36,7 @@ def record_upload(state,body,principal):
     if prior:
         if prior['sha256']!=digest or prior['job_id']!=job['id']:raise DomainError('PHOTO_ID_CONFLICT','Photo id is already linked to different bytes or a different job')
         return dict(prior,duplicate=True)
-    path=data_dir()/digest
-    if not path.exists():
-        # Exclusive create avoids rewriting a hash-named object during concurrent retries.
-        try:
-            with path.open('xb') as file:file.write(content)
-        except FileExistsError:pass
+    evidence_store().put(digest,content)  # hash-named, so a retried upload is harmless
     metadata={'photo_id':ident,'job_id':job['id'],'sha256':digest,'size_bytes':len(content),'content_type':mime,'filename':Path(str(body.get('filename','evidence'))).name,'uploaded_at':state.now,'uploaded_by':principal['user_id'],'type':body.get('type'),'url':'/evidence/uploads/'+ident}
     uploads[ident]=metadata
     emit(state,'EvidenceUploaded',job['machine_id'],metadata,principal['user_id'])
@@ -56,10 +46,10 @@ def uploaded_content(state,ident,principal):
     record=state.metadata.get('uploads',{}).get(ident)
     if not record:raise DomainError('NOT_FOUND','Uploaded evidence not found',status=404)
     scoped_job(state,record['job_id'],principal)
-    path=data_dir()/record['sha256']
-    if not path.is_file():raise DomainError('EVIDENCE_MISSING','Evidence bytes are missing from storage',status=404)
-    if hashlib.sha256(path.read_bytes()).hexdigest()!=record['sha256']:raise DomainError('EVIDENCE_TAMPERED','Stored evidence bytes do not match the recorded hash')
-    return path,record
+    content=evidence_store().get(record['sha256'])
+    if content is None:raise DomainError('EVIDENCE_MISSING','Evidence bytes are missing from storage',status=404)
+    if hashlib.sha256(content).hexdigest()!=record['sha256']:raise DomainError('EVIDENCE_TAMPERED','Stored evidence bytes do not match the recorded hash')
+    return content,record
 
 def attach_uploaded(state,job_id,payload,actor):
     job=state.jobs[job_id];photo_id=payload.get('photo_id')

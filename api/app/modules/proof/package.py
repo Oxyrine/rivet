@@ -9,6 +9,10 @@ from contract.canonical import canonical_json, digest, machine_view, GENESIS
 from contract.sla import outcome
 
 def signing_key():
+    encoded=os.environ.get('RIVET_SIGNING_KEY')
+    if encoded:  # hosted: the key is a secret, never a file on an ephemeral disk
+        try:return Ed25519PrivateKey.from_private_bytes(base64.b64decode(encoded,validate=True))
+        except Exception as exc:raise RuntimeError('RIVET_SIGNING_KEY must be the base64 of a 32-byte Ed25519 private key') from exc
     path=Path(os.environ.get('RIVET_KEY_PATH','api/data/provider-ed25519.key'))
     path.parent.mkdir(parents=True,exist_ok=True)
     if not path.exists():
@@ -20,7 +24,7 @@ def signing_key():
 
 def public_key():
     raw=signing_key().public_key().public_bytes(Encoding.Raw,PublicFormat.Raw)
-    return {'key_id':'k-demo-01','public_key':base64.b64encode(raw).decode(),'fingerprint':sha256(raw).hexdigest()}
+    return {'key_id':os.environ.get('RIVET_KEY_ID','k-demo-01'),'public_key':base64.b64encode(raw).decode(),'fingerprint':sha256(raw).hexdigest()}
 
 def seal(body):
     return {'body':body,'key':public_key(),'signature':base64.b64encode(signing_key().sign(canonical_json(body).encode())).decode()}

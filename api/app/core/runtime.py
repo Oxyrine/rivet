@@ -45,13 +45,31 @@ class Idempotency(Base):
     result = Column(JSON, nullable=False)
     expires_at = Column(String, nullable=False)
 
+def database_url(url):
+    """Hosted providers hand out postgres:// or postgresql://; SQLAlchemy needs the psycopg driver named."""
+    for prefix in ('postgres://', 'postgresql://'):
+        if url.startswith(prefix): return 'postgresql+psycopg://' + url[len(prefix):]
+    return url
+
+def engine_options(url):
+    if url.startswith('sqlite'): return {'connect_args': {'check_same_thread': False, 'timeout': 30}, 'pool_pre_ping': True}
+    # prepare_threshold=None keeps psycopg compatible with a transaction-mode pooler; the pool stays small for a managed database
+    return {'connect_args': {'prepare_threshold': None}, 'pool_pre_ping': True, 'pool_size': 5, 'max_overflow': 5}
+
+APP_TABLES = ('tenant_state', 'event', 'ledger_entry', 'outbox', 'idempotency')
+
+def rls_statements():
+    """Supabase serves public-schema tables over its REST API; with RLS on and no policies, the public keys see nothing."""
+    return [f'ALTER TABLE {table} ENABLE ROW LEVEL SECURITY' for table in APP_TABLES]
+
 def fixture():
     return LedgerState.from_dict(json.loads((ROOT / 'contract/fixtures/m104.json').read_text(encoding='utf-8')))
 
 class Store:
     def __init__(self, url=None):
         self.url = url or os.getenv('DATABASE_URL', 'sqlite:///' + str(ROOT / 'rivet.db').replace('\\', '/'))
-        self.engine = create_engine(self.url, connect_args={'check_same_thread': False, 'timeout': 30} if self.url.startswith('sqlite') else {}, pool_pre_ping=True)
+        self.url = database_url(self.url)
+        self.engine = create_engine(self.url, **engine_options(self.url))
         self.lock = threading.RLock()
         Base.metadata.create_all(self.engine)
         self._triggers()
@@ -76,6 +94,7 @@ class Store:
                 for table in ('event', 'ledger_entry'):
                     conn.exec_driver_sql(f'DROP TRIGGER IF EXISTS immutable_{table} ON {table}')
                     conn.exec_driver_sql(f'CREATE TRIGGER immutable_{table} BEFORE UPDATE OR DELETE ON {table} FOR EACH ROW EXECUTE FUNCTION reject_audit_mutation()')
+                for statement in rls_statements(): conn.exec_driver_sql(statement)
 
     def read(self):
         with self.lock, Session(self.engine) as session:
