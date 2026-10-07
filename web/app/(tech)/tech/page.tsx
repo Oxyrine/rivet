@@ -11,6 +11,8 @@ import { storeShiftCache, getCachedShift, checkStaleStatus, StaleStatus } from '
 import { getQueuedCommands, QueuedCommand, getQueueLimits, QueueLimits } from '@/lib/offline/queue';
 import { executeTechnicianAction } from '@/lib/offline/actions';
 import { hostedAuth } from '@/lib/supabase';
+import { ReportScreen } from './components/report-screen';
+import type { ReportPayload } from '@/lib/report';
 import { initReplayListeners, replayPendingCommands, isIOSDevice, SyncResultSummary } from '@/lib/offline/replay';
 import { BarcodeScannerModal } from './components/barcode-scanner-modal';
 import { SupervisorPermitModal } from './components/supervisor-permit-modal';
@@ -55,6 +57,7 @@ export default function TechnicianFieldPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [dataSource, setDataSource] = useState<'live-mock' | 'fixture-mock'>('fixture-mock');
   const [selectedJob, setSelectedJob] = useState<ShiftJob | null>(null);
+  const [showReport, setShowReport] = useState(false);
   const [syncStatus, setSyncStatus] = useState<string>('Online · Shift cached');
   const [isOnline, setIsOnline] = useState<boolean>(true);
   const [signInPending, setSignInPending] = useState<number | null>(null);
@@ -196,6 +199,7 @@ export default function TechnicianFieldPage() {
   const handleSwitchTech = async (tech: 'priya' | 'ravi') => {
     setSelectedTech(tech);
     setSelectedJob(null);
+    setShowReport(false);
     if (typeof window !== 'undefined') {
       localStorage.setItem('rivet.active-tech', tech);
     }
@@ -301,6 +305,19 @@ export default function TechnicianFieldPage() {
     } catch (err: any) {
       alert(`Action error: ${err.message}`);
     }
+  };
+
+  // Completion report: saved to the device queue like every other action, sent when online.
+  const submitReport = async (payload: ReportPayload) => {
+    if (!selectedJob) throw new Error('Open a job first.');
+    const cmd = await executeTechnicianAction(
+      { userId: selectedTech, deviceId: `device-${selectedTech}`, jobId: selectedJob.id },
+      'SubmitReport',
+      payload as unknown as Record<string, any>
+    );
+    setActionNotice(`Report saved on this device · #${cmd.device_seq} SubmitReport`);
+    setTimeout(() => setActionNotice(''), 4000);
+    await refreshQueue();
   };
 
   // CheckIn with GPS & Arrival Code
@@ -941,7 +958,6 @@ export default function TechnicianFieldPage() {
                   className="secondary-button"
                   style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}
                   onClick={() => {
-                    performAction('EvidenceAttached', { photo_id: `photo-${Date.now()}`, type: 'after_photo' });
                     const fileInput = document.getElementById('camera-photo-input') as HTMLInputElement | null;
                     if (fileInput) fileInput.click();
                   }}
@@ -954,9 +970,9 @@ export default function TechnicianFieldPage() {
                 type="button"
                 data-testid="action-submitreport"
                 className="secondary-button"
-                onClick={() => performAction('SubmitReport', { tasks_completed: ['repaired'], parts_claimed: ['HS-40'] })}
+                onClick={() => setShowReport(true)}
               >
-                <CheckCircle2 size={14} /> 7. Submit Report
+                <CheckCircle2 size={14} /> 7. Complete Report
               </button>
               <button
                 type="button"
@@ -1013,6 +1029,21 @@ export default function TechnicianFieldPage() {
             </div>
           </aside>
         </div>
+      )}
+
+      {/* Completion report */}
+      {showReport && selectedJob && (
+        <ReportScreen
+          job={selectedJob}
+          deviceId={`device-${selectedTech}`}
+          alreadySubmitted={
+            queuedCmds.some((c) => c.type === 'SubmitReport' && c.job_id === selectedJob.id) ||
+            ['awaiting_acceptance', 'accepted', 'closure_blocked', 'closed', 'completed'].includes(selectedJob.state)
+          }
+          onPhoto={handlePhotoCapture}
+          onSubmit={submitReport}
+          onClose={() => setShowReport(false)}
+        />
       )}
 
       {/* Optical Barcode / QR Scanner Modal */}

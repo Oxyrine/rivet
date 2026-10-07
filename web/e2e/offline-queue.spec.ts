@@ -50,11 +50,18 @@ test.describe('Task 2: Evidence-preserving offline execution & queue persistence
     await expect(page.locator('[data-testid="action-notice"]')).toContainText('ReadingRecorded');
 
     // Action 6: Attach Evidence
-    await page.click('[data-testid="action-evidence"]');
+    const pngBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+    await page.setInputFiles('[data-testid="camera-file-input"]', {
+      name: 'field-photo.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from(pngBase64, 'base64'),
+    });
     await expect(page.locator('[data-testid="action-notice"]')).toContainText('EvidenceAttached');
 
     // Action 7: Submit Report
     await page.click('[data-testid="action-submitreport"]');
+    await page.click('[data-testid="report-review-btn"]');
+    await page.click('[data-testid="report-submit-btn"]');
     await expect(page.locator('[data-testid="action-notice"]')).toContainText('SubmitReport');
 
     // 5. Verify queue count shows 7 before reload

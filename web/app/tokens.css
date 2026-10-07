@@ -114,3 +114,13 @@
   --shadow-lg: 0 12px 36px rgba(17, 24, 20, 0.12), 0 2px 8px rgba(17, 24, 20, 0.06);
   --shadow-glow: 0 0 20px rgba(200, 76, 28, 0.25);
 }
+
+/* The field app, billing panel, map and status chip were written against the earlier palette.
+   These aliases map its names onto the current tokens so they follow the design system. */
+:root,
+[data-theme] {
+  --panel: var(--surface);
+  --panel-alt: var(--surface-sunken);
+  --accent: var(--brand-accent);
+  --blue: var(--ink-2);
+}

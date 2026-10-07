@@ -22,6 +22,7 @@ export interface QueuedCommand {
 export interface StoredPhoto {
   photo_id: string;             // UUID
   job_id: string;
+  type?: string;                // before_photo, after_photo, permit_photo, delivery_note, signed_sheet
   blob?: Blob | ArrayBuffer;
   data_url?: string;
   content_type: string;

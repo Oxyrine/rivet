@@ -147,6 +147,7 @@ export async function captureAndStorePhoto(params: {
   const storedPhoto: StoredPhoto = {
     photo_id: photoId,
     job_id: params.jobId,
+    type: params.type,
     data_url: `data:${params.mimeType};base64,${params.base64Data}`,
     content_type: params.mimeType,
     device_ts: nowIso,
@@ -205,6 +206,13 @@ export async function uploadPendingPhotos(authToken?: string): Promise<{
       await db.put('photos', photo);
 
       const base64Content = photo.data_url?.split(',')[1] || '';
+      // The upload must carry the same type as the EvidenceAttached command, or the server
+      // refuses the pair. Photos stored before the type was kept take it from their command.
+      let evidenceType = photo.type;
+      if (!evidenceType) {
+        const queued = await db.getAll('commands');
+        evidenceType = queued.find((c) => c.type === 'EvidenceAttached' && c.payload?.photo_id === photo.photo_id)?.payload?.type;
+      }
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
@@ -223,7 +231,7 @@ export async function uploadPendingPhotos(authToken?: string): Promise<{
           photo_id: photo.photo_id,
           job_id: photo.job_id,
           content_base64: base64Content,
-          type: (photo as any).type || 'before_photo',
+          type: evidenceType || 'before_photo',
           filename: `${photo.photo_id}.${photo.content_type.includes('png') ? 'png' : 'jpg'}`,
         }),
       });
