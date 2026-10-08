@@ -16,17 +16,18 @@ async function tryProxy(request: NextRequest, path: string): Promise<Response | 
   const apiUrl = realApiUrl();
   if (!apiUrl) return null;
 
-  // If backend was recently unreachable/sleeping, bypass proxy to serve demo engine without lag
-  if (Date.now() < backendOfflineUntil) {
+  const isRead = ['GET', 'HEAD'].includes(request.method.toUpperCase());
+
+  // If backend was recently unreachable/sleeping, serve reads from the demo engine without lag. Writes always try the real API.
+  if (isRead && Date.now() < backendOfflineUntil) {
     return null;
   }
 
-  const isRead = ['GET', 'HEAD'].includes(request.method.toUpperCase());
-
   try {
     const controller = new AbortController();
-    // 6 second timeout prevents requests from hanging when Render backend is cold or asleep
-    const timeout = setTimeout(() => controller.abort(), 6000);
+    // Reads give up quickly (the demo engine can answer). A write needs time for a cold Render instance: aborting it can still complete on
+    // the server while the caller is told it failed.
+    const timeout = setTimeout(() => controller.abort(), isRead ? 6000 : 25000);
 
     const headers = new Headers(request.headers);
     headers.delete('host');
@@ -71,6 +72,12 @@ async function handle(request: NextRequest, { params }: { params: Promise<{ slug
   // 1. Check if remote proxy is reachable
   const proxied = await tryProxy(request, path);
   if (proxied) return proxied;
+
+  // A write is never answered by the in-memory demo engine when a real API is configured: it has no field-app routes and its answer would
+  // be thrown away, so the phone would think the action was handled. 503 makes the caller keep it queued and retry.
+  if (realApiUrl() && !['GET', 'HEAD'].includes(method)) {
+    return NextResponse.json({ code: 'API_UNAVAILABLE', message: 'The server is waking up. Your action is kept and will be sent again.' }, { status: 503 });
+  }
 
   // 2. Seamless local fallback to Demo Engine when remote backend is sleeping or unreachable
 
