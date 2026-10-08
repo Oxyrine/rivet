@@ -10,24 +10,17 @@ function realApiUrl(): string | null {
   return apiUrl;
 }
 
-let backendOfflineUntil = 0;
-
 async function tryProxy(request: NextRequest, path: string): Promise<Response | null> {
   const apiUrl = realApiUrl();
   if (!apiUrl) return null;
 
   const isRead = ['GET', 'HEAD'].includes(request.method.toUpperCase());
 
-  // If backend was recently unreachable/sleeping, serve reads from the demo engine without lag. Writes always try the real API.
-  if (isRead && Date.now() < backendOfflineUntil) {
-    return null;
-  }
-
   try {
     const controller = new AbortController();
-    // Reads give up quickly (the demo engine can answer). A write needs time for a cold Render instance: aborting it can still complete on
-    // the server while the caller is told it failed.
-    const timeout = setTimeout(() => controller.abort(), isRead ? 6000 : 25000);
+    // Give a cold Render instance time to wake. A read that gave up early used to be answered by the demo engine, so tables flipped between
+    // real and fake data; aborting a write can also still complete on the server while the caller is told it failed.
+    const timeout = setTimeout(() => controller.abort(), isRead ? 20000 : 25000);
 
     const headers = new Headers(request.headers);
     headers.delete('host');
@@ -54,13 +47,9 @@ async function tryProxy(request: NextRequest, path: string): Promise<Response | 
       });
     }
 
-    // Backend returned 502/503/504 (sleeping/waking) -> mark offline for 30s
-    backendOfflineUntil = Date.now() + 30000;
-    return null;
+    return null; // 502/503/504: the API is waking
   } catch {
-    // Network failure, connection refused, or timeout -> mark offline for 30s
-    backendOfflineUntil = Date.now() + 30000;
-    return null;
+    return null; // network failure or timeout
   }
 }
 
@@ -73,12 +62,11 @@ async function handle(request: NextRequest, { params }: { params: Promise<{ slug
   const proxied = await tryProxy(request, path);
   if (proxied) return proxied;
 
-  // A mobile sync write is queued on device when backend is cold. Other web actions fall back to Demo Engine.
-  if (realApiUrl() && !['GET', 'HEAD'].includes(method) && (path.startsWith('field/') || path.startsWith('sync/') || path.startsWith('evidence/'))) {
-    return NextResponse.json({ code: 'API_UNAVAILABLE', message: 'The server is waking up. Your action is kept and will be sent again.' }, { status: 503 });
+  // With a real API configured, never answer from the in-memory demo engine, for reads or writes: it holds different data, so mixing the two
+  // makes tables flip between them. Pages keep what they last had and retry; a queued write stays queued and is sent again.
+  if (realApiUrl()) {
+    return NextResponse.json({ code: 'API_UNAVAILABLE', message: 'The server is waking up. Showing the last data; retrying.' }, { status: 503 });
   }
-
-  // 2. Seamless local fallback to Demo Engine when remote backend is sleeping or unreachable
 
   // 2. Local high-fidelity Demo Engine fallback
   let body: any = {};

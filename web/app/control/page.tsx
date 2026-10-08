@@ -92,8 +92,10 @@ export default function ControlRoom() {
   const [candidate, setCandidate] = useState('');
   const [timeline, setTimeline] = useState<any[]>([]);
 
+  const polling = useRef(false);
   const load = useCallback(async () => {
-    if (!session) return;
+    if (!session || polling.current) return; // a slow answer must not stack up another poll behind it
+    polling.current = true;
     try {
       const [j, r] = await Promise.all([api<any>('/jobs'), api<any[]>('/exceptions/risk')]);
       setJobs(Array.isArray(j) ? j : j.items || j.jobs || []);
@@ -101,6 +103,8 @@ export default function ControlRoom() {
       setError('');
     } catch (e) {
       setError((e as Error).message);
+    } finally {
+      polling.current = false;
     }
   }, [session]);
 
