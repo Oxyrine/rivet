@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Request
+from statistics import fmean, pstdev
 from api.app.core.runtime import store
 from api.app.core.security import require_roles, scoped_job, scoped_machine
 from contract.errors import DomainError
@@ -12,6 +13,35 @@ router=APIRouter(tags=['Completion verification'])
 read= require_roles('coordinator','manager','supervisor','requester','auditor','admin','technician')
 write= require_roles('coordinator','manager','admin','technician')
 customer=require_roles('supervisor','admin')
+
+
+def telemetry_anomaly(state, machine_id, body):
+    """Keep a bounded per-machine baseline and require sustained outliers before opening service work."""
+    book = state.metadata.setdefault('telemetry_baseline', {}).setdefault(machine_id, {'pressure_bar': [], 'vibration': [], 'consecutive': 0})
+    signals = []
+    for metric in ('pressure_bar', 'vibration'):
+        value = body.get(metric)
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
+            continue
+        samples = book.setdefault(metric, [])
+        if len(samples) >= 10:
+            average, spread = fmean(samples), pstdev(samples)
+            score = abs(value - average) / spread if spread else (float('inf') if value != average else 0)
+            anomalous = score > 3
+            detail = {'metric': metric, 'value': value, 'mean': f'{average:.3f}', 'z_score': f'{score:.3f}' if score != float('inf') else 'infinite'}
+        elif metric == 'pressure_bar':
+            anomalous = value < 120 or value > 160
+            detail = {'metric': metric, 'value': value, 'rule': 'outside fixed 120–160 bar warm-up range'}
+        else:
+            anomalous, detail = False, {}
+        samples.append(value)
+        del samples[:-30]
+        if anomalous: signals.append(detail)
+    book['consecutive'] = book.get('consecutive', 0) + 1 if signals else 0
+    if book['consecutive'] < 2:
+        return None
+    book['consecutive'] = 0
+    return signals
 
 @router.post('/stores/issue')
 def store_issue(body:dict,request:Request,p=Depends(require_roles('storekeeper','admin'))):
@@ -104,6 +134,13 @@ def telemetry(body:dict,p=Depends(require_roles('coordinator','admin'))):
             if previous and previous.get('state') in ('completed','verified','closed'):
                 return domain.fix_failed(s,previous['id'],p['user_id'])
             return create_request(s,{'machine_id':machine_id,'fault':'hydraulic_leak','source':'simulated telemetry'})
+        anomaly = telemetry_anomaly(s, machine_id, body)
+        if anomaly:
+            from api.app.modules.ledger.domain import create_request
+            request = create_request(s, {'machine_id': machine_id, 'fault': 'hydraulic_leak', 'source': 'telemetry anomaly',
+                                         'description': 'Two consecutive telemetry outliers: ' + ', '.join(f"{signal['metric']}={signal['value']}" for signal in anomaly), 'actor': p['user_id']})
+            emit(s, 'TelemetryAnomalyDetected', machine_id, {'machine_id': machine_id, 'signals': anomaly, 'request_id': request.get('id'), 'job_id': request.get('job_id')}, p['user_id'])
+            return {**request, 'anomaly': anomaly}
         j=next((j for j in reversed(list(s.jobs.values())) if j['machine_id']==machine_id and j['state'] not in DONE),None)
         normal=body.get('status')=='running' and isinstance(body.get('pressure_bar'),int) and 120<=body['pressure_bar']<=160
         return domain.machine_running(s,j['id'],'simulated telemetry',p['user_id']) if j and normal else {'recorded':True,'fix_confirmed':False}
