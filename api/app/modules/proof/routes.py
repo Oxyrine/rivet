@@ -4,6 +4,7 @@ from api.app.core.security import require_roles, scoped_job, scoped_machine
 from contract.errors import DomainError
 from contract.state import emit
 from . import service as domain
+from api.app.core.views import machine_view
 from .package import make_package, public_key
 
 router=APIRouter(tags=['Completion verification'])
@@ -73,7 +74,7 @@ def package(job_id:str,p=Depends(read)):
 @router.get('/machines/{machine_id}/passport')
 def passport(machine_id:str,p=Depends(read)):
     s=store.read(); scoped_machine(s,machine_id,p)
-    return {'machine':s.machines[machine_id],'jobs':[j for j in s.jobs.values() if j['machine_id']==machine_id],'events':[e for e in s.events if e['machine']==machine_id]}
+    return {'machine':machine_view(s,s.machines[machine_id]),'jobs':[j for j in s.jobs.values() if j['machine_id']==machine_id],'events':[e for e in s.events if e['machine']==machine_id]}
 
 @router.get('/machines/{machine_id}/package')
 def machine_package(machine_id:str,p=Depends(read)):

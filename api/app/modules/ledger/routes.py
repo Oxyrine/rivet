@@ -10,7 +10,7 @@ from contract.state import emit
 from api.app.core.runtime import store
 from api.app.core.auth import require_roles, scoped_job, scoped_machine, tokens, hosted, SECRET
 from api.app.core.clock import now, iso, demo_controls
-from api.app.core.views import job_view, summary_view, commitments_view
+from api.app.core.views import job_view, summary_view, commitments_view, machine_view
 from .domain import create_request, approve, assign, hold, release, candidates, move
 from .sync import replay, command
 from .uploads import record_upload,uploaded_content
@@ -308,7 +308,7 @@ def gate_key(ident:str,body:dict,p=Depends(require_roles('supervisor'))):
 def dashboard(p=Depends(read)):
     s=store.read();visible=[j for j in s.jobs.values() if j['site_id'] in p['sites'] and (p['role']!='technician' or j.get('technician_id')==p.get('technician_id'))]
     ids={j['id'] for j in visible}
-    return summary_view({'now':s.now,'jobs':visible,'machines':[m for m in s.machines.values() if m['site_id'] in p['sites']],'sites':[v for k,v in s.sites.items() if k in p['sites']],'technicians':list(s.technicians.values()) if p['role'] in ('coordinator','manager','admin') else [],'breaches':[b for b in s.breaches.values() if not b.get('job_id') or b['job_id'] in ids],'commitments':[c for c in s.commitments.values() if c.get('job_id') in ids],'event_cursor':len(s.events)},p['role'])
+    return summary_view({'now':s.now,'jobs':visible,'machines':[machine_view(s,m) for m in s.machines.values() if m['site_id'] in p['sites']],'sites':[v for k,v in s.sites.items() if k in p['sites']],'technicians':list(s.technicians.values()) if p['role'] in ('coordinator','manager','admin') else [],'breaches':[b for b in s.breaches.values() if not b.get('job_id') or b['job_id'] in ids],'commitments':[c for c in s.commitments.values() if c.get('job_id') in ids],'event_cursor':len(s.events)},p['role'])
 
 @router.get('/adapters')
 def adapters(p=Depends(read)):return store.read().adapters

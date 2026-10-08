@@ -14,6 +14,17 @@ CUSTOMER_COMMITMENTS = frozenset({'ACCESS_WINDOW', 'SHUTDOWN_WINDOW', 'PERMIT_TO
 CUSTOMER_HIDDEN_JOB_FIELDS = ('candidates', 'technician_id', 'planned_parts', 'reassigned_from', 'flags')
 
 
+def machine_view(state, machine):
+    """The machine as it is read. Its status comes from its open service request, not only from a stored flag that an
+    earlier mistake could leave behind: a machine with an unfinished request never reads 'Running'."""
+    for job in state.jobs.values():
+        if job['machine_id'] != machine['id'] or not job.get('request_id') or job.get('state') in ('closed', 'cancelled', 'completed') or job.get('restored_at'):
+            continue
+        status = 'Restored, awaiting confirmation' if job.get('checkout_at') else 'Under repair' if job.get('state') == 'in_progress' else 'Fault detected'
+        return {**machine, 'status': status}
+    return machine
+
+
 def is_staff(role):
     return role in STAFF
 

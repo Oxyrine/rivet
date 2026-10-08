@@ -99,3 +99,15 @@ def test_confirming_the_machine_runs_before_the_technician_has_finished_is_refus
     assert refused.status_code == 409 and refused.json()['code'] == 'NOTHING_TO_CONFIRM'
     machines = {m['id']: m for m in client.get('/dashboard/summary', headers=coordinator).json()['machines']}
     assert machines['M-104']['status'] == 'Fault detected'
+
+
+def test_a_machine_with_an_unfinished_request_never_reads_running_even_if_a_stale_flag_says_so(client):
+    """Data left behind by the old early-confirm bug must not keep showing 'Running'."""
+    coordinator = sign_in(client, 'coordinator')
+    job = client.post('/requests', json={'machine_id': 'M-104', 'fault': 'hydraulic_leak'}, headers=coordinator).json()['job_id']
+    store.mutate(lambda s: s.machines['M-104'].update(status='Running'))  # the stuck state
+    assert client.get('/machines/M-104/passport', headers=coordinator).json()['machine']['status'] == 'Fault detected'
+    assert {m['id']: m['status'] for m in client.get('/dashboard/summary', headers=coordinator).json()['machines']}['M-104'] == 'Fault detected'
+    assert client.get('/machines/M-117/passport', headers=coordinator).json()['machine']['status'] == 'Running'  # a planned job is not a fault
+    store.mutate(lambda s: s.jobs[job].update(state='cancelled'))
+    assert client.get('/machines/M-104/passport', headers=coordinator).json()['machine']['status'] == 'Running'

@@ -350,7 +350,7 @@ cd web ; npm run typecheck ; npm run build
 
 Or `make thesis`, `make test-ledger`, `make test-exceptions`, `make test-proof`, `make test-sync` for one area at a time.
 
-**128 backend tests** are collected; 125 run in a few seconds and the other three (the history seeder and the demo runner) take longer. Next.js type checking and the production build pass. Playwright specs for the field app, the report screen, sync and conflict screens, the map and the billing panel are in `web/e2e/`; they need `npx playwright install` and a running API, and have not been run in CI.
+**129 backend tests** are collected; 126 run in a few seconds and the other three (the history seeder and the demo runner) take longer. Next.js type checking and the production build pass. Playwright specs for the field app, the report screen, sync and conflict screens, the map and the billing panel are in `web/e2e/`; they need `npx playwright install` and a running API, and have not been run in CI.
 
 | What is proven | Where |
 | --- | --- |
