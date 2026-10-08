@@ -5,6 +5,8 @@
  * backend databases or remote APIs are sleeping or unconfigured.
  */
 
+import m104Data from './m104.json';
+
 export interface Site {
   id: string;
   name: string;
@@ -127,143 +129,24 @@ class DemoEngine {
   public nextRequestNum = 2231;
   public adapters = { telemetry: { enabled: true }, billing: { enabled: false } };
 
+  public contracts: Record<string, any> = {};
+
   constructor() {
     this.now = new Date().toISOString();
     this.reset();
   }
 
   public reset() {
-    this.now = new Date().toISOString();
-    this.sites = {
-      'site-a': { id: 'site-a', name: 'Aster Works · Plant A', customer_id: 'customer-plant', timezone: 'Asia/Kolkata', lat_e6: 19076000, lng_e6: 72877000 },
-      'site-b': { id: 'site-b', name: 'Site B · Parts depot', customer_id: 'customer-plant', timezone: 'Asia/Kolkata', lat_e6: 19198000, lng_e6: 72987000 },
-      'site-c': { id: 'site-c', name: 'Site C · Remote plant', customer_id: 'customer-other', timezone: 'Asia/Kolkata', lat_e6: 20760000, lng_e6: 73150000 },
-    };
-
-    this.machines = {
-      'M-104': { id: 'M-104', name: 'Hydraulic press', site_id: 'site-a', contract_id: 'P1', eligible: true, status: 'Running', sensor: true },
-      'M-117': { id: 'M-117', name: 'Industrial drive', site_id: 'site-a', contract_id: 'P2', eligible: true, status: 'Running', sensor: false },
-      'M-122': { id: 'M-122', name: 'Industrial drive', site_id: 'site-a', contract_id: 'P2', eligible: true, status: 'Running', sensor: false },
-      'M-133': { id: 'M-133', name: 'Industrial drive', site_id: 'site-a', contract_id: 'P2', eligible: true, status: 'Running', sensor: false },
-      'M-134': { id: 'M-134', name: 'Industrial drive', site_id: 'site-a', contract_id: 'P2', eligible: true, status: 'Running', sensor: false },
-      'M-135': { id: 'M-135', name: 'Industrial drive', site_id: 'site-a', contract_id: 'P2', eligible: true, status: 'Running', sensor: false },
-      'M-136': { id: 'M-136', name: 'Industrial drive', site_id: 'site-a', contract_id: 'P2', eligible: true, status: 'Running', sensor: false },
-      'M-137': { id: 'M-137', name: 'Industrial drive', site_id: 'site-a', contract_id: 'P2', eligible: true, status: 'Running', sensor: false },
-      'M-138': { id: 'M-138', name: 'Industrial drive', site_id: 'site-c', contract_id: 'P2', eligible: true, status: 'Running', sensor: false },
-      'M-139': { id: 'M-139', name: 'Industrial drive', site_id: 'site-c', contract_id: 'P2', eligible: true, status: 'Running', sensor: false },
-      'M-140': { id: 'M-140', name: 'Industrial drive', site_id: 'site-c', contract_id: 'P2', eligible: true, status: 'Running', sensor: false },
-      'M-141': { id: 'M-141', name: 'Industrial drive', site_id: 'site-c', contract_id: 'P2', eligible: true, status: 'Running', sensor: false },
-    };
-
-    this.technicians = {
-      ravi: { id: 'ravi', name: 'Ravi Shankar', skills: { hydraulics: 2, gearbox: 2 }, certificate_valid: true, available: true, distance_km: 6, travel_minutes: 9, site_id: 'site-a' },
-      priya: { id: 'priya', name: 'Priya Nair', skills: { hydraulics: 2, gearbox: 2 }, certificate_valid: true, available: true, distance_km: 12, travel_minutes: 18, site_id: 'site-a' },
-      karthik: { id: 'karthik', name: 'Karthik Raja', skills: { hydraulics: 1, gearbox: 2 }, certificate_valid: true, available: true, distance_km: 17, travel_minutes: 25, site_id: 'site-a' },
-      dev: { id: 'dev', name: 'Dev Verma', skills: { hydraulics: 2, gearbox: 2 }, certificate_valid: true, available: true, distance_km: 20, travel_minutes: 30, site_id: 'site-a' },
-      meena: { id: 'meena', name: 'Meena Patel', skills: { hydraulics: 2, gearbox: 2 }, certificate_valid: true, available: true, distance_km: 150, travel_minutes: 150, site_id: 'site-c' },
-      arjun: { id: 'arjun', name: 'Arjun Sen', skills: { hydraulics: 2, gearbox: 2 }, certificate_valid: false, available: true, distance_km: 7, travel_minutes: 10, site_id: 'site-a' },
-      'contractor-1': { id: 'contractor-1', name: 'Approved Contractor (Apex Industrial)', skills: { hydraulics: 2 }, certificate_valid: true, available: true, distance_km: 21, travel_minutes: 31, contractor: true, approved: true, sites: ['site-a'] },
-    };
-
-    this.balances = {
-      'store:site-b:available|HS-40': 3,
-      'store:site-b:available|JACK': 2,
-      'store:site-a:available|O-RING': 12,
-    };
-
-    this.jobs = {
-      'J-2236': {
-        id: 'J-2236',
-        machine_id: 'M-117',
-        site_id: 'site-a',
-        technician_id: 'ravi',
-        state: 'assigned',
-        priority: 'P2',
-        fault: 'gearbox_overhaul',
-        created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
-        planned_start: new Date(Date.now() + 1800000).toISOString(),
-        deadline: new Date(Date.now() + 3600000 * 4).toISOString(),
-        duration_minutes: 95,
-        planned_parts: {},
-        issued_parts: {},
-        commitments: [
-          { id: 'time:J-2236', type: 'TECH_TIME', resource: 'TIME', owner: 'ravi', state: 'HELD', quantity: 7 },
-        ],
-      },
-      'J-2239': {
-        id: 'J-2239',
-        machine_id: 'M-122',
-        site_id: 'site-a',
-        technician_id: 'ravi',
-        state: 'assigned',
-        priority: 'P2',
-        fault: 'gearbox_overhaul',
-        created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
-        planned_start: new Date(Date.now() + 3600000 * 3).toISOString(),
-        deadline: new Date(Date.now() + 3600000 * 6).toISOString(),
-        duration_minutes: 95,
-        planned_parts: {},
-        issued_parts: {},
-        commitments: [
-          { id: 'time:J-2239', type: 'TECH_TIME', resource: 'TIME', owner: 'ravi', state: 'HELD', quantity: 7 },
-        ],
-      },
-      'J-2240': {
-        id: 'J-2240',
-        machine_id: 'M-133',
-        site_id: 'site-a',
-        technician_id: 'dev',
-        state: 'assigned',
-        priority: 'P1',
-        fault: 'gearbox_overhaul',
-        created_at: new Date(Date.now() - 3600000 * 1).toISOString(),
-        planned_start: new Date(Date.now() + 900000).toISOString(),
-        deadline: new Date(Date.now() + 3600000 * 2.5).toISOString(),
-        duration_minutes: 95,
-        planned_parts: { 'HS-40': 1 },
-        issued_parts: { 'HS-40': 1 },
-        commitments: [
-          { id: 'time:J-2240', type: 'TECH_TIME', resource: 'TIME', owner: 'dev', state: 'HELD', quantity: 7 },
-          { id: 'hold:J-2240', type: 'PART_HOLD', resource: 'HS-40', quantity: 1, state: 'HELD', source: 'store:site-b:available', owner: 'dev', physical_location: 'Site B · Parts depot' },
-        ],
-      },
-      'J-2254': {
-        id: 'J-2254',
-        machine_id: 'M-135',
-        site_id: 'site-a',
-        technician_id: 'priya',
-        state: 'assigned',
-        priority: 'P2',
-        fault: 'gearbox_overhaul',
-        created_at: new Date(Date.now() - 3600000 * 1).toISOString(),
-        planned_start: new Date(Date.now() + 3600000 * 2).toISOString(),
-        deadline: new Date(Date.now() + 3600000 * 5).toISOString(),
-        duration_minutes: 95,
-        planned_parts: {},
-        issued_parts: {},
-        commitments: [
-          { id: 'time:J-2254', type: 'TECH_TIME', resource: 'TIME', owner: 'priya', state: 'HELD', quantity: 7 },
-        ],
-      },
-      'J-2258': {
-        id: 'J-2258',
-        machine_id: 'M-138',
-        site_id: 'site-c',
-        technician_id: 'meena',
-        state: 'assigned',
-        priority: 'P2',
-        fault: 'gearbox_overhaul',
-        created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
-        planned_start: new Date(Date.now() + 1800000).toISOString(),
-        deadline: new Date(Date.now() + 3600000 * 4).toISOString(),
-        duration_minutes: 95,
-        planned_parts: {},
-        issued_parts: {},
-        commitments: [
-          { id: 'time:J-2258', type: 'TECH_TIME', resource: 'TIME', owner: 'meena', state: 'HELD', quantity: 7 },
-        ],
-      },
-    };
+    const raw = m104Data as any;
+    this.now = raw.now || new Date().toISOString();
+    this.sites = JSON.parse(JSON.stringify(raw.sites || {}));
+    this.machines = JSON.parse(JSON.stringify(raw.machines || {}));
+    this.technicians = JSON.parse(JSON.stringify(raw.technicians || {}));
+    this.contracts = JSON.parse(JSON.stringify(raw.contracts || {}));
+    this.jobs = JSON.parse(JSON.stringify(raw.jobs || {}));
+    this.commitments = JSON.parse(JSON.stringify(raw.commitments || {}));
+    this.balances = JSON.parse(JSON.stringify(raw.balances || {}));
+    this.requests = {};
   }
 
   public getSummary() {
@@ -829,76 +712,141 @@ class DemoEngine {
     };
   }
 
-  public storeStock: Record<string, Record<string, number>> = {
-    'site-a': { 'HS-40': 8, 'O-RING': 12, 'JACK': 3, 'VALVE-9': 4 },
-    'site-b': { 'HS-40': 15, 'O-RING': 20, 'JACK': 2, 'SEAL-2': 5 },
-    'site-c': { 'HS-40': 6, 'O-RING': 10, 'JACK': 1, 'BEARING-1': 2 },
-  };
-
-  public vanStock: Record<string, Record<string, number>> = {
-    'ravi': { 'HS-40': 2, 'O-RING': 3 },
-    'priya': { 'HS-40': 1, 'O-RING': 2, 'JACK': 1 },
-  };
-
-  public getStoresOverview() {
+  public getStoresOverview(sitesFilter = ['site-a', 'site-b', 'site-c']) {
     const NAMES: Record<string, string> = {
       'HS-40': 'Hydraulic seal kit',
       'O-RING': 'O-ring set',
       'JACK': 'Hydraulic jack',
-      'VALVE-9': 'Pressure control valve',
-      'SEAL-2': 'Rotary shaft seal',
-      'BEARING-1': 'Roller bearing assembly',
     };
+    const HOLDS = ['PART_HOLD', 'TOOL_HOLD'];
+    const LIVE = ['HELD', 'ACTIVE'];
+    const LOW = 2;
 
-    const stores = Object.entries(this.storeStock).map(([siteId, stockMap]) => ({
-      site_id: siteId,
-      name: this.sites[siteId]?.name || siteId.toUpperCase(),
-      stock: Object.entries(stockMap).map(([resource, qty]) => ({
+    // Shelves
+    const held: Record<string, number> = {};
+    for (const c of Object.values(this.commitments)) {
+      if (HOLDS.includes(c.type) && LIVE.includes(c.state) && String(c.source || '').startsWith('store:')) {
+        const key = `${c.source}|${c.resource}`;
+        const jobId = (c as any).job_id || c.id.split(':')[1] || c.id;
+        const stillReserved = this.balances[`job:${jobId}:reserved|${c.resource}`] ?? (c.quantity || 1);
+        held[key] = (held[key] || 0) + Math.min(c.quantity || 1, stillReserved);
+      }
+    }
+
+    const shelves: Record<string, any[]> = {};
+    for (const [key, qty] of Object.entries(this.balances)) {
+      const [account, resource] = key.split('|');
+      if (!account || !resource) continue;
+      const parts = account.split(':');
+      if (parts[0] !== 'store' || parts[parts.length - 1] !== 'available' || !sitesFilter.includes(parts[1])) continue;
+      const site = parts[1];
+      if (!shelves[site]) shelves[site] = [];
+      shelves[site].push({
         resource,
-        name: NAMES[resource] || resource,
+        name: NAMES[resource] || null,
         available: qty,
-        held: 1,
-        low: qty <= 2,
-      })),
+        held: held[`${account}|${resource}`] || 0,
+        low: qty < LOW,
+      });
+    }
+
+    for (const rows of Object.values(shelves)) {
+      rows.sort((a, b) => a.resource.localeCompare(b.resource));
+    }
+
+    const stores = Object.keys(shelves).sort().map(site => ({
+      site_id: site,
+      name: this.sites[site]?.name || site,
+      stock: shelves[site],
     }));
 
-    const needs = Object.values(this.jobs).flatMap((job) => {
-      const parts = job.planned_parts || {};
-      const issued = job.issued_parts || {};
-      return Object.entries(parts).map(([resource, needed]) => {
-        const isIssued = (issued[resource] || 0) >= needed;
-        return {
-          job_id: job.id,
-          machine_id: job.machine_id,
-          site_id: job.site_id,
-          priority: job.priority,
-          job_state: job.state,
-          technician_id: job.technician_id || null,
-          technician: job.technician_id ? this.technicians[job.technician_id]?.name || job.technician_id : null,
-          planned_start: job.planned_start,
+    // Needs
+    const WORK_DONE = ['verified', 'closed', 'cancelled', 'completed'];
+    const needs: any[] = [];
+    for (const job of Object.values(this.jobs)) {
+      if (WORK_DONE.includes(job.state)) continue;
+      const tech = job.technician_id ? this.technicians[job.technician_id] : null;
+      const holds = Object.values(this.commitments).filter(
+        (c: any) => c.job_id === job.id || c.id.includes(job.id) || (job.commitments && job.commitments.some(jc => jc.id === c.id))
+      );
+      const base = {
+        job_id: job.id,
+        machine_id: job.machine_id,
+        site_id: job.site_id,
+        priority: job.priority,
+        job_state: job.state,
+        technician_id: job.technician_id || null,
+        technician: tech?.name || null,
+        planned_start: job.planned_start,
+      };
+
+      for (const [resource, needed] of Object.entries(job.planned_parts || {})) {
+        const hold = holds.find(c => c.type === 'PART_HOLD' && c.resource === resource && LIVE.includes(c.state));
+        const issued = job.issued_parts?.[resource] || 0;
+        const site = (hold as any)?.physical_location || 'site-b';
+        if (!sitesFilter.includes(site)) continue;
+        const status: 'issued' | 'ready' | 'waiting' = issued >= needed ? 'issued' : hold ? 'ready' : 'waiting';
+        needs.push({
+          ...base,
           kind: 'part' as const,
           resource,
-          name: NAMES[resource] || resource,
+          name: NAMES[resource] || null,
           needed,
-          issued: issued[resource] || 0,
-          outstanding: Math.max(0, needed - (issued[resource] || 0)),
-          status: isIssued ? ('issued' as const) : job.technician_id ? ('ready' as const) : ('waiting' as const),
-          store_site: job.site_id,
-        };
-      });
+          issued,
+          outstanding: Math.max(0, needed - issued),
+          status,
+          store_site: site,
+        });
+      }
+
+      for (const hold of holds) {
+        if (hold.type === 'TOOL_HOLD' && LIVE.includes(hold.state) && (hold as any).physical_location && sitesFilter.includes((hold as any).physical_location)) {
+          needs.push({
+            ...base,
+            kind: 'tool' as const,
+            resource: hold.resource || '',
+            name: NAMES[hold.resource || ''] || null,
+            needed: hold.quantity || 1,
+            issued: 0,
+            outstanding: hold.quantity || 1,
+            status: 'ready' as const,
+            store_site: (hold as any).physical_location,
+          });
+        }
+      }
+    }
+
+    needs.sort((a, b) => {
+      if ((a.technician === null) !== (b.technician === null)) return a.technician === null ? 1 : -1;
+      const timeA = a.planned_start || '9';
+      const timeB = b.planned_start || '9';
+      if (timeA !== timeB) return timeA.localeCompare(timeB);
+      if (a.job_id !== b.job_id) return a.job_id.localeCompare(b.job_id);
+      return a.resource.localeCompare(b.resource);
     });
 
-    const vans = Object.entries(this.vanStock).map(([tid, stockMap]) => ({
+    // Vans
+    const vansMap: Record<string, any[]> = {};
+    for (const [key, qty] of Object.entries(this.balances)) {
+      const [account, resource] = key.split('|');
+      if (account.startsWith('van:') && qty > 0) {
+        const tid = account.split(':')[1];
+        if (!vansMap[tid]) vansMap[tid] = [];
+        vansMap[tid].push({
+          resource,
+          name: NAMES[resource] || null,
+          quantity: qty,
+        });
+      }
+    }
+
+    const vans = Object.keys(vansMap).sort().map(tid => ({
       technician_id: tid,
       technician: this.technicians[tid]?.name || tid,
-      stock: Object.entries(stockMap).map(([resource, qty]) => ({
-        resource,
-        name: NAMES[resource] || resource,
-        quantity: qty,
-      })),
+      stock: vansMap[tid],
     }));
 
-    const technicians = Object.values(this.technicians).map((t) => ({
+    const technicians = Object.values(this.technicians).map(t => ({
       id: t.id,
       name: t.name,
     }));
@@ -906,30 +854,36 @@ class DemoEngine {
     return { stores, needs, vans, technicians };
   }
 
-  public receiveStock(resource: string, quantity: number, reference?: string, siteId = 'site-a') {
+  public receiveStock(resource: string, quantity: number, reference?: string, siteId = 'site-b') {
     const upper = (resource || '').trim().toUpperCase();
-    if (!this.storeStock[siteId]) this.storeStock[siteId] = {};
-    this.storeStock[siteId][upper] = (this.storeStock[siteId][upper] || 0) + quantity;
-    return { resource: upper, quantity, store_site: siteId, available: this.storeStock[siteId][upper] };
+    const site = siteId || 'site-b';
+    const key = `store:${site}:available|${upper}`;
+    this.balances[key] = (this.balances[key] || 0) + quantity;
+    return { resource: upper, quantity, store_site: site, available: this.balances[key] };
   }
 
-  public vanIssue(technicianId: string, resource: string, quantity: number, siteId = 'site-a') {
+  public vanIssue(technicianId: string, resource: string, quantity: number, siteId = 'site-b') {
     const upper = (resource || '').trim().toUpperCase();
-    if (this.storeStock[siteId] && this.storeStock[siteId][upper]) {
-      this.storeStock[siteId][upper] = Math.max(0, this.storeStock[siteId][upper] - quantity);
-    }
-    if (!this.vanStock[technicianId]) this.vanStock[technicianId] = {};
-    this.vanStock[technicianId][upper] = (this.vanStock[technicianId][upper] || 0) + quantity;
-    return { technician_id: technicianId, resource: upper, quantity, van_stock: this.vanStock[technicianId][upper] };
+    const site = siteId || 'site-b';
+    const storeKey = `store:${site}:available|${upper}`;
+    const vanKey = `van:${technicianId}:stock|${upper}`;
+    this.balances[storeKey] = Math.max(0, (this.balances[storeKey] || 0) - quantity);
+    this.balances[vanKey] = (this.balances[vanKey] || 0) + quantity;
+    return { technician_id: technicianId, resource: upper, quantity, van_stock: this.balances[vanKey] };
   }
 
   public issueStock(jobId: string, resource: string, quantity: number) {
     const job = this.jobs[jobId];
+    const upper = (resource || '').trim().toUpperCase();
     if (job) {
       if (!job.issued_parts) job.issued_parts = {};
-      job.issued_parts[resource] = (job.issued_parts[resource] || 0) + quantity;
+      job.issued_parts[upper] = (job.issued_parts[upper] || 0) + quantity;
     }
-    return { job_id: jobId, resource, quantity, issued: true };
+    const reservedKey = `job:${jobId}:reserved|${upper}`;
+    if (this.balances[reservedKey] !== undefined) {
+      this.balances[reservedKey] = Math.max(0, this.balances[reservedKey] - quantity);
+    }
+    return { job_id: jobId, resource: upper, quantity, issued: true };
   }
 
   public generateJwt(userId = 'coordinator'): string {

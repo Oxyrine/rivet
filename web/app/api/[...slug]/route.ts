@@ -328,6 +328,11 @@ async function handle(request: NextRequest, { params }: { params: Promise<{ slug
     return NextResponse.json({ now: new Date().toISOString() });
   }
 
+  if (path === 'admin/reset') {
+    demoEngine.reset();
+    return NextResponse.json({ reset: true });
+  }
+
   if (path.startsWith('machines/') && path.endsWith('/passport')) {
     const machineId = path.split('/')[1];
     return NextResponse.json(demoEngine.getPassport(machineId));
