@@ -5,7 +5,14 @@
 <script type="module">
 import {verifyPackage} from './verify.js'; let pkg,result;const field=document.querySelector('#key');field.value=localStorage.getItem('hep-pinned-key')||'';let anchors=JSON.parse(localStorage.getItem('hep-anchors')||'[]');
 document.querySelector('#pin').onclick=()=>{localStorage.setItem('hep-pinned-key',field.value.trim());document.querySelector('#result').textContent='Onboarding key pinned. Verify the fingerprint through your service contract.'};
-document.querySelector('#package').onchange=async e=>{try{pkg=JSON.parse(await e.target.files[0].text());result=await verifyPackage(pkg,field.value.trim(),anchors);document.querySelector('#result').textContent=JSON.stringify(result,null,2)}catch(err){document.querySelector('#result').textContent=err.message}};
+document.querySelector('#package').onchange=async e=>{const out=document.querySelector('#result');try{pkg=JSON.parse(await e.target.files[0].text());result=undefined;
+if(!field.value.trim()){out.textContent='No key is pinned yet, so the signature cannot be checked.\nPaste the key from your service contract above, click "Save onboarding key", then choose the package again.';return}
+result=await verifyPackage(pkg,field.value.trim(),anchors);
+// "Pending" means the customer has not accepted yet: the record is genuine but the job is not finished.
+const notFinal=result.valid&&pkg.body.acceptance==='Pending';
+const heading=!result.valid?'VERIFICATION FAILED':notFinal?'SIGNATURE VALID - JOB NOT FINISHED':'SERVICE RECORD VERIFIED';
+const note=notFinal?(pkg.body.report_hash?'The technician has reported, but the customer has not accepted yet. The signature and chain are valid for what has happened so far; the outcome is not final.':'This job is still in progress: no report has been submitted and nothing has been accepted. The signature and chain cover only what has happened so far, so there is no final outcome to check yet.')+'\n\n':'';
+out.textContent=heading+'\n\n'+note+JSON.stringify(result,null,2)}catch(err){out.textContent=err.message}};
 document.querySelector('#remember').onclick=()=>{if(!result?.valid)return;anchors.push({machine_id:pkg.body.machine_id,machine_seq:pkg.body.events.length,machine_hash:pkg.body.head});localStorage.setItem('hep-anchors',JSON.stringify(anchors));document.querySelector('#result').textContent+='\nCustomer-held head saved.'};
 document.querySelector('#import').onchange=async e=>{anchors=JSON.parse(await e.target.files[0].text());localStorage.setItem('hep-anchors',JSON.stringify(anchors));};
 document.querySelector('#export').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(anchors)],{type:'application/json'}));a.download='customer-held-history.json';a.click();};
