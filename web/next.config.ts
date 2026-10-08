@@ -1,5 +1,8 @@
 import type { NextConfig } from 'next';
+
 const config: NextConfig = {
-  async rewrites() { return [{source:'/api/:path*',destination:`${process.env.API_URL || 'http://127.0.0.1:8000'}/:path*`}]; },
+  /* API routes are dynamically handled and proxied via app/api route handlers */
 };
+
 export default config;
+
