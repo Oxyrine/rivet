@@ -35,6 +35,8 @@ export default function Stores() {
 
   // Reading is open to the coordinator and manager (they assign against what is in stock); only the storekeeper changes stock.
   const canAct = session?.role === 'storekeeper' || session?.role === 'admin';
+  // Giving a job a technician is the coordinator's call (it books their time and reserves the part); the storekeeper is only told who to ask.
+  const canAssign = session?.role === 'coordinator' || session?.role === 'manager' || session?.role === 'admin';
 
   const load = useCallback(async () => {
     try {
@@ -144,6 +146,14 @@ export default function Stores() {
                     <StatusLabel tone={row.status === 'issued' ? 'positive' : row.status === 'ready' ? 'warning' : 'neutral'}>
                       {row.status === 'issued' ? 'Issued' : row.kind === 'tool' ? 'Held for the job' : row.status === 'ready' ? 'Ready to hand over' : 'Waiting for a technician'}
                     </StatusLabel>
+                    {row.status === 'waiting' && !row.technician_id && (canAssign ? (
+                      <Button variant="primary" busy={busy === `${id}-assign`} disabled={!!busy}
+                        onClick={() => act(`${id}-assign`, `/jobs/${row.job_id}/assign`, {}, `Assigned the best-qualified technician to ${row.job_id}. The part is now reserved for them.`)}>
+                        Assign best match
+                      </Button>
+                    ) : (
+                      <span className={s.sub}>A coordinator assigns this in the Control Room</span>
+                    ))}
                     {canAct && row.kind === 'part' && row.status === 'ready' && (
                       <Button variant="primary" busy={busy === id} disabled={!!busy}
                         onClick={() => act(id, '/stores/issue', { job_id: row.job_id, resource: row.resource, quantity: row.outstanding }, `Issued ${row.outstanding} × ${row.resource} to ${row.technician} for ${row.job_id}.`)}>
