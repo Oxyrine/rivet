@@ -43,7 +43,8 @@ def test_seed_history_and_m104_passport(http_client):
     s = store.read()
     for jid in ['J-2236', 'J-2239', 'J-2240', 'J-2253', 'J-2254', 'J-2255', 'J-2256', 'J-2257', 'J-2258', 'J-2259', 'J-2260']:
         assert jid in s.jobs
-        assert s.jobs[jid]['state'] == 'assigned'
+        # three jobs are deliberately released so the demo can assign them live; the rest stay assigned
+        assert s.jobs[jid]['state'] == ('approved' if jid in s.metadata['demo_floor'] else 'assigned')
         assert s.jobs[jid]['acceptance'] == 'Pending'
     
     # Verify next_request is ready for today's demo at 2231

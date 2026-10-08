@@ -10,7 +10,7 @@ Scope (which sites, which technician) is decided in `api/app/core/auth.py`. Whic
 | auditor | Control room (read-only) | Control room, Machine passports, Service records | nothing | none: reads the whole record |
 | supervisor (customer site lead) | Customer approvals | Customer approvals, Machine passports, Service records, Site arrival | confirms access and permits, confirms the machine runs, accepts reports, disputes lines, enrols the gate | customer view |
 | requester (customer) | Customer approvals | Customer approvals, Machine passports, Service records | requests service, confirms access and permits (cannot accept, dispute or confirm the machine runs) | customer view |
-| storekeeper | Service records | Service records only (no stores screen yet) | issues parts through the API | sees no jobs |
+| storekeeper | Stores | Stores (what each technician needs, shelf stock, van top-ups, book in stock) and Service records | issues parts to jobs, tops up vans, books in stock | sees the parts and tools each job needs, not the jobs themselves |
 | technician | Field app | Field app only | own job actions, report, evidence | own jobs only, no dispatcher ranking |
 
 **Customer view** removes the provider's internal planning: the ranked technician candidates (skills and certificates), the assigned technician, planned parts, part and technician-time holds, SLA breach and recovery data, and the live event stream. A customer still gets their service, its state, the commitments they take part in, the report, the reconciliation and the evidence.

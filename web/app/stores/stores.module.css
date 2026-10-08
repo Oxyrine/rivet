@@ -1,0 +1,35 @@
+.page { display: flex; flex-direction: column; gap: 20px; }
+
+.kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.kpi {
+  display: grid; grid-template-columns: auto auto 1fr; align-items: center; gap: 10px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 14px 16px;
+}
+.kpi b { font-size: 24px; font-variant-numeric: tabular-nums; }
+.kpi span { color: var(--ink-2); font-size: 13px; }
+
+.groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; margin-top: 14px; }
+.group { border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); }
+.groupHead { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-bottom: 1px solid var(--line-subtle); background: var(--surface-sunken); }
+.groupHead .muted { font-size: 12px; }
+
+.row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; border-bottom: 1px solid var(--line-subtle); }
+.row:last-child { border-bottom: 0; }
+.what { flex: 1 1 160px; display: flex; flex-direction: column; min-width: 0; }
+.sub { font-family: var(--font-mono); font-size: 11px; color: var(--ink-2); margin-top: 2px; }
+
+.scroller { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); margin-top: 12px; }
+.scroller table { margin: 0; min-width: 420px; }
+
+.forms { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+.form { display: grid; gap: 10px; margin-top: 12px; }
+.form label { display: grid; gap: 4px; font-size: 12px; color: var(--ink-2); }
+.form input, .form select { width: 100%; }
+
+.vans { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-top: 12px; }
+.van { display: flex; flex-direction: column; gap: 4px; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px; background: var(--surface); font-size: 14px; }
+
+@media (max-width: 640px) {
+  .kpis { grid-template-columns: 1fr; }
+  .groups { grid-template-columns: 1fr; }
+}

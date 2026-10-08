@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ClipboardCheck, Fingerprint, ScanLine, BadgeCheck, UsersRound, Wrench } from 'lucide-react';
+import { LayoutDashboard, ClipboardCheck, Fingerprint, ScanLine, BadgeCheck, UsersRound, Wrench, Boxes } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useSession } from '../lib/api';
 import { destinationsFor } from '../lib/roles';
@@ -12,6 +12,7 @@ const icons: Record<string, LucideIcon> = {
   '/portal': ClipboardCheck,
   '/passport': BadgeCheck,
   '/verify': Fingerprint,
+  '/stores': Boxes,
   '/gate': ScanLine,
   '/tech': Wrench,
 };

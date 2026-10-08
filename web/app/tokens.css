@@ -13,6 +13,8 @@
   --brand-accent-border: rgba(200, 76, 28, 0.25);
   --brand-accent-glow: rgba(200, 76, 28, 0.15);
   --brand-on-dark: #f0f4f1;
+  --primary: var(--brand); /* the shared Button's primary variant */
+  --on-primary: #ffffff;
 
   /* Machinery Dark Graphite Palette */
   --graphite-950: #0a0e0c;

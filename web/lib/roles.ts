@@ -6,6 +6,7 @@ export const DESTINATIONS: Record<string, Destination> = {
   portal: { href: '/portal', label: 'Customer approvals' },
   passport: { href: '/passport', label: 'Machine passports' },
   verify: { href: '/verify', label: 'Service records' },
+  stores: { href: '/stores', label: 'Stores' },
   gate: { href: '/gate', label: 'Site arrival' },
   tech: { href: '/tech', label: 'Field app' },
   team: { href: '/team', label: 'Team access' },
@@ -13,13 +14,13 @@ export const DESTINATIONS: Record<string, Destination> = {
 
 /** Pages in sidebar order. The first is where the role lands after signing in. */
 export const ACCESS: Record<string, string[]> = {
-  admin: ['control', 'portal', 'passport', 'verify', 'gate', 'tech'],
-  coordinator: ['control', 'passport', 'verify'],
-  manager: ['control', 'passport', 'verify'],
+  admin: ['control', 'portal', 'passport', 'verify', 'stores', 'gate', 'tech'],
+  coordinator: ['control', 'stores', 'passport', 'verify'],
+  manager: ['control', 'stores', 'passport', 'verify'],
   auditor: ['control', 'passport', 'verify'],
   supervisor: ['portal', 'passport', 'verify', 'gate'],
   requester: ['portal', 'passport', 'verify'],
-  storekeeper: ['verify'],
+  storekeeper: ['stores', 'verify'],
   technician: ['tech'],
 };
 

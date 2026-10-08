@@ -332,7 +332,7 @@ python -m adapters.billing.main --poll   # run the billing adapter against the A
 | auditor | Control room (read-only) | Nothing | Reads the whole record |
 | supervisor (customer site lead) | Customer approvals | Confirms access and permits and that the machine runs, accepts reports, disputes lines, enrols the gate | Customer view |
 | requester (customer) | Customer approvals | Requests service, confirms access and permits | Customer view |
-| storekeeper | Service records | Issues parts through the API | No jobs (no stores screen yet) |
+| storekeeper | Stores, Service records | Issues parts to jobs, tops up technicians' vans, books in stock | Sees what each job needs from the store, not the jobs |
 | technician | Field app | Own job actions, report, evidence | Own jobs only, no dispatcher ranking |
 
 Signed-out visitors see only the verifier. Full detail in [docs/roles.md](docs/roles.md).
@@ -438,7 +438,7 @@ Rivet is a hackathon build. This section says plainly what is and is not done, i
 
 Other open items:
 
-- **Not built:** a storekeeper stores screen (that role only sees Service records); the **Log Task** button in the field app is a stub; phone OTP (the provider is off, and technicians on shared phones would need an SMS provider).
+- **Not built:** the **Log Task** button in the field app is a stub; phone OTP (the provider is off, and technicians on shared phones would need an SMS provider).
 - **Scoping:** customers see every job at their site, not only their company's.
 - **Brute force:** there is no lockout on repeated wrong PINs yet.
 - **Concurrency and scale:** event sealing is inline, the scheduler assumes one instance, and large-volume scheduling, PostgreSQL concurrency, backup and restore and production authentication have not been exercised.
