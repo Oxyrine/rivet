@@ -1,0 +1,16 @@
+plugins {
+  id 'com.android.application'
+}
+
+android {
+  namespace 'app.rivet.field'
+  compileSdk 36
+
+  defaultConfig {
+    applicationId 'app.rivet.field'
+    minSdk 24
+    targetSdk 36
+    versionCode 1
+    versionName '1.0.0'
+  }
+}

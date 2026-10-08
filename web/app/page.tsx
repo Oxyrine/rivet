@@ -24,6 +24,7 @@ const shortcuts = [
   { href: '/passport', title: 'Machine passports', description: 'Full equipment history and verified audit trail' },
   { href: '/verify', title: 'Service records', description: 'Offline cryptographic verification and key pinning' },
   { href: '/gate', title: 'Site arrival', description: 'Ed25519 signed rotating arrival code' },
+  { href: '/field-app', title: 'Field app', description: 'Install the Android companion for technicians on site' },
 ];
 
 const stages = [
@@ -394,6 +395,7 @@ export default function Landing() {
           <Link href="/control">Control Room</Link>
           <Link href="/passport">Machine Passports</Link>
           <Link href="/verify">Records Verification</Link>
+          <Link href="/field-app">Field app</Link>
         </nav>
         <div className={s.navActions}>
           <SessionBar />
