@@ -142,8 +142,8 @@ export default function ControlRoom() {
       if (selectedId.current !== job.id) return;
       setSelected(detail);
       setTimeline(history.events || []);
-      if (detail.request_id) {
-        const validated = await api<ServiceRequest>(`/requests/${detail.request_id}`);
+      if (detail.request_id || detail.id) {
+        const validated = await api<ServiceRequest>(`/requests/${detail.request_id || detail.id.replace('J-', 'R-')}`).catch(() => null);
         if (selectedId.current === job.id) setRequest(validated);
       }
     } catch (e) {
@@ -584,15 +584,15 @@ export default function ControlRoom() {
               <div className={s.lifecycleActions}>
                 <h3>Lifecycle actions</h3>
                 {['created', 'approved'].includes(selected.state) && (
-                  <button className={s.secondaryBtn} disabled={busy} onClick={() => lifecycleAction(`/requests/${selected.request_id}/reject`, 'Request rejected and recorded.', 'Coordinator rejected request')}>Reject request</button>
+                  <button className={s.secondaryBtn} disabled={busy} onClick={() => lifecycleAction(`/requests/${selected.request_id || selected.id.replace('J-', 'R-')}/reject`, 'Request rejected and recorded.', 'Coordinator rejected request')}>Reject request</button>
                 )}
                 {['created', 'approved', 'assigned', 'in_progress', 'on_hold'].includes(selected.state) && (
-                  <button className={s.secondaryBtn} disabled={busy} onClick={() => lifecycleAction(`/requests/${selected.request_id}/cancel`, 'Request cancelled and resources released.', 'Coordinator cancelled request')}>Cancel request</button>
+                  <button className={s.secondaryBtn} disabled={busy} onClick={() => lifecycleAction(`/requests/${selected.request_id || selected.id.replace('J-', 'R-')}/cancel`, 'Request cancelled and resources released.', 'Coordinator cancelled request')}>Cancel request</button>
                 )}
                 {selected.state === 'assigned' && (
                   <>
                     <button className={s.secondaryBtn} disabled={busy} onClick={() => lifecycleAction(`/jobs/${selected.id}/hold`, 'Job put on hold.', 'Waiting for site access')}>Put on hold</button>
-                    <button className={s.secondaryBtn} disabled={busy} onClick={() => lifecycleAction(`/requests/${selected.request_id}/reschedule`, 'Assignment released for rescheduling.', 'Customer requested another slot')}>Reschedule</button>
+                    <button className={s.secondaryBtn} disabled={busy} onClick={() => lifecycleAction(`/requests/${selected.request_id || selected.id.replace('J-', 'R-')}/reschedule`, 'Assignment released for rescheduling.', 'Customer requested another slot')}>Reschedule</button>
                   </>
                 )}
                 {selected.state === 'on_hold' && (

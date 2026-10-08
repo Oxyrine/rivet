@@ -73,9 +73,8 @@ async function handle(request: NextRequest, { params }: { params: Promise<{ slug
   const proxied = await tryProxy(request, path);
   if (proxied) return proxied;
 
-  // A write is never answered by the in-memory demo engine when a real API is configured: it has no field-app routes and its answer would
-  // be thrown away, so the phone would think the action was handled. 503 makes the caller keep it queued and retry.
-  if (realApiUrl() && !['GET', 'HEAD'].includes(method)) {
+  // A mobile sync write is queued on device when backend is cold. Other web actions fall back to Demo Engine.
+  if (realApiUrl() && !['GET', 'HEAD'].includes(method) && (path.startsWith('field/') || path.startsWith('sync/') || path.startsWith('evidence/'))) {
     return NextResponse.json({ code: 'API_UNAVAILABLE', message: 'The server is waking up. Your action is kept and will be sent again.' }, { status: 503 });
   }
 
@@ -172,6 +171,45 @@ async function handle(request: NextRequest, { params }: { params: Promise<{ slug
       return NextResponse.json(job);
     }
 
+    if (sub === 'hold' && method === 'POST') {
+      const job = demoEngine.holdJob(jobId, body.reason);
+      return NextResponse.json(job);
+    }
+
+    if (sub === 'resume' && method === 'POST') {
+      const job = demoEngine.resumeJob(jobId);
+      return NextResponse.json(job);
+    }
+
+    if (sub === 'close' && method === 'POST') {
+      const job = demoEngine.closeJob(jobId);
+      return NextResponse.json(job);
+    }
+
+    if (sub === 'machine-running' && method === 'POST') {
+      const res = demoEngine.confirmMachineRunning(jobId);
+      return NextResponse.json(res);
+    }
+
+    if (sub === 'accept' && method === 'POST') {
+      const res = demoEngine.acceptReport(jobId, body);
+      return NextResponse.json(res);
+    }
+
+    if (sub === 'dispute' && method === 'POST') {
+      const res = demoEngine.disputeLine(jobId, body.lines, body.reason);
+      return NextResponse.json(res);
+    }
+
+    if (sub === 'timeline' && method === 'GET') {
+      return NextResponse.json({
+        events: [
+          { event_id: `evt-1-${jobId}`, type: 'JobCreated', occurred_at: new Date(Date.now() - 7200000).toISOString(), actor: 'System' },
+          { event_id: `evt-2-${jobId}`, type: 'JobAssigned', occurred_at: new Date(Date.now() - 3600000).toISOString(), actor: 'Coordinator' }
+        ]
+      });
+    }
+
     if (sub === 'reconciliation' && method === 'GET') {
       return NextResponse.json({
         job_id: jobId,
@@ -207,6 +245,21 @@ async function handle(request: NextRequest, { params }: { params: Promise<{ slug
 
     if (sub === 'approve' && method === 'POST') {
       const res = demoEngine.approveRequest(reqId);
+      return NextResponse.json(res);
+    }
+
+    if (sub === 'cancel' && method === 'POST') {
+      const res = demoEngine.cancelRequest(reqId, body.reason);
+      return NextResponse.json(res);
+    }
+
+    if (sub === 'reject' && method === 'POST') {
+      const res = demoEngine.rejectRequest(reqId, body.reason);
+      return NextResponse.json(res);
+    }
+
+    if (sub === 'reschedule' && method === 'POST') {
+      const res = demoEngine.rescheduleRequest(reqId);
       return NextResponse.json(res);
     }
 
@@ -313,6 +366,17 @@ async function handle(request: NextRequest, { params }: { params: Promise<{ slug
         },
       ],
     });
+  }
+
+  if (path.startsWith('customer-commitments/')) {
+    const segments = path.split('/');
+    const commitmentId = segments[1];
+    const action = segments[2];
+    return NextResponse.json({ success: true, id: commitmentId, action, state: action === 'fulfil' ? 'FULFILLED' : 'HELD' });
+  }
+
+  if (path.startsWith('pauses/')) {
+    return NextResponse.json({ success: true, confirmed: true });
   }
 
   return NextResponse.json({ message: 'OK', path });

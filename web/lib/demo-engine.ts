@@ -68,6 +68,13 @@ export interface Job {
   report_hash?: string;
   acceptance?: string;
   on_site?: boolean;
+  version?: number;
+  machine_running_at?: string;
+  checkout_at?: string;
+  accepted_at?: string;
+  disputed?: boolean;
+  dispute_lines?: string[];
+  dispute_reason?: string;
 }
 
 export interface ServiceRequest {
@@ -414,6 +421,106 @@ class DemoEngine {
       return { id: job.id, state: 'approved' };
     }
     return { error: 'Request not found' };
+  }
+
+  public cancelRequest(id: string, reason?: string) {
+    const req = this.requests[id] || Object.values(this.requests).find(r => r.job_id === id);
+    const jobId = req ? req.job_id : id.startsWith('R-') ? id.replace('R-', 'J-') : id;
+    if (req) req.state = 'cancelled';
+    const job = this.jobs[jobId] || this.jobs[id];
+    if (job) {
+      job.state = 'cancelled';
+      job.commitments = [];
+      if (this.machines[job.machine_id]) this.machines[job.machine_id].status = 'Running';
+      return { id: req ? req.id : id, job_id: job.id, state: 'cancelled' };
+    }
+    return { id, state: 'cancelled' };
+  }
+
+  public rejectRequest(id: string, reason?: string) {
+    const req = this.requests[id] || Object.values(this.requests).find(r => r.job_id === id);
+    const jobId = req ? req.job_id : id.startsWith('R-') ? id.replace('R-', 'J-') : id;
+    if (req) req.state = 'rejected';
+    const job = this.jobs[jobId] || this.jobs[id];
+    if (job) {
+      job.state = 'rejected';
+      job.commitments = [];
+      if (this.machines[job.machine_id]) this.machines[job.machine_id].status = 'Running';
+      return { id: req ? req.id : id, job_id: job.id, state: 'rejected' };
+    }
+    return { id, state: 'rejected' };
+  }
+
+  public rescheduleRequest(id: string) {
+    const req = this.requests[id] || Object.values(this.requests).find(r => r.job_id === id);
+    const jobId = req ? req.job_id : id.startsWith('R-') ? id.replace('R-', 'J-') : id;
+    if (req) req.state = 'approved';
+    const job = this.jobs[jobId] || this.jobs[id];
+    if (job) {
+      job.state = 'approved';
+      job.technician_id = null;
+      job.commitments = [];
+      return { id: req ? req.id : id, job_id: job.id, state: 'approved' };
+    }
+    return { id, state: 'approved' };
+  }
+
+  public holdJob(jobId: string, reason?: string) {
+    const job = this.jobs[jobId];
+    if (job) {
+      job.state = 'on_hold';
+      return { job_id: job.id, state: 'on_hold', version: (job.version || 1) + 1 };
+    }
+    return { job_id: jobId, state: 'on_hold' };
+  }
+
+  public resumeJob(jobId: string) {
+    const job = this.jobs[jobId];
+    if (job) {
+      job.state = 'assigned';
+      return { job_id: job.id, state: 'assigned', version: (job.version || 1) + 1 };
+    }
+    return { job_id: jobId, state: 'assigned' };
+  }
+
+  public closeJob(jobId: string) {
+    const job = this.jobs[jobId];
+    if (job) {
+      job.state = 'closed';
+      if (this.machines[job.machine_id]) this.machines[job.machine_id].status = 'Running';
+      return { job_id: job.id, state: 'closed', version: (job.version || 1) + 1 };
+    }
+    return { job_id: jobId, state: 'closed' };
+  }
+
+  public confirmMachineRunning(jobId: string) {
+    const job = this.jobs[jobId];
+    if (job) {
+      job.machine_running_at = new Date().toISOString();
+      return { job_id: job.id, machine_running_at: job.machine_running_at };
+    }
+    return { job_id: jobId, machine_running_at: new Date().toISOString() };
+  }
+
+  public acceptReport(jobId: string, data: any = {}) {
+    const job = this.jobs[jobId];
+    if (job) {
+      job.state = 'verified';
+      job.accepted_at = new Date().toISOString();
+      return { job_id: job.id, state: 'verified', accepted_at: job.accepted_at };
+    }
+    return { job_id: jobId, state: 'verified' };
+  }
+
+  public disputeLine(jobId: string, lines: string[] = [], reason = '') {
+    const job = this.jobs[jobId];
+    if (job) {
+      job.disputed = true;
+      job.dispute_lines = lines;
+      job.dispute_reason = reason;
+      return { job_id: job.id, disputed: true, lines, reason };
+    }
+    return { job_id: jobId, disputed: true, lines, reason };
   }
 
   public assignJob(jobId: string, techId: string | null) {
