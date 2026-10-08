@@ -98,8 +98,12 @@ def command(state, device, cmd, principal):
     else:raise DomainError('UNKNOWN_COMMAND','Unknown field action',{'type':kind})
     return {'job_id':job['id'],'state':job['state']}
 
-def replay(state, device_id, commands, principal):
+def replay(state, device_id, commands, principal, rebase=False):
     device=state.devices[device_id];results=[];pending=device.setdefault('pending',{});history=device.setdefault('results',{});fingerprints=device.setdefault('fingerprints',{})
+    lowest=min((c['device_seq'] for c in commands),default=0)
+    # After a data reset the server has no history for this device while the phone's numbering carries on. Only a device the server has
+    # never accepted anything from may be re-based, so a real gap in a live sequence is still held.
+    if rebase and not history and lowest>device['last_seq']+1:device['last_seq']=lowest-1
     from contract.canonical import canonical_json
     for cmd in commands:
         key=cmd['idempotency_key'];encoded=canonical_json(cmd)

@@ -3,16 +3,23 @@ import { demoEngine } from '@/lib/demo-engine';
 
 export const dynamic = 'force-dynamic';
 
-async function tryProxy(request: NextRequest, path: string): Promise<Response | null> {
+// The real API is configured unless API_URL is unset or points at localhost on a production build.
+function realApiUrl(): string | null {
   const apiUrl = process.env.API_URL;
-  // If API_URL points to localhost in a production environment, don't attempt to proxy as it will fail
-  if (!apiUrl || (process.env.NODE_ENV === 'production' && (apiUrl.includes('127.0.0.1') || apiUrl.includes('localhost')))) {
-    return null;
-  }
+  if (!apiUrl || (process.env.NODE_ENV === 'production' && (apiUrl.includes('127.0.0.1') || apiUrl.includes('localhost')))) return null;
+  return apiUrl;
+}
+
+async function tryProxy(request: NextRequest, path: string): Promise<Response | null> {
+  const apiUrl = realApiUrl();
+  if (!apiUrl) return null;
+  const isRead = ['GET', 'HEAD'].includes(request.method.toUpperCase());
 
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 2500);
+    // Reads may fall back to the demo engine quickly; a write must be given time (the free API takes a while to wake) because aborting it
+    // can still complete on the server while the caller is told it failed.
+    const timeout = setTimeout(() => controller.abort(), isRead ? 2500 : 25000);
 
     const headers = new Headers(request.headers);
     headers.delete('host');
@@ -29,7 +36,8 @@ async function tryProxy(request: NextRequest, path: string): Promise<Response | 
     });
 
     clearTimeout(timeout);
-    if (response.ok || response.status === 401 || response.status === 403 || response.status === 422) {
+    // A real refusal to a write (400, 404, 409...) is the answer; only an unreachable or failing API may fall back to the demo engine.
+    if (response.ok || response.status === 401 || response.status === 403 || response.status === 422 || (!isRead && response.status < 500)) {
       const respData = await response.text();
       return new Response(respData, {
         status: response.status,
@@ -52,6 +60,11 @@ async function handle(request: NextRequest, { params }: { params: Promise<{ slug
   // 1. Check if remote proxy is reachable
   const proxied = await tryProxy(request, path);
   if (proxied) return proxied;
+
+  // A write must never be answered by the in-memory demo engine when a real API is configured: report it as unavailable so the caller retries.
+  if (realApiUrl() && !['GET', 'HEAD'].includes(method)) {
+    return NextResponse.json({ code: 'API_UNAVAILABLE', message: 'The server is not answering yet. Nothing was lost; try again in a moment.' }, { status: 503 });
+  }
 
   // 2. Local high-fidelity Demo Engine fallback
   let body: any = {};

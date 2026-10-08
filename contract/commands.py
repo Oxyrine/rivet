@@ -31,6 +31,8 @@ class DeviceCommand(Command):
 
 class DeviceBatch(Command):
     commands: list[DeviceCommand]
+    # Set by a device that knows the server lost its history (a data reset), so it asks to continue from its own sequence.
+    rebase: bool = False
 
 class Report(Command):
     parts: dict[str, int] = Field(default_factory=dict)

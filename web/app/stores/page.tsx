@@ -37,25 +37,43 @@ export default function Stores() {
   const canAct = session?.role === 'storekeeper' || session?.role === 'admin';
 
   const load = useCallback(async () => {
-    try { setData(await api<Overview>('/stores/overview')); setError(''); }
-    catch (e) { setError((e as Error).message); }
+    try {
+      const overview = await api<Overview>('/stores/overview');
+      setData(overview && typeof overview === 'object' ? overview : null);
+      setError('');
+    } catch (e) {
+      setError((e as Error).message);
+    }
   }, []);
 
-  useEffect(() => { if (session) void load(); else setData(null); }, [session, load]);
+  useEffect(() => {
+    if (session) void load();
+    else setData(null);
+  }, [session, load]);
 
   const act = async (id: string, path: string, body: object, done: string) => {
-    setBusy(id); setMessage(''); setError('');
+    setBusy(id);
+    setMessage('');
+    setError('');
     try {
-      await api(path, { method: 'POST', body: JSON.stringify(body), headers: { 'Idempotency-Key': `${id}-${Date.now()}` } });
+      await api(path, {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: { 'Idempotency-Key': `${id}-${Date.now()}` },
+      });
       setMessage(done);
       await load();
-    } catch (e) { setError((e as Error).message); }
-    finally { setBusy(''); }
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy('');
+    }
   };
 
   const groups = useMemo(() => {
     const map = new Map<string, { name: string; rows: Need[] }>();
     for (const need of data?.needs ?? []) {
+      if (!need) continue;
       const key = need.technician_id ?? '_none';
       if (!map.has(key)) map.set(key, { name: need.technician ?? 'Not assigned yet', rows: [] });
       map.get(key)!.rows.push(need);
@@ -63,10 +81,15 @@ export default function Stores() {
     return [...map.entries()].sort(([a], [b]) => (a === '_none' ? 1 : b === '_none' ? -1 : a.localeCompare(b)));
   }, [data]);
 
-  const ready = data?.needs.filter(n => n.status === 'ready' && n.kind === 'part').length ?? 0;
-  const waiting = data?.needs.filter(n => n.status === 'waiting').length ?? 0;
-  const low = data?.stores.flatMap(x => x.stock).filter(x => x.low).length ?? 0;
-  const resources = [...new Set(data?.stores.flatMap(x => x.stock.map(r => r.resource)) ?? [])];
+  const needsList = data?.needs ?? [];
+  const storesList = data?.stores ?? [];
+  const vansList = data?.vans ?? [];
+  const techniciansList = data?.technicians ?? [];
+
+  const ready = needsList.filter(n => n && n.status === 'ready' && n.kind === 'part').length;
+  const waiting = needsList.filter(n => n && n.status === 'waiting').length;
+  const low = storesList.flatMap(x => x?.stock ?? []).filter(x => x && x.low).length;
+  const resources = [...new Set(storesList.flatMap(x => (x?.stock ?? []).map(r => r?.resource)).filter((r): r is string => Boolean(r)))];
 
   if (!session) {
     return (
@@ -135,14 +158,14 @@ export default function Stores() {
         </div>
       </section>
 
-      {data?.stores.map(store => (
+      {storesList.map(store => (
         <section key={store.site_id} className="panel">
           <h2>On the shelf · {store.name}</h2>
           <div className={s.scroller}>
             <table>
               <thead><tr><th>Part</th><th>On the shelf</th><th>Held for jobs</th><th /></tr></thead>
               <tbody>
-                {store.stock.map(item => (
+                {(store.stock ?? []).map(item => (
                   <tr key={item.resource}>
                     <td>{item.name ? <>{item.name} <span className={s.sub}>{item.resource}</span></> : item.resource}</td>
                     <td><b>{item.available}</b></td>
@@ -176,7 +199,7 @@ export default function Stores() {
               <label>Technician
                 <select value={van.technician_id} onChange={e => setVan({ ...van, technician_id: e.target.value })} required>
                   <option value="">Choose…</option>
-                  {data.technicians.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  {techniciansList.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
               </label>
               <label>Part
@@ -193,14 +216,14 @@ export default function Stores() {
       )}
       <datalist id="parts">{resources.map(r => <option key={r} value={r} />)}</datalist>
 
-      {!!data?.vans.length && (
+      {!!vansList.length && (
         <section className="panel">
           <h2>Van stock</h2>
           <div className={s.vans}>
-            {data.vans.map(v => (
+            {vansList.map(v => (
               <div key={v.technician_id} className={s.van}>
                 <strong>{v.technician}</strong>
-                {v.stock.map(x => <span key={x.resource}>{x.quantity} × {label(x.resource, x.name)}</span>)}
+                {(v.stock ?? []).map(x => <span key={x.resource}>{x.quantity} × {label(x.resource, x.name)}</span>)}
               </div>
             ))}
           </div>

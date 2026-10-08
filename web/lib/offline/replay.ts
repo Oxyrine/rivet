@@ -89,6 +89,11 @@ export async function replayPendingCommands(
   let totalGaps = 0;
   const allResults: SyncResultSummary['results'] = [];
 
+  // The server numbers a device's commands from 1 and holds anything that skips ahead. After a data reset it expects 1 again while
+  // this phone carries on from its old numbers, so every command would wait forever. Detect that and ask the server to continue from ours.
+  const lowestSeq = Math.min(...orderedCommands.map((c) => c.device_seq));
+  let rebase = false;
+
   // 2. Process in batches
   for (let i = 0; i < orderedCommands.length; i += BATCH_SIZE) {
     const batch = orderedCommands.slice(i, i + BATCH_SIZE);
@@ -123,6 +128,7 @@ export async function replayPendingCommands(
           original?: any;
           code?: string;
           message?: string;
+          expected_seq?: number;
         }>;
         last_seq: number;
         sequence_gaps: number;
@@ -130,8 +136,16 @@ export async function replayPendingCommands(
       }>(`/devices/${deviceId}/commands`, {
         method: 'POST',
         headers,
-        body: JSON.stringify(payload),
+        body: JSON.stringify(rebase ? { ...payload, rebase: true } : payload),
+        // A request that never answers would leave replay marked as running and block every later attempt.
+        signal: typeof AbortSignal.timeout === 'function' ? AbortSignal.timeout(30000) : undefined,
       });
+
+      if (!rebase && response?.results?.some((r) => r.status === 'held_gap' && typeof r.expected_seq === 'number' && r.expected_seq < lowestSeq)) {
+        rebase = true;
+        i -= BATCH_SIZE; // send this batch again, asking the server to continue from our numbering
+        continue;
+      }
 
       if (response && response.results) {
         totalGaps = response.sequence_gaps || 0;
@@ -258,8 +272,11 @@ export function initReplayListeners(
   if (navigator.onLine) {
     runReplay();
   }
+  // Retry while anything is still waiting: a sleeping server or a dropped request should not need a new tap to be sent again.
+  const retryTimer = window.setInterval(runReplay, 20000);
 
   return () => {
+    window.clearInterval(retryTimer);
     window.removeEventListener('online', handleOnline);
     document.removeEventListener('visibilitychange', handleVisibility);
     window.removeEventListener('rivet:trigger-replay', handleTrigger);

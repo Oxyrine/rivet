@@ -281,7 +281,7 @@ def shift(ident:str,p=Depends(require_roles('technician'))):
 
 @router.post('/devices/{ident}/commands')
 def commands(ident:str,body:DeviceBatch,p=Depends(require_roles('technician'))):
-    def fn(s):device_scope(s,ident,p);return replay(s,ident,[c.model_dump() for c in body.commands],p)
+    def fn(s):device_scope(s,ident,p);return replay(s,ident,[c.model_dump() for c in body.commands],p,rebase=body.rebase)
     return store.mutate(fn)
 
 @router.post('/jobs/{ident}/actions/{kind}')

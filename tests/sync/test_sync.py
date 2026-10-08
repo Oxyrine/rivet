@@ -76,3 +76,16 @@ def test_offline_issue_report_replays_as_an_auditable_shortfall():
     hold=next(c for c in s.commitments.values() if c.get('job_id')=='J-2231' and c.get('resource')=='HS-40')
     assert hold['state']=='BREACHED'
     assert any(b['type']=='PART_SHORTFALL' for b in s.breaches.values())
+
+
+def test_a_device_whose_server_history_was_reset_can_ask_to_continue_from_its_own_numbers():
+    s,p=setup()
+    held=replay(s,'device-ravi',[cmd(26),cmd(27)],p)  # phone kept counting after a data reset
+    assert [r['status'] for r in held['results']]==['held_gap','held_gap'] and held['results'][0]['expected_seq']==1
+    out=replay(s,'device-ravi',[cmd(26),cmd(27)],p,rebase=True)
+    assert [r['status'] for r in out['results']]==['accepted','accepted'] and out['last_seq']==27
+
+def test_rebase_is_refused_once_the_server_has_history_for_the_device():
+    s,p=setup();replay(s,'device-ravi',[cmd(1)],p)
+    out=replay(s,'device-ravi',[cmd(5)],p,rebase=True)  # a real gap in a live sequence is still held
+    assert out['results'][0]['status']=='held_gap'
