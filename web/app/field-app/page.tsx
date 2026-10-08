@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 const downloadUrl = '/rivet-field.apk';
 const releaseUrl = 'https://github.com/Oxyrine/rivet/releases';
-const checksum = 'ADA7798E3D65529511FE8773BE7EE9505533CC7F4FA2B4C3006CD28E6CB26E08';
+const checksum = '940DA116C84D190BD4FE1BCEDBBF7A0289BD0BF627C60EA67E58DA1D003F1CD6';
 
 export default function FieldAppPage() {
   return (
@@ -30,7 +30,7 @@ export default function FieldAppPage() {
                 Release notes <ExternalLink size={14} aria-hidden="true" />
               </a>
             </div>
-            <p className={s.meta}>Version 1.0.1 · Android 7.0 or newer · 1.9 MB</p>
+            <p className={s.meta}>Version 1.0.2 · Android 7.0 or newer · 1.9 MB · asks for camera and location when you use them</p>
           </div>
           <div className={s.device} aria-hidden="true">
             <div className={s.deviceTop} />
