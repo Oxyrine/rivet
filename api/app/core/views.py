@@ -5,6 +5,8 @@ internal planning: no technician ranking with skills and certificates, no parts 
 no assignment details. A technician sees their own jobs without the dispatcher's candidate ranking.
 """
 
+from contract.lifecycle import DONE
+
 STAFF = ('admin', 'coordinator', 'manager', 'auditor')
 CUSTOMER = ('requester', 'supervisor')
 
@@ -18,7 +20,7 @@ def machine_view(state, machine):
     """The machine as it is read. Its status comes from its open service request, not only from a stored flag that an
     earlier mistake could leave behind: a machine with an unfinished request never reads 'Running'."""
     for job in state.jobs.values():
-        if job['machine_id'] != machine['id'] or not job.get('request_id') or job.get('state') in ('closed', 'cancelled', 'completed') or job.get('restored_at'):
+        if job['machine_id'] != machine['id'] or not job.get('request_id') or job.get('state') in DONE or job.get('restored_at'):
             continue
         status = 'Restored, awaiting confirmation' if job.get('checkout_at') else 'Under repair' if job.get('state') == 'in_progress' else 'Fault detected'
         return {**machine, 'status': status}

@@ -3,6 +3,8 @@ from math import ceil
 from contract.errors import DomainError
 from contract.state import emit
 from api.app.core.clock import now
+from contract.lifecycle import DONE, WORK_DONE
+from api.app.modules.workflow import engine
 
 def move(state, source, dest, resource, quantity, actor='system'):
     if not isinstance(quantity, int) or isinstance(quantity,bool) or quantity <= 0: raise DomainError('BAD_QUANTITY', 'Quantity must be a positive integer')
@@ -35,7 +37,7 @@ def hold(state, command):
     ident=f"hold-{len(state.commitments)+1:05d}"
     same=[v['id'] for v in state.commitments.values() if v.get('source')==source and v.get('resource')==resource]
     if 'time:'+job['id'] in state.commitments:same.append('time:'+job['id'])
-    item={'id':ident,'type':command.get('type','PART_HOLD'),'job_id':job['id'],'resource':resource,'quantity':qty,'source':source,'owner':job.get('technician_id'),'state':'HELD','physical_location':source.split(':')[1] if ':' in source else source,'expires_at':command.get('expires_at') or (now(state)+timedelta(hours=4)).isoformat(),'depends_on':same}
+    item={'id':ident,'type':command.get('type','PART_HOLD'),'job_id':job['id'],'resource':resource,'quantity':qty,'source':source,'owner':job.get('technician_id'),'state':'HELD','physical_location':source.split(':')[1] if ':' in source else source,'expires_at':command.get('expires_at') or (now(state)+timedelta(hours=engine.rule(state,'hold_expiry_hours',job))).isoformat(),'depends_on':same}
     state.commitments[ident]=item
     emit(state,'ResourceHeld',job['machine_id'],item,command.get('actor','system'))
     return item
@@ -59,7 +61,7 @@ def candidates(state, job):
         projected_start=now(state)+timedelta(minutes=tech.get('travel_minutes',0))
         projected_end=projected_start+timedelta(minutes=job.get('duration_minutes',60))
         for existing in state.jobs.values():
-            if existing['id']==job['id'] or existing.get('technician_id')!=tech['id'] or existing['state'] in ('closed','cancelled','completed') or not existing.get('planned_start'):continue
+            if existing['id']==job['id'] or existing.get('technician_id')!=tech['id'] or existing['state'] in WORK_DONE or not existing.get('planned_start'):continue
             start=datetime.fromisoformat(existing['planned_start']);end=start+timedelta(minutes=existing.get('duration_minutes',60))
             if projected_start<end and projected_end>start:
                 reasons.append('TIME_CONFLICT');break
@@ -78,30 +80,30 @@ def contention(state, parts, job_id):
 def create_request(state, command):
     machine=state.machines.get(command['machine_id'])
     if not machine or not machine.get('eligible'): raise DomainError('MACHINE_INELIGIBLE','Machine is not covered')
-    duplicate=next((j for j in state.jobs.values() if j['machine_id']==machine['id'] and j['state'] not in ('closed','cancelled') and j['fault']==command.get('fault','hydraulic_leak')),None)
+    duplicate=next((j for j in state.jobs.values() if j['machine_id']==machine['id'] and j['state'] not in DONE and j['fault']==command.get('fault','hydraulic_leak')),None)
     if duplicate:return {'id':duplicate.get('request_id',duplicate['id']),'job_id':duplicate['id'],'duplicate':True}
     number=state.metadata.get('next_request',2231); state.metadata['next_request']=number+1
     ident=f'R-{number}'; job_id=f'J-{number}'; contract=state.contracts[machine['contract_id']]
     parts=command.get('planned_parts', {'HS-40':1} if command.get('fault','hydraulic_leak')=='hydraulic_leak' else {})
-    job={'id':job_id,'request_id':ident,'machine_id':machine['id'],'site_id':machine['site_id'],'priority':command.get('priority',machine['contract_id']),'fault':command.get('fault','hydraulic_leak'),'created_at':state.now,'deadline':(now(state)+timedelta(minutes=contract['resolution_minutes'])).isoformat(),'state':'pending_approval','technician_id':None,'duration_minutes':state.metadata['durations'].get(command.get('fault','hydraulic_leak'),60),'planned_parts':parts,'issued_parts':{},'evidence':[],'tasks':[],'checklist':[],'acceptance':'Pending','on_site':False}
-    state.jobs[job_id]=job
+    job={'id':job_id,'request_id':ident,'machine_id':machine['id'],'site_id':machine['site_id'],'priority':command.get('priority',machine['contract_id']),'fault':command.get('fault','hydraulic_leak'),'created_at':state.now,'deadline':(now(state)+timedelta(minutes=contract['resolution_minutes'])).isoformat(),'state':'created','technician_id':None,'duration_minutes':state.metadata['durations'].get(command.get('fault','hydraulic_leak'),60),'planned_parts':parts,'issued_parts':{},'evidence':[],'tasks':[],'checklist':[],'acceptance':'Pending','on_site':False}
+    engine.pin(state,job);state.jobs[job_id]=job
     checks={'eligible':True,'skills':any(c['eligible'] for c in candidates(state,job)),'parts':all(state.balances.get('store:site-b:available|'+r,0)>=q for r,q in parts.items()),'tools':state.balances.get('store:site-b:available|JACK',0)>0,'priority':job['priority'],'site_id':machine['site_id'],'contention':contention(state,parts,job_id)}
-    request={'id':ident,'job_id':job_id,'machine_id':machine['id'],'source':command.get('source','portal'),'description':command.get('description',''),'state':'pending_approval','validation':checks}
+    request={'id':ident,'job_id':job_id,'machine_id':machine['id'],'source':command.get('source','portal'),'description':command.get('description',''),'state':'created','validation':checks}
     state.requests[ident]=request;machine['status']='Fault detected'
     emit(state,'RequestCreated',machine['id'],request,command.get('actor','system'));emit(state,'SlaStarted',machine['id'],{'job_id':job_id,'contract':contract},command.get('actor','system'))
     estimate=sum(state.metadata['part_costs_paise'].get(r,0)*q for r,q in parts.items())
-    request['auto_approved']=checks['skills'] and checks['parts'] and checks['tools'] and estimate<=contract['auto_approve_paise']
+    limit=engine.rule(state,'approval_threshold_paise',job);limit=contract['auto_approve_paise'] if limit is None else limit
+    request['auto_approved']=engine.rule(state,'skip_approval',job) or (checks['skills'] and checks['parts'] and checks['tools'] and estimate<=limit)
     if request['auto_approved']: approve(state,ident,command.get('actor','system'))
     return request
 
 def approve(state, ident, actor='system'):
     request=state.requests[ident];job=state.jobs[request['job_id']]
     if request['state']=='approved':return request
-    request['state']='approved';job['state']='approved'
+    engine.transition(state,job,'approved',actor,'RequestApproved',{'request_id':ident},request)
     for kind in ('ACCESS_WINDOW','SHUTDOWN_WINDOW','PERMIT_TO_WORK'):
         cid=f"{kind.lower()}:{job['id']}"
         state.commitments[cid]={'id':cid,'type':kind,'job_id':job['id'],'state':'PROPOSED','owner':'supervisor','depends_on':[]}
-    emit(state,'RequestApproved',job['machine_id'],{'request_id':ident,'job_id':job['id']},actor)
     return request
 
 def assign(state, job_id, technician_id=None, actor='system'):
@@ -110,7 +112,7 @@ def assign(state, job_id, technician_id=None, actor='system'):
     if job['state']!='approved': raise DomainError('APPROVAL_REQUIRED','Approve request before assigning')
     eligible=[c for c in candidates(state,job) if c['eligible'] and (not technician_id or c['id']==technician_id)]
     if not eligible:raise DomainError('NO_FEASIBLE_TECHNICIAN','No qualified technician is available')
-    tech=eligible[0];job['technician_id']=tech['id']; job['state']='assigned';job['planned_start']=(now(state)+timedelta(minutes=tech['travel_minutes'])).isoformat()
+    tech=eligible[0];job['technician_id']=tech['id'];job['planned_start']=(now(state)+timedelta(minutes=tech['travel_minutes'])).isoformat()
     account=f"tech:{tech['id']}:{state.now[:10]}:free";slots=ceil(job['duration_minutes']/15)
     move(state,account,f'job:{job_id}:allocated','TIME',slots,actor)
     prior=['time:'+j['id'] for j in sorted(state.jobs.values(),key=lambda x:x.get('planned_start','')) if j.get('technician_id')==tech['id'] and j['id']!=job_id and j.get('planned_start','')<job['planned_start']]
@@ -121,7 +123,7 @@ def assign(state, job_id, technician_id=None, actor='system'):
     for resource,qty in job['planned_parts'].items():hold(state,{'job_id':job_id,'source':'store:site-b:available','resource':resource,'quantity':qty,'actor':actor})
     hold(state,{'job_id':job_id,'source':'store:site-b:available','resource':'JACK','quantity':1,'type':'TOOL_HOLD','actor':actor})
     state.commitments['sla:'+job_id]={'id':'sla:'+job_id,'type':'SLA_WINDOW','job_id':job_id,'state':'ACTIVE','deadline':job['deadline'],'depends_on':[v['id'] for v in state.commitments.values() if v.get('job_id')==job_id]}
-    emit(state,'JobAssigned',job['machine_id'],{'job_id':job_id,'technician_id':tech['id']},actor)
+    engine.transition(state,job,'assigned',actor,'JobAssigned',{'technician_id':tech['id']})
     return job
 
 def apply(state, command):

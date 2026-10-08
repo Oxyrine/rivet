@@ -6,6 +6,8 @@ from contract.canonical import canonical_json
 from contract.errors import DomainError
 from contract.state import emit
 from contract.sla import instant, outcome
+from contract.lifecycle import FINISHED
+from api.app.modules.workflow import engine, commands
 
 def report_hash(report):
     return sha256(canonical_json(report).encode()).hexdigest()
@@ -52,6 +54,7 @@ def reconcile(s, job_id):
     label = 'Unexplained' if unresolved else 'Explained variance' if any(r['outcome']=='Explained variance' for r in rows) else 'Clean'
     result = {'outcome': label, 'rows': rows, 'presence': j.get('presence_strength','strong' if j.get('presence_confirmed') else 'weak; customer confirmation required'), 'fix': j.get('fix_source', 'unconfirmed'),'flags':j.get('flags',[])}
     j['reconciliation'] = result
+    if j.get('state')=='completed': j['closure_blocked'] = result['outcome']=='Unexplained'
     return result
 
 def submit_report(s, job_id, payload, actor):
@@ -61,9 +64,12 @@ def submit_report(s, job_id, payload, actor):
         raise DomainError('INVALID_QUANTITY', 'Part quantities must be nonnegative integers', status=422)
     if not isinstance(payload.get('minutes',60),int) or isinstance(payload.get('minutes',60),bool) or payload.get('minutes',60)<0:
         raise DomainError('INVALID_DURATION','Report duration must be nonnegative integer minutes',status=422)
+    if j['state'] in ('created', 'approved', 'assigned'): raise DomainError('WORK_NOT_STARTED', 'Start work before submitting a report')
     report = {'parts': parts, 'checklist': payload.get('checklist', []), 'minutes': payload.get('minutes', 60), 'notes': payload.get('notes', '')}
-    j.update(report=report, report_hash=report_hash(report), report_submitted_at=s.now, state='awaiting_acceptance', acceptance='Pending', reminders=[])
-    job_event(s,j,'ReportSubmitted',{'report':report,'report_hash':j['report_hash']},actor)
+    j.update(report=report, report_hash=report_hash(report), report_submitted_at=s.now, acceptance='Pending', reminders=[], closure_blocked=False)
+    if j['state']=='completed':  # a corrected report before the customer has accepted: same stage, new version
+        engine.bump(s,j,actor,'ReportSubmitted');job_event(s,j,'ReportSubmitted',{'report':report,'report_hash':j['report_hash'],'from_state':'completed','to_state':'completed','job_version':j['version']},actor)
+    else: engine.transition(s,j,'completed',actor,'ReportSubmitted',{'report':report,'report_hash':j['report_hash']})
     for commitment in s.commitments.values():
         if commitment.get('job_id')==job_id and commitment.get('type')=='TECH_TIME' and commitment.get('state') in ('HELD','ACTIVE'):
             from api.app.modules.ledger.domain import move
@@ -78,7 +84,6 @@ def submit_report(s, job_id, payload, actor):
             job_event(s,j,'TechnicianReleased',{'commitment_id':commitment['id']},actor)
     result=reconcile(s,job_id)
     if result['outcome']=='Unexplained':
-        j['state']='closure_blocked'
         job_event(s,j,'ClosureBlocked',{'reconciliation':result,'report_hash':j['report_hash']},actor)
     return {'job':j, 'reconciliation':result}
 
@@ -112,7 +117,7 @@ def store_issue(s,job_id,payload,principal):
     return {'job_id':job_id,'resource':resource,'quantity':quantity,'issued_parts':j['issued_parts']}
 
 def service_restored(s,j,actor):
-    if j.get('state')=='closed':return  # acceptance seals the outcome; later readings cannot move the clock
+    if j.get('state') in FINISHED:return  # acceptance seals the outcome; later readings cannot move the clock
     checkout=instant(j['checkout_at']); running=instant(j['machine_running_at'])
     if running<checkout:
         j.pop('restored_at',None);j.pop('sla',None);j['fix_source']='unconfirmed';return
@@ -124,7 +129,7 @@ def service_restored(s,j,actor):
 
 def machine_running(s,job_id,source,actor):
     j=s.jobs[job_id]
-    if j.get('state')=='closed':return j
+    if j.get('state') in FINISHED:return j
     j.update(machine_running_at=s.now,fix_source=source)
     # A reading before the technician has finished says nothing about the repair, so the machine keeps its fault status until then.
     if j.get('checkout_at'): s.machines[j['machine_id']]['status']='Running'
@@ -133,11 +138,7 @@ def machine_running(s,job_id,source,actor):
     return j
 
 def fix_failed(s,job_id,actor):
-    j=s.jobs[job_id];j.update(fix_source='unconfirmed',state='reopened',acceptance='Pending')
-    for key in ('machine_running_at','restored_at','sla'):j.pop(key,None)
-    s.machines[j['machine_id']]['status']='Fault detected'
-    job_event(s,j,'SlaReopened',{'reason':'post-service fault; prior restoration no longer confirms fix'},actor)
-    return j
+    return commands.reopen(s,job_id,{'reason':'post-service fault; prior restoration no longer confirms fix'},actor,event='SlaReopened',check_window=False)
 
 def explain_variance(s,job_id,payload,actor,manager=False):
     j=s.jobs[job_id]; part=payload['part']; quantity=j.get('report',{}).get('parts',{}).get(part,0)-j.get('issued_parts',{}).get(part,0)
@@ -166,9 +167,10 @@ def accept(s,job_id,payload,principal):
     if not (j.get('presence_confirmed') or j.get('presence_strength') in ('strong','medium')) and not payload.get('confirm_presence'): raise DomainError('CONFIRM_PRESENCE','Weak presence evidence requires customer confirmation')
     confirmed=j.get('restored_at') and j.get('fix_source') in ('simulated telemetry','customer confirmation','plant telemetry')
     j['acceptance']='Verified' if confirmed else 'Accepted, fix not independently confirmed'
-    event=job_event(s,j,'AcceptanceRecorded',{'acceptance':j['acceptance'],'report_hash':j['report_hash'],'device_id':payload['device_id']},principal['user_id'])
+    j['verified_at']=s.now
+    event=engine.transition(s,j,'verified',principal['user_id'],'AcceptanceRecorded',{'acceptance':j['acceptance'],'report_hash':j['report_hash'],'device_id':payload['device_id']})
     receipt={'job_id':job_id,'machine_id':j['machine_id'],'report_hash':j['report_hash'],'machine_seq':event['machine_seq'],'machine_hash':event['machine_hash'],'at':s.now,'acceptance':j['acceptance']}
-    s.receipts.append(receipt); j['state']='closed'; return receipt
+    s.receipts.append(receipt); return receipt
 
 def alternate_accept(s,job_id,payload,principal):
     j=s.jobs[job_id];mode=payload.get('mode')
@@ -182,7 +184,7 @@ def alternate_accept(s,job_id,payload,principal):
         if evidence.get('job_id')!=job_id or evidence.get('type')!='signed_sheet': raise DomainError('SIGNED_SHEET_REQUIRED','Attach a signed job sheet to this job first')
         label='Accepted on paper'
     else: raise DomainError('ACCEPTANCE_MODE','Choose email or paper')
-    j.update(acceptance=label,state='closed');job_event(s,j,'AcceptanceRecorded',{'acceptance':label,'report_hash':j['report_hash']},principal['user_id']);return j
+    j.update(acceptance=label,verified_at=s.now);engine.transition(s,j,'verified',principal['user_id'],'AcceptanceRecorded',{'acceptance':label,'report_hash':j['report_hash']});return j
 
 def reminders(s):
     changed=[]
@@ -194,7 +196,7 @@ def reminders(s):
             if hours>=threshold and threshold not in sent:
                 sent.append(threshold); job_event(s,j,'AcceptanceReminder',{'hours':threshold,'channel':'in-app escalation'},'system')
         if hours>=24 and sent==[12,20] and reconcile(s,j['id'])['outcome']!='Unexplained':
-            j['acceptance']='Deemed accepted'; j['state']='closed'; job_event(s,j,'AcceptanceDeemed',{'not_verified':True},'system'); changed.append(j['id'])
+            j.update(acceptance='Deemed accepted',verified_at=s.now); engine.transition(s,j,'verified','system','AcceptanceDeemed',{'not_verified':True}); changed.append(j['id'])
     return {'deemed':changed}
 
 def dispute(s,job_id,payload,actor):

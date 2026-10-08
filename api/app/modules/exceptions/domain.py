@@ -13,7 +13,8 @@ from contract.errors import DomainError
 from contract.sla import instant
 from contract.state import emit
 
-TERMINAL = {'closed', 'cancelled', 'completed'}
+from contract.lifecycle import WORK_DONE as TERMINAL
+from api.app.modules.workflow import engine
 ACTIVE = {'HELD', 'ACTIVE', 'COMMITTED', 'BREACHED'}
 
 
@@ -67,7 +68,8 @@ def rejection(state, job, tech):
     if not tech.get('certificate_valid', False): return 'Certification expired'
     if tech.get('certificate_expires', '9999') < state.now[:10]: return 'Certification expired'
     if tech.get('skills', {}).get(skill_required(job), 0) < job.get('required_level', 2): return 'Required skill level is missing'
-    if tech.get('travel_minutes', 0) > state.metadata.get('max_travel_minutes', 90): return 'Travel exceeds the 90-minute limit'
+    limit = engine.rule(state, 'max_travel_minutes', job)
+    if tech.get('travel_minutes', 0) > limit: return f'Travel exceeds the {limit}-minute limit'
     if tech.get('contractor') and (not tech.get('approved', False) or job['site_id'] not in tech.get('sites', [])):
         return 'Contractor is not approved for this site'
     return None
@@ -373,7 +375,7 @@ def risk(state):
         finish = instant(job.get('projected_finish', job.get('planned_start', state.now))) + (timedelta() if job.get('projected_finish') else timedelta(minutes=job.get('duration_minutes', 60)))
         margin = int((instant(job['deadline'])-finish).total_seconds())//60
         if margin < 0: signals.append({'signal': 'Projected SLA miss', 'points': 35, 'detail': f'{-margin} minutes beyond deadline'})
-        elif margin < 30: signals.append({'signal': 'Low SLA margin', 'points': 15, 'detail': f'{margin} minutes of margin'})
+        elif margin < engine.rule(state, 'risk_margin_minutes', job): signals.append({'signal': 'Low SLA margin', 'points': 15, 'detail': f'{margin} minutes of margin'})
         if any(c.get('state') == 'BREACHED' for c in state.commitments.values() if c.get('job_id') == job['id']): signals.append({'signal': 'Broken commitment', 'points': 20, 'detail': 'A required promise is breached'})
         rows.append({'job_id': job['id'], 'machine_id': job['machine_id'], 'site_id': job['site_id'], 'priority': job.get('priority'), 'technician_id': job.get('technician_id'),
                      'deadline': job['deadline'], 'tier': risk_tier(job.get('priority'), signals), 'score': min(100, sum(s['points'] for s in signals)), 'sla_margin_minutes': margin, 'signals': signals})

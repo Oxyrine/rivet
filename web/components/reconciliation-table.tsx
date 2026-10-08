@@ -34,7 +34,7 @@ export function ReconciliationTable({job,onResult}:{job:any;onResult?:(result:an
   if(r.check==='Work duration')return [`${job.duration_minutes} min expected`,`${r.reported} min`,`${r.corroborated} min between check-in and check-out`];
   return [String(r.planned??0),String(r.reported??0),r.outcome==='Unconfirmed'?'No store issue recorded yet':`${r.corroborated} issued by the store`];
  };
- const blocked=job.state==='closure_blocked'||recon.outcome==='Unexplained';
+ const blocked=recon.outcome==='Unexplained';
  const presence=String(recon.presence||'weak');
  return <div className={s.wrap}>
   {blocked&&<div className={s.blocked} role="alert"><b>Closure blocked</b><span>The report disagrees with records the technician does not write. It cannot be accepted until the lines marked ✕ are corrected or a manager signs off.</span></div>}

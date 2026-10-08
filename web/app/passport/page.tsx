@@ -18,12 +18,16 @@ const STATE: Record<string, { label: string; note: string; tone: string }> = {
 
 // Until the report is in there is nothing to accept yet, so a pending job says where the work actually is.
 const STAGE: Record<string, string> = {
-  pending_approval: 'Awaiting approval',
+  created: 'Awaiting approval',
   approved: 'Approved, not yet assigned',
   assigned: 'Assigned to a technician',
   in_progress: 'Work in progress',
-  closure_blocked: 'Closure blocked',
-  reopened: 'Reopened',
+  completed: 'Awaiting customer verification',
+  verified: 'Verified, ready to close',
+  on_hold: 'On hold',
+  rejected: 'Rejected',
+  cancelled: 'Cancelled',
+  closed: 'Closed',
 };
 
 const day = (v?: string) => v ? new Date(v).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', timeZone: 'Asia/Kolkata' }) : '—';

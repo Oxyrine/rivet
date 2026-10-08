@@ -5,6 +5,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from contract.state import emit
 from contract.errors import DomainError
 from api.app.core.clock import now
+from api.app.modules.workflow import engine, commands
 
 def presence(state, job, payload):
     site=job['site_id'];key=state.metadata.get('gate_keys',{}).get(site)
@@ -38,7 +39,7 @@ def command(state, device, cmd, principal):
             saved={'id':'pending-'+cmd['idempotency_key'],'job_id':job['id'],'payload':payload,'actor':actor,'pending':True}
             state.evidence[saved['id']]=saved;job['evidence'].append(saved['id'])
         raise DomainError('JOB_REASSIGNED','This job moved to another technician. Your evidence is attached.',{'technician_id':job.get('technician_id'),'evidence_count':len(job['evidence'])})
-    if job['state']=='cancelled':raise DomainError('JOB_CANCELLED','Job has been cancelled')
+    if job['state'] in ('cancelled','rejected'):raise DomainError('JOB_CANCELLED','Job has been cancelled')
     try:
         captured=datetime.fromisoformat(cmd['device_ts'].replace('Z','+00:00'))
         if captured.tzinfo is None: raise ValueError()
@@ -55,7 +56,9 @@ def command(state, device, cmd, principal):
     elif kind=='StartWork':
         if any(c['type']=='PERMIT_TO_WORK' and c.get('job_id')==job['id'] and c['state']!='FULFILLED' for c in state.commitments.values()):raise DomainError('PERMIT_PENDING','Permit to work has not been issued')
         if not job['on_site']:raise DomainError('CHECKIN_REQUIRED','Check in before starting work')
-        job['state']='in_progress';job['started_at']=state.now;state.machines[job['machine_id']]['status']='Under repair';emit(state,'WorkStarted',job['machine_id'],{'job_id':job['id']},actor)
+        waiting=commands.pending_stages(state,job)
+        if waiting:raise DomainError('STAGE_PENDING','Complete the required stage first: '+', '.join(waiting),{'stages':waiting})
+        engine.transition(state,job,'in_progress',actor,'WorkStarted');job['started_at']=state.now;state.machines[job['machine_id']]['status']='Under repair'
     elif kind=='PartScanned':
         from .domain import move
         resource=payload.get('resource') or payload.get('part_id');qty=payload.get('quantity',1)

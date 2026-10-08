@@ -1,7 +1,7 @@
 import { Site } from './use-summary';
 
 export function humanState(state: string): string {
-  if (state === 'pending_approval') return 'Awaiting approval';
+  if (state === 'created') return 'Awaiting approval';
   return state.replaceAll('_', ' ').replace(/^./, c => c.toUpperCase());
 }
 

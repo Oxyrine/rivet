@@ -47,7 +47,7 @@ async def idempotency_context(request,call_next):
 async def domain_error(request,exc):return JSONResponse(status_code=exc.status,content=exc.as_dict())
 
 app.include_router(ledger_router)
-for module in ('exceptions','proof'):
+for module in ('exceptions','proof','workflow'):
     try:
         import importlib
         app.include_router(importlib.import_module(f'api.app.modules.{module}.routes').router)

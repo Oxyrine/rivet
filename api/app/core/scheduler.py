@@ -2,6 +2,7 @@
 from datetime import timedelta,datetime
 from .clock import now
 from contract.state import emit
+from api.app.modules.workflow import engine
 
 def tick(state):
     from api.app.modules.ledger.domain import release
@@ -31,7 +32,7 @@ def tick(state):
     late=set()
     for job in state.jobs.values():
         if job.get('state')!='assigned' or job.get('check_in_at') or not job.get('planned_start'):continue
-        if now(state)>datetime.fromisoformat(job['planned_start'])+timedelta(minutes=20):
+        if now(state)>datetime.fromisoformat(job['planned_start'])+timedelta(minutes=engine.rule(state,'checkin_grace_minutes',job)):
             technician_id=job.get('technician_id')
             if technician_id and state.technicians[technician_id].get('available'):late.add(technician_id)
     from api.app.modules.exceptions.domain import dropout

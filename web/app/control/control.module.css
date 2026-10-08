@@ -386,6 +386,47 @@
   font-size: 11px;
 }
 
+.timeline {
+  display: grid;
+  gap: 8px;
+  max-height: 188px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.timelineEvent {
+  display: grid;
+  gap: 2px;
+  padding: 9px 10px;
+  border-left: 2px solid var(--brand-accent);
+  background: var(--surface-sunken);
+}
+
+.timelineEvent b {
+  font-size: 12px;
+}
+
+.timelineEvent small {
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.lifecycleActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
+}
+
+.lifecycleActions h3 {
+  width: 100%;
+  margin: 0 0 2px;
+}
+
 .priority,
 .neutral,
 .state {

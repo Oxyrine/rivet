@@ -35,7 +35,8 @@ class LedgerState:
 
     @classmethod
     def from_dict(cls, value):
-        return cls(**{k: v for k, v in value.items() if k in cls.__dataclass_fields__})
+        from .lifecycle import migrate
+        return migrate(cls(**{k: v for k, v in value.items() if k in cls.__dataclass_fields__}))
 
 def emit(state, event_type, machine=None, payload=None, actor='system', cause_hash=None):
     events = state.events

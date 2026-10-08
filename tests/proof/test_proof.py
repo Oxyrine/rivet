@@ -9,7 +9,7 @@ from api.app.modules.proof.package import make_package, verify, seal
 
 def state():
     s=LedgerState.from_dict(json.loads(Path('contract/fixtures/m104.json').read_text()))
-    j=s.jobs['J-2240']; j['technician_id']='priya'; j['presence_confirmed']=True
+    j=s.jobs['J-2240']; j['technician_id']='priya'; j['presence_confirmed']=True; j['state']='in_progress'  # work has started: a report cannot skip that stage
     from api.app.modules.ledger.uploads import record_upload
     png='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aJ1kAAAAASUVORK5CYII='
     for kind in ('before_photo','after_photo'):
@@ -91,7 +91,7 @@ def test_technician_report_cannot_rewrite_store_issue():
     result=d.submit_report(s,'J-2240',{'parts':{'HS-40':2},'checklist':s.metadata['required_checklist']},'priya')
     row=result['reconciliation']['rows'][0];assert row['corroborated']==1;assert row['outcome']=='Unexplained'
     corrected=clean(s);assert corrected['reconciliation']['outcome']=='Clean'
-    assert s.jobs['J-2240']['state']=='awaiting_acceptance'
+    assert s.jobs['J-2240']['state']=='completed'
     assert any(e['type']=='ClosureBlocked' for e in s.events)
 
 def test_running_before_checkout_does_not_stop_sla():
@@ -100,7 +100,7 @@ def test_running_before_checkout_does_not_stop_sla():
     j=s.jobs['J-2240'];assert 'restored_at' not in j
     d.accept(s,j['id'],{'pin':'4826','device_id':'device-supervisor','report_hash':j['report_hash']},s.users['supervisor'])
     assert j['acceptance']=='Accepted, fix not independently confirmed'
-    d.machine_running(s,j['id'],'simulated telemetry','system');d.fix_failed(s,j['id'],'system');assert j['state']=='reopened';assert 'sla' not in j
+    d.machine_running(s,j['id'],'simulated telemetry','system');d.fix_failed(s,j['id'],'system');assert j['state']=='in_progress';assert 'sla' not in j
 
 def test_storekeeper_issue_scope_uses_source_warehouse():
     s=state();j=s.jobs['J-2240'];j['issued_parts']={}

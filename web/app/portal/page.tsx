@@ -82,7 +82,7 @@ export default function Portal() {
   const stateLabel: Record<string, string> = { PROPOSED: 'Awaiting your confirmation', HELD: 'Confirmed', FULFILLED: 'Fulfilled' };
 
   const j = detail?.job || detail;
-  const blocked = !!j && (j.state === 'closure_blocked' || recon?.outcome === 'Unexplained' || !!recon?.rows?.some((r: any) => r.outcome === 'Unconfirmed'));
+  const blocked = !!j && (recon?.outcome === 'Unexplained' || !!recon?.rows?.some((r: any) => r.outcome === 'Unconfirmed'));
 
   return (
     <div className="portal-page">
@@ -127,7 +127,7 @@ export default function Portal() {
               <small>Equipment</small>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
                 <h2>{j.machine_id}</h2>
-                <StatusLabel tone={j.state === 'closed' || j.state === 'completed' ? 'positive' : j.state === 'closure_blocked' ? 'critical' : 'warning'}>
+                <StatusLabel tone={j.state === 'closed' || j.state === 'verified' || j.state === 'completed' ? 'positive' : ['rejected', 'cancelled'].includes(j.state) ? 'critical' : 'warning'}>
                   {j.state?.replaceAll('_', ' ')}
                 </StatusLabel>
               </div>

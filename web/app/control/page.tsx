@@ -55,6 +55,7 @@ type Job = {
   report?: any;
   report_hash?: string;
   acceptance?: string;
+  version?: number;
 };
 
 type ServiceRequest = {
@@ -89,6 +90,7 @@ export default function ControlRoom() {
   const [tech, setTech] = useState('ravi');
   const [request, setRequest] = useState<ServiceRequest | null>(null);
   const [candidate, setCandidate] = useState('');
+  const [timeline, setTimeline] = useState<any[]>([]);
 
   const load = useCallback(async () => {
     if (!session) return;
@@ -134,10 +136,12 @@ export default function ControlRoom() {
     setSelected(job);
     setRequest(null);
     setCandidate('');
+    setTimeline([]);
     try {
-      const detail = await api<Job>(`/jobs/${job.id}`);
+      const [detail, history] = await Promise.all([api<Job>(`/jobs/${job.id}`), api<{ events: any[] }>(`/jobs/${job.id}/timeline`)]);
       if (selectedId.current !== job.id) return;
       setSelected(detail);
+      setTimeline(history.events || []);
       if (detail.request_id) {
         const validated = await api<ServiceRequest>(`/requests/${detail.request_id}`);
         if (selectedId.current === job.id) setRequest(validated);
@@ -150,7 +154,16 @@ export default function ControlRoom() {
   function dismiss() {
     selectedId.current = null;
     setSelected(null);
+    setTimeline([]);
   }
+
+  const lifecycleAction = (path: string, message: string, reason: string) =>
+    action(
+      () => api(path, { method: 'POST', body: JSON.stringify({ reason, expected_version: selected?.version }) }),
+      message
+    ).then(result => {
+      if (result && selected) void openJob(selected);
+    });
 
   useEffect(() => {
     if (!session || !jobs.length || requestedJobOpened.current) return;
@@ -556,6 +569,41 @@ export default function ControlRoom() {
               </>
             )}
 
+            <h3>Activity timeline</h3>
+            <div className={s.timeline} aria-label="Job activity timeline">
+              {timeline.length ? timeline.slice().reverse().map(event => (
+                <div className={s.timelineEvent} key={event.event_id}>
+                  <b>{event.type.replaceAll(/([a-z])([A-Z])/g, '$1 $2')}</b>
+                  <small>{event.occurred_at?.replace('T', ' ').replace('+00:00', ' UTC')} · {event.actor}</small>
+                  {event.payload?.reason && <small>{event.payload.reason}</small>}
+                </div>
+              )) : <p className={s.muted}>No lifecycle events have been recorded yet.</p>}
+            </div>
+
+            {canAct && selected.state !== 'closed' && !['cancelled', 'rejected'].includes(selected.state) && (
+              <div className={s.lifecycleActions}>
+                <h3>Lifecycle actions</h3>
+                {['created', 'approved'].includes(selected.state) && (
+                  <button className={s.secondaryBtn} disabled={busy} onClick={() => lifecycleAction(`/requests/${selected.request_id}/reject`, 'Request rejected and recorded.', 'Coordinator rejected request')}>Reject request</button>
+                )}
+                {['created', 'approved', 'assigned', 'in_progress', 'on_hold'].includes(selected.state) && (
+                  <button className={s.secondaryBtn} disabled={busy} onClick={() => lifecycleAction(`/requests/${selected.request_id}/cancel`, 'Request cancelled and resources released.', 'Coordinator cancelled request')}>Cancel request</button>
+                )}
+                {selected.state === 'assigned' && (
+                  <>
+                    <button className={s.secondaryBtn} disabled={busy} onClick={() => lifecycleAction(`/jobs/${selected.id}/hold`, 'Job put on hold.', 'Waiting for site access')}>Put on hold</button>
+                    <button className={s.secondaryBtn} disabled={busy} onClick={() => lifecycleAction(`/requests/${selected.request_id}/reschedule`, 'Assignment released for rescheduling.', 'Customer requested another slot')}>Reschedule</button>
+                  </>
+                )}
+                {selected.state === 'on_hold' && (
+                  <button className={s.primary} disabled={busy} onClick={() => lifecycleAction(`/jobs/${selected.id}/resume`, 'Job resumed.', 'Site is ready to continue')}>Resume work</button>
+                )}
+                {selected.state === 'verified' && (
+                  <button className={s.primary} disabled={busy} onClick={() => action(() => api(`/jobs/${selected.id}/close`, { method: 'POST', body: JSON.stringify({ expected_version: selected.version }) }), 'Job closed.').then(result => { if (result) void openJob(selected); })}>Close job</button>
+                )}
+              </div>
+            )}
+
             <h3>Ranked Technician Candidates</h3>
             {(selected.candidates || []).map((t, index) => (
               <div key={t.id} className={s.candidate}>
@@ -574,10 +622,10 @@ export default function ControlRoom() {
               </div>
             ))}
 
-            {canAct && ['pending_approval', 'approved'].includes(selected.state) && (
+            {canAct && ['created', 'approved'].includes(selected.state) && (
               <div className={s.dispatch}>
                 <h3>Dispatch Execution</h3>
-                {selected.state === 'pending_approval' ? (
+                {selected.state === 'created' ? (
                   <button
                     disabled={busy}
                     className={s.primary}

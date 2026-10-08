@@ -1044,7 +1044,7 @@ export default function TechnicianFieldPage() {
           deviceId={`device-${selectedTech}`}
           alreadySubmitted={
             queuedCmds.some((c) => c.type === 'SubmitReport' && c.job_id === selectedJob.id) ||
-            ['awaiting_acceptance', 'accepted', 'closure_blocked', 'closed', 'completed'].includes(selectedJob.state)
+            ['completed', 'verified', 'closed'].includes(selectedJob.state)
           }
           onPhoto={handlePhotoCapture}
           onSubmit={submitReport}

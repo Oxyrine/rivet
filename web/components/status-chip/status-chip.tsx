@@ -28,7 +28,7 @@ export function deriveStatus(machine?: any, job?: any, overrideStatus?: string):
       return 'Verified';
     }
     if (
-      job.state === 'awaiting_acceptance' ||
+      job.state === 'completed' ||
       job.checkout_at ||
       (job.fix_source && job.fix_source !== 'unconfirmed') ||
       job.acceptance === 'Restored, awaiting confirmation'
@@ -43,7 +43,7 @@ export function deriveStatus(machine?: any, job?: any, overrideStatus?: string):
     ) {
       return 'Under repair';
     }
-    if (['pending_approval', 'approved', 'assigned'].includes(job.state)) {
+    if (['created', 'approved', 'assigned', 'on_hold'].includes(job.state)) {
       return 'Fault detected';
     }
   }
