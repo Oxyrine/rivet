@@ -65,3 +65,14 @@ def test_rate_limited_commands_are_deferred_not_reported_as_gaps():
     assert out['sequence_gaps']==0
     final=replay(s,'device-ravi',[cmd(11),cmd(12)],p)
     assert [r['status'] for r in final['results']]==['accepted','accepted']
+
+
+def test_offline_issue_report_replays_as_an_auditable_shortfall():
+    s,p=setup()
+    issue=cmd(1,'IssueReported')
+    issue['payload']={'kind':'part_shortage','details':{'resource':'HS-40','note':'Shelf is empty'}}
+    result=replay(s,'device-ravi',[issue],p)
+    assert result['results'][0]['status']=='accepted'
+    hold=next(c for c in s.commitments.values() if c.get('job_id')=='J-2231' and c.get('resource')=='HS-40')
+    assert hold['state']=='BREACHED'
+    assert any(b['type']=='PART_SHORTFALL' for b in s.breaches.values())

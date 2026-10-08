@@ -43,4 +43,4 @@ class Accept(Command):
     device_id: str
     report_hash: str | None = None
 
-DEVICE_TYPES = ['CheckIn','StartWork','TaskLogged','PartScanned','ReadingRecorded','EvidenceAttached','ReportDropout','SiteAccessRefused','SubmitReport','CheckOut']
+DEVICE_TYPES = ['CheckIn','StartWork','TaskLogged','PartScanned','ReadingRecorded','EvidenceAttached','ReportDropout','IssueReported','SiteAccessRefused','SubmitReport','CheckOut']

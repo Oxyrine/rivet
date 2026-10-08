@@ -90,6 +90,9 @@ def command(state, device, cmd, principal):
         updated,events,result=dropout(state,principal['technician_id'],actor=actor)
         state.__dict__.update(updated.__dict__)
         return result
+    elif kind=='IssueReported':
+        from api.app.modules.exceptions.domain import report_issue
+        return report_issue(state, job['id'], payload, actor)
     elif kind=='SiteAccessRefused':
         job.setdefault('flags',[]).append('ACCESS_REFUSED');emit(state,'SiteAccessRefused',job['machine_id'],{'job_id':job['id'],**payload},actor)
     else:raise DomainError('UNKNOWN_COMMAND','Unknown field action',{'type':kind})

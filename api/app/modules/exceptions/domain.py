@@ -18,6 +18,76 @@ from api.app.modules.workflow import engine
 ACTIVE = {'HELD', 'ACTIVE', 'COMMITTED', 'BREACHED'}
 
 
+def report_issue(state, job_id, payload, actor):
+    """Record a field issue against an open job. Facts are append-only and every resource change stays balanced."""
+    job = state.jobs.get(job_id)
+    if not job:
+        raise DomainError('NOT_FOUND', 'Job not found', status=404)
+    kind = str((payload or {}).get('kind') or '').strip()
+    details = (payload or {}).get('details') or {}
+    if kind not in {'part_shortage', 'extra_work', 'unsafe_condition'}:
+        raise DomainError('INVALID_ISSUE', 'Issue kind must be part_shortage, extra_work, or unsafe_condition', status=422)
+    if not isinstance(details, dict):
+        raise DomainError('INVALID_ISSUE', 'Issue details must be an object', status=422)
+    engine.check_version(job, (payload or {}).get('expected_version'))
+
+    if kind == 'part_shortage':
+        resource = str(details.get('resource') or '').strip()
+        if not resource:
+            raise DomainError('RESOURCE_REQUIRED', 'Name the missing part', status=422)
+        hold = next((commitment for commitment in state.commitments.values()
+                     if commitment.get('job_id') == job_id and commitment.get('type') == 'PART_HOLD'
+                     and commitment.get('resource') == resource and commitment.get('state') in {'HELD', 'ACTIVE'}), None)
+        if not hold:
+            raise DomainError('PART_HOLD_NOT_FOUND', 'There is no live hold for that part on this job', status=409)
+        hold['state'] = 'BREACHED'
+        breach_id = f"breach-{len(state.breaches) + 1:04d}"
+        state.breaches[breach_id] = {'id': breach_id, 'type': 'PART_SHORTFALL', 'job_id': job_id, 'commitment_id': hold['id'],
+                                     'resource': resource, 'details': details, 'state': 'OPEN', 'occurred_at': state.now}
+        job['at_risk'] = True
+        engine.bump(state, job, actor, 'PartShortageReported')
+        emit(state, 'PartShortageReported', job['machine_id'], {'job_id': job_id, 'breach_id': breach_id, 'resource': resource,
+                                                                 'details': details, 'job_version': job['version']}, actor)
+        return {'job_id': job_id, 'kind': kind, 'breach_id': breach_id, 'state': job['state'], 'version': job['version']}
+
+    if kind == 'extra_work':
+        minutes = details.get('minutes')
+        if not isinstance(minutes, int) or isinstance(minutes, bool) or minutes <= 0:
+            raise DomainError('INVALID_MINUTES', 'Extra work minutes must be a positive integer', status=422)
+        slots = (minutes + 14) // 15
+        commitment = next((item for item in state.commitments.values()
+                           if item.get('job_id') == job_id and item.get('type') in {'TECH_TIME', 'TECH_ASSIGN'} and item.get('state') in {'HELD', 'ACTIVE'}), None)
+        if not commitment:
+            raise DomainError('TIME_HOLD_NOT_FOUND', 'The technician has no live time reservation for this job', status=409)
+        from api.app.modules.ledger.domain import move
+        source = commitment.get('source')
+        account = commitment.get('reservation_account', f'job:{job_id}:allocated')
+        move(state, source, account, 'TIME', slots, actor)
+        commitment['quantity'] += slots
+        job['duration_minutes'] = job.get('duration_minutes', 0) + minutes
+        estimate = details.get('est_cost_paise', 0)
+        if not isinstance(estimate, int) or isinstance(estimate, bool) or estimate < 0:
+            raise DomainError('INVALID_COST', 'Estimated cost must be a nonnegative integer in paise', status=422)
+        limit = engine.rule(state, 'approval_threshold_paise', job)
+        if limit is not None and estimate > limit:
+            approval_id = f'approval:{job_id}:{job.get("version", 1) + 1}'
+            state.commitments[approval_id] = {'id': approval_id, 'type': 'APPROVAL', 'job_id': job_id, 'state': 'PROPOSED',
+                                              'reason': 'EXTRA_WORK', 'est_cost_paise': estimate, 'depends_on': [commitment['id']]}
+        engine.bump(state, job, actor, 'ExtraWorkReported')
+        emit(state, 'ExtraWorkReported', job['machine_id'], {'job_id': job_id, 'minutes': minutes, 'est_cost_paise': estimate,
+                                                              'slots': slots, 'job_version': job['version']}, actor)
+        return {'job_id': job_id, 'kind': kind, 'state': job['state'], 'version': job['version'], 'extra_slots': slots}
+
+    reason = str(details.get('reason') or details.get('description') or '').strip()
+    if not reason:
+        raise DomainError('REASON_REQUIRED', 'Describe the unsafe condition', status=422)
+    from api.app.modules.workflow import commands
+    result = commands.hold(state, job_id, {'reason': reason, 'expected_version': (payload or {}).get('expected_version')}, actor, event='SafetyHold')
+    job['safety_hold'] = True
+    emit(state, 'UnsafeConditionReported', job['machine_id'], {'job_id': job_id, 'details': details, 'job_version': job['version']}, actor)
+    return {**result, 'kind': kind}
+
+
 def fingerprint(state):
     raw = canonical({'jobs': state.jobs, 'commitments': state.commitments,
                      'technicians': state.technicians, 'balances': state.balances,
@@ -382,6 +452,7 @@ def risk(state):
         if margin < 0: signals.append({'signal': 'Projected SLA miss', 'points': 35, 'detail': f'{-margin} minutes beyond deadline'})
         elif margin < engine.rule(state, 'risk_margin_minutes', job): signals.append({'signal': 'Low SLA margin', 'points': 15, 'detail': f'{margin} minutes of margin'})
         if any(c.get('state') == 'BREACHED' for c in state.commitments.values() if c.get('job_id') == job['id']): signals.append({'signal': 'Broken commitment', 'points': 20, 'detail': 'A required promise is breached'})
+        if job.get('safety_hold'): signals.append({'signal': 'Safety hold', 'points': 50, 'detail': 'Field work stopped until the condition is cleared'})
         rows.append({'job_id': job['id'], 'machine_id': job['machine_id'], 'site_id': job['site_id'], 'priority': job.get('priority'), 'technician_id': job.get('technician_id'),
                      'deadline': job['deadline'], 'tier': risk_tier(job.get('priority'), signals), 'score': min(100, sum(s['points'] for s in signals)), 'sla_margin_minutes': margin, 'signals': signals})
     return sorted(rows, key=lambda r: (TIERS.index(r['tier']), r['priority'] or 'P9', r['sla_margin_minutes'], r['job_id']))

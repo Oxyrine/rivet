@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from api.app.core.runtime import store
 from api.app.core.security import require_roles, scoped_job
 from contract.errors import DomainError
-from .domain import impact, recovery, dropout, approve_plan, risk, fingerprint
+from .domain import impact, recovery, dropout, approve_plan, risk, fingerprint, report_issue
 
 router = APIRouter(tags=['exceptions'])
 READ = ('coordinator', 'manager', 'admin', 'auditor')
@@ -54,6 +54,13 @@ def post_approval(plan_id: str, principal=Depends(require_roles(*WRITE)), idempo
         for a in plan['assignments']: scoped_job(state, a['job_id'], principal)
         return commit(state, approve_plan(state, plan_id, principal['role'], principal['user_id']))
     return store.mutate(execute, key=principal['user_id']+':'+idempotency_key if idempotency_key else None, body={'plan_id': plan_id})
+
+@router.post('/jobs/{job_id}/issues')
+def post_issue(job_id: str, body: dict, principal=Depends(require_roles('technician', *WRITE)), idempotency_key: str | None=Header(default=None)):
+    def execute(state):
+        scoped_job(state, job_id, principal)
+        return report_issue(state, job_id, body, principal['user_id'])
+    return store.mutate(execute, key=principal['user_id']+':'+idempotency_key if idempotency_key else None, body={'job_id': job_id, **body})
 
 @router.post('/exceptions/plans/{technician_id}/refresh')
 def refresh_plans(technician_id: str, principal=Depends(require_roles(*WRITE))):
