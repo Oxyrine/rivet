@@ -1015,8 +1015,9 @@ export default function TechnicianFieldPage() {
                   <div key={cmd.idempotency_key} style={{ padding: '8px 10px', background: 'var(--panel-alt)', marginBottom: '6px', fontSize: '11px', fontFamily: 'var(--mono)', borderRadius: '2px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <b>#{cmd.device_seq} {cmd.type}</b>
-                      <span className="badge amber">{cmd.status.toUpperCase()}</span>
+                      <span className={`badge ${cmd.status === 'rejected' ? 'danger' : 'amber'}`}>{cmd.status.toUpperCase()}</span>
                     </div>
+                    {cmd.status === 'rejected' && <div role="alert" style={{ color: 'var(--critical)', fontSize: '11px', margin: '4px 0' }}>Not accepted: {cmd.error_message || cmd.error_code}</div>}
                     <span style={{ color: 'var(--muted)', fontSize: '10px' }}>Key: {cmd.idempotency_key.slice(0, 18)}...</span>
                   </div>
                 ))
@@ -1043,8 +1044,16 @@ export default function TechnicianFieldPage() {
           job={selectedJob}
           deviceId={`device-${selectedTech}`}
           alreadySubmitted={
-            queuedCmds.some((c) => c.type === 'SubmitReport' && c.job_id === selectedJob.id) ||
+            queuedCmds.some((c) => c.type === 'SubmitReport' && c.job_id === selectedJob.id && c.status !== 'rejected') ||
             ['completed', 'verified', 'closed'].includes(selectedJob.state)
+          }
+          rejection={(() => {
+            const last = [...queuedCmds].reverse().find((c) => c.type === 'SubmitReport' && c.job_id === selectedJob.id);
+            return last?.status === 'rejected' ? last.error_message || 'The server refused it.' : undefined;
+          })()}
+          notStarted={
+            ['assigned', 'approved'].includes(selectedJob.state) &&
+            !queuedCmds.some((c) => c.type === 'StartWork' && c.job_id === selectedJob.id && c.status !== 'rejected')
           }
           onPhoto={handlePhotoCapture}
           onSubmit={submitReport}

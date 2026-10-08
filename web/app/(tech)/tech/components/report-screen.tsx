@@ -22,6 +22,10 @@ interface ReportScreenProps {
   deviceId: string;
   /** The report already went out or is waiting in the queue, so a second one would replace it. */
   alreadySubmitted: boolean;
+  /** Work on this job has not been started (here or in the queue): the server refuses a report until it is. */
+  notStarted?: boolean;
+  /** Why the server turned the last report down, so the technician is not left thinking it went through. */
+  rejection?: string;
   onPhoto: (event: React.ChangeEvent<HTMLInputElement>, type: PhotoType) => Promise<void>;
   onSubmit: (payload: ReportPayload) => Promise<void>;
   onClose: () => void;
@@ -38,7 +42,7 @@ const sectionTitle: React.CSSProperties = {
 
 const stepButton: React.CSSProperties = { width: 34, height: 34, padding: 0, justifyContent: 'center' };
 
-export function ReportScreen({ job, deviceId, alreadySubmitted, onPhoto, onSubmit, onClose }: ReportScreenProps) {
+export function ReportScreen({ job, deviceId, alreadySubmitted, notStarted, rejection, onPhoto, onSubmit, onClose }: ReportScreenProps) {
   const [step, setStep] = useState<'edit' | 'review'>('edit');
   const [scanned, setScanned] = useState<Record<string, number>>({});
   const [photosTaken, setPhotosTaken] = useState<ReadonlySet<string>>(new Set());
@@ -169,6 +173,16 @@ export function ReportScreen({ job, deviceId, alreadySubmitted, onPhoto, onSubmi
           {job.machine_id} · {job.fault.replaceAll('_', ' ')}. The customer checks this report against the store ledger and your photos before accepting.
         </p>
 
+        {rejection && (
+          <p role="alert" data-testid="report-rejected" style={{ margin: '14px 0 0', padding: '10px 12px', background: 'var(--critical-surface, #fdeeee)', border: '1px solid var(--critical, #c0392b)', borderRadius: '3px', fontSize: '13px' }}>
+            <b>The server did not accept your last report.</b> {rejection} Fix that, then submit again: nothing reached the supervisor.
+          </p>
+        )}
+        {notStarted && (
+          <p role="status" data-testid="report-not-started" style={{ margin: '14px 0 0', padding: '10px 12px', background: 'var(--panel-alt)', border: '1px solid var(--amber, #b25e00)', borderRadius: '3px', fontSize: '13px' }}>
+            You have not started work on this job. Close this screen and press <b>2. Start Work</b> first; a report cannot be sent before that.
+          </p>
+        )}
         {alreadySubmitted && (
           <p role="status" data-testid="report-already-submitted" style={{ margin: '14px 0 0', padding: '10px 12px', background: 'var(--panel-alt)', border: '1px solid var(--green)', borderRadius: '3px', fontSize: '13px' }}>
             A report for this job is already queued or sent. Submitting again replaces it.
@@ -322,7 +336,7 @@ export function ReportScreen({ job, deviceId, alreadySubmitted, onPhoto, onSubmi
 
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '16px' }}>
               <button type="button" className="quiet-button" onClick={() => setStep('edit')} disabled={sending}>Back</button>
-              <button type="button" className="primary-button" data-testid="report-submit-btn" disabled={sending || errors.length > 0} onClick={submit}>
+              <button type="button" className="primary-button" data-testid="report-submit-btn" disabled={sending || errors.length > 0 || !!notStarted} onClick={submit}>
                 {sending ? 'Saving…' : 'Submit report'}
               </button>
             </div>

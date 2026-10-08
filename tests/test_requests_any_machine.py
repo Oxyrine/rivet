@@ -40,3 +40,15 @@ def test_the_summary_lists_only_the_machines_a_person_may_report_on(client):
     mine = {m['id'] for m in client.get('/dashboard/summary', headers=sign_in(client, 'requester')).json()['machines']}
     everyone = {m['id'] for m in client.get('/dashboard/summary', headers=sign_in(client, 'coordinator')).json()['machines']}
     assert 'M-117' in mine and 'M-138' not in mine and 'M-138' in everyone
+
+
+def test_a_report_sent_before_work_started_is_rejected_with_a_reason_the_field_app_can_show(client):
+    """The queue reports 'accepted' or 'rejected' per command. A rejected report must say why and must not appear on the customer's side."""
+    priya, supervisor = sign_in(client, 'priya'), sign_in(client, 'supervisor')
+    state = store.read()
+    device = state.users['priya']['device_id']
+    command = lambda seq, kind, payload: {'device_seq': seq, 'idempotency_key': f'k{seq}', 'device_ts': state.now, 'type': kind, 'job_id': 'J-2254', 'payload': payload}
+    batch = [command(1, 'CheckIn', {'machine_qr': 'M-134'}), command(2, 'SubmitReport', {'parts': {}, 'checklist': ['isolate'], 'minutes': 60})]
+    results = client.post(f'/devices/{device}/commands', json={'commands': batch}, headers=priya).json()['results']
+    assert [r['status'] for r in results] == ['accepted', 'rejected'] and results[1]['code'] == 'WORK_NOT_STARTED' and results[1]['message']
+    assert not client.get('/jobs/J-2254', headers=supervisor).json().get('report')
