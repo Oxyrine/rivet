@@ -113,8 +113,8 @@ self.addEventListener('fetch', (event) => {
           const cache = await caches.open(CACHE_NAME);
           const match = await cache.match(req, { ignoreSearch: true });
           if (match) return match;
-          // Graceful fallback to avoid halting page execution with a 408
-          return new Response('', { status: 200 });
+          // A failed script must fail: an empty 200 "loads" as a blank module and crashes the page on first use.
+          return Response.error();
         });
     })
   );
