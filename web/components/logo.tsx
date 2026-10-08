@@ -11,7 +11,7 @@ export function Logo({ variant = 'light', className = '', style, ...props }: Log
   const isCompact = variant === 'compact';
   const isDark = variant === 'dark';
 
-  const strokeColor = isDark ? '#FFFFFF' : 'var(--ink, #111814)';
+  const textColor = isDark ? '#FFFFFF' : 'var(--ink, #111814)';
   const accentColor = isDark ? '#E86330' : 'var(--brand-accent, #C84C1C)';
 
   const handleReplay = () => {
@@ -37,247 +37,164 @@ export function Logo({ variant = 'light', className = '', style, ...props }: Log
       {...props}
     >
       <style>{`
-        /* Authentic pen stroke handwriting animations */
-        .handwritten-main-stroke {
-          stroke-dasharray: 450;
-          stroke-dashoffset: 450;
-          animation: drawHandwrittenPath 1.6s cubic-bezier(0.42, 0, 0.25, 1) 0.1s forwards;
+        .rivet-logo-wrapper {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
         }
 
-        .handwritten-crossbar-stroke {
-          stroke-dasharray: 25;
-          stroke-dashoffset: 25;
-          animation: drawHandwrittenCrossbar 0.25s ease-out 1.55s forwards;
+        .rivet-cursive-text {
+          font-family: var(--font-cursive), 'Caveat', 'Segoe Script', cursive;
+          font-weight: 700;
+          font-size: 36px;
+          line-height: 1;
+          letter-spacing: -0.5px;
+          color: ${textColor};
+          white-space: nowrap;
+          display: inline-block;
+          position: relative;
         }
 
-        .handwritten-dot-ink {
-          opacity: 0;
-          transform-origin: 40px 12px;
-          animation: dropInkDot 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) 1.65s forwards;
+        /* Writing handwriting reveal animation: R -> i -> v -> e -> t */
+        .rivet-writing-layer {
+          display: inline-block;
+          white-space: nowrap;
+          clip-path: inset(0 100% 0 0);
+          animation: writeFromRToT 1.35s cubic-bezier(0.45, 0.05, 0.25, 1) 0.1s forwards;
         }
 
-        .handwritten-pen-tip {
+        /* Animated Pen-Tip / Ink Nib traveling from R to T */
+        .rivet-pen-nib {
           position: absolute;
-          width: 6px;
-          height: 6px;
+          top: 50%;
+          left: 0;
+          width: 5px;
+          height: 5px;
           border-radius: 50%;
           background: ${accentColor};
-          box-shadow: 0 0 8px ${accentColor};
+          box-shadow: 0 0 6px ${accentColor};
+          transform: translateY(-50%);
           pointer-events: none;
           opacity: 0;
-          animation: tracePenHandwriting 1.85s cubic-bezier(0.42, 0, 0.25, 1) 0.1s forwards;
+          animation: travelPenNib 1.35s cubic-bezier(0.45, 0.05, 0.25, 1) 0.1s forwards;
         }
 
-        /* Stroke drawing keyframes */
-        @keyframes drawHandwrittenPath {
+        /* Underline flourish drawing in as 't' completes */
+        .rivet-flourish-stroke {
+          position: absolute;
+          bottom: -4px;
+          left: 4px;
+          width: 82%;
+          height: 3px;
+          stroke-dasharray: 90;
+          stroke-dashoffset: 90;
+          animation: writeFlourish 0.5s ease-out 1.25s forwards;
+        }
+
+        /* Final static logo settle state */
+        .rivet-static-settle {
+          animation: settleFinalLogo 0.3s ease-out 1.4s forwards;
+        }
+
+        @keyframes writeFromRToT {
           0% {
-            stroke-dashoffset: 450;
+            clip-path: inset(0 100% 0 0);
           }
           100% {
-            stroke-dashoffset: 0;
+            clip-path: inset(0 0% 0 0);
           }
         }
 
-        @keyframes drawHandwrittenCrossbar {
+        @keyframes travelPenNib {
           0% {
-            stroke-dashoffset: 25;
-          }
-          100% {
-            stroke-dashoffset: 0;
-          }
-        }
-
-        @keyframes dropInkDot {
-          0% {
-            opacity: 0;
-            transform: scale(0.2);
-          }
-          100% {
+            left: 0%;
             opacity: 1;
-            transform: scale(1);
+            transform: translateY(-40%) scale(1.2);
           }
-        }
-
-        /* Pen tip follows the handwriting path from R -> i -> v -> e -> t -> crossbar -> dot */
-        @keyframes tracePenHandwriting {
-          0% {
+          20% {
+            transform: translateY(-10%) scale(1);
+          }
+          40% {
+            transform: translateY(-50%) scale(1.1);
+          }
+          60% {
+            transform: translateY(-20%) scale(1);
+          }
+          85% {
+            left: 92%;
             opacity: 1;
-            left: 10%;
-            top: 22%;
-          }
-          12% {
-            left: 10%;
-            top: 78%;
-          }
-          24% {
-            left: 23%;
-            top: 32%;
-          }
-          32% {
-            left: 22%;
-            top: 78%;
-          }
-          42% {
-            left: 33%;
-            top: 44%;
-          }
-          50% {
-            left: 33%;
-            top: 78%;
-          }
-          58% {
-            left: 45%;
-            top: 44%;
-          }
-          66% {
-            left: 54%;
-            top: 78%;
-          }
-          74% {
-            left: 64%;
-            top: 44%;
-          }
-          82% {
-            left: 74%;
-            top: 78%;
-          }
-          90% {
-            left: 88%;
-            top: 18%;
-          }
-          94% {
-            left: 88%;
-            top: 74%;
-          }
-          97% {
-            left: 96%;
-            top: 68%;
-            opacity: 1;
+            transform: translateY(-60%) scale(1.2);
           }
           98% {
-            left: 80%;
-            top: 41%;
-            opacity: 0.9;
-          }
-          99% {
-            left: 93%;
-            top: 41%;
-            opacity: 0.7;
+            left: 98%;
+            opacity: 0.8;
+            transform: translateY(-40%) scale(0.9);
           }
           100% {
-            left: 33%;
-            top: 26%;
+            left: 100%;
             opacity: 0;
+            transform: translateY(-50%) scale(0);
+          }
+        }
+
+        @keyframes writeFlourish {
+          to {
+            stroke-dashoffset: 0;
+          }
+        }
+
+        @keyframes settleFinalLogo {
+          from {
+            filter: drop-shadow(0 0 1px rgba(232, 99, 48, 0.4));
+          }
+          to {
+            filter: drop-shadow(0 0 0 transparent);
           }
         }
 
         @media (prefers-reduced-motion: reduce) {
-          .handwritten-main-stroke,
-          .handwritten-crossbar-stroke {
+          .rivet-writing-layer {
+            clip-path: inset(0 0% 0 0) !important;
+            animation: none !important;
+          }
+          .rivet-pen-nib {
+            display: none !important;
+          }
+          .rivet-flourish-stroke {
             stroke-dashoffset: 0 !important;
             animation: none !important;
-          }
-          .handwritten-dot-ink {
-            opacity: 1 !important;
-            transform: scale(1) !important;
-            animation: none !important;
-          }
-          .handwritten-pen-tip {
-            display: none !important;
           }
         }
       `}</style>
 
       {isCompact ? (
-        <svg
-          viewBox="0 0 44 48"
-          fill="none"
-          aria-label="Rivet"
-          role="img"
-          style={{
-            display: 'block',
-            width: 32,
-            height: 34,
-            overflow: 'visible',
-          }}
-        >
-          <title>Rivet</title>
-          <g stroke={strokeColor} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-            {/* R stem & lobe */}
-            <path
-              className="handwritten-main-stroke"
-              d="
-                M 14,10 L 12,36
-                M 12,36 C 13,24 15,10 22,7 C 29,4 35,7 35,15 C 35,22 27,23 15,23
-                C 19,23 23,28 27,36
-              "
-            />
-          </g>
-        </svg>
-      ) : (
-        <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
-          {/* Animated Pen Nib Indicator */}
-          <span className="handwritten-pen-tip" aria-hidden="true" />
-
-          {/* Genuine SVG Cursive Handwriting Wordmark */}
-          <svg
-            viewBox="0 0 126 46"
-            fill="none"
-            aria-label="Rivet"
-            role="img"
-            style={{
-              display: 'block',
-              width: 'auto',
-              height: 34,
-              minWidth: 104,
-              overflow: 'visible',
-            }}
+        <div className="rivet-logo-wrapper">
+          <span
+            className="rivet-cursive-text rivet-writing-layer"
+            style={{ fontSize: '32px', color: textColor }}
           >
-            <title>Rivet</title>
-            <g strokeLinecap="round" strokeLinejoin="round">
-              {/* Main continuous cursive handwriting stroke: R -> i -> v -> e -> t */}
-              <path
-                className="handwritten-main-stroke"
-                d="
-                  M 14,10 L 12,36
-                  M 12,36 C 13,24 15,10 22,7 C 29,4 35,7 35,15 C 35,22 27,23 15,23
-                  C 19,23 23,28 27,36
-                  C 31,36 36,26 40,20
-                  L 40,36
-                  C 44,36 50,26 56,20
-                  C 59,28 62,36 66,36
-                  C 70,36 74,26 77,20
-                  C 79,20 82,22 84,25
-                  C 86,28 89,20 93,20
-                  C 95,20 96,23 95,26
-                  C 93,28 87,29 86,31
-                  C 85,33 87,36 92,36
-                  C 97,36 103,20 106,8
-                  L 106,33
-                  C 106,36 110,36 118,32
-                "
-                stroke={strokeColor}
-                strokeWidth="2.8"
-              />
+            R
+          </span>
+          <span className="rivet-pen-nib" style={{ height: '4px', width: '4px' }} />
+        </div>
+      ) : (
+        <div className="rivet-logo-wrapper rivet-static-settle">
+          {/* Main Cursive Handwriting Text */}
+          <span className="rivet-cursive-text rivet-writing-layer">
+            Rivet
+          </span>
 
-              {/* Accented Crossbar on 't' */}
-              <path
-                className="handwritten-crossbar-stroke"
-                d="M 98,19 L 114,19"
-                stroke={accentColor}
-                strokeWidth="2.8"
-              />
+          {/* Traveling Ink Pen Nib */}
+          <span className="rivet-pen-nib" aria-hidden="true" />
 
-              {/* Accented Dot on 'i' */}
-              <circle
-                className="handwritten-dot-ink"
-                cx="40"
-                cy="12"
-                r="2.2"
-                fill={accentColor}
-                stroke="none"
-              />
-            </g>
+          {/* Underline Flourish */}
+          <svg className="rivet-flourish-stroke" viewBox="0 0 80 4" fill="none" aria-hidden="true">
+            <path
+              d="M 2 2 C 24 1, 52 3.5, 78 2"
+              stroke={accentColor}
+              strokeWidth="2.4"
+              strokeLinecap="round"
+            />
           </svg>
         </div>
       )}
