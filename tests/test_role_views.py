@@ -89,3 +89,13 @@ def test_only_the_supervisor_can_accept_dispute_or_confirm_the_machine_runs(clie
         assert client.post(path, json=body, headers=requester).status_code == 403, path
     assert client.post('/jobs/J-2236/dispute', json={'lines': ['labour']}, headers=supervisor).status_code == 200
     assert client.post('/customer-commitments/time:J-2236/confirm', json={}, headers=requester).status_code != 403  # requesters still confirm access and permits
+
+
+def test_confirming_the_machine_runs_before_the_technician_has_finished_is_refused(client):
+    """A machine does not read 'Running' on a job nobody has worked: that confirmation waits for checkout."""
+    coordinator, supervisor = sign_in(client, 'coordinator'), sign_in(client, 'supervisor')
+    r = client.post('/requests', json={'machine_id': 'M-104', 'fault': 'hydraulic_leak'}, headers=coordinator).json()
+    refused = client.post(f"/jobs/{r['job_id']}/machine-running", json={}, headers=supervisor)
+    assert refused.status_code == 409 and refused.json()['code'] == 'NOTHING_TO_CONFIRM'
+    machines = {m['id']: m for m in client.get('/dashboard/summary', headers=coordinator).json()['machines']}
+    assert machines['M-104']['status'] == 'Fault detected'

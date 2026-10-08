@@ -16,6 +16,16 @@ const STATE: Record<string, { label: string; note: string; tone: string }> = {
   'Pending': { label: 'Awaiting acceptance', note: '', tone: 'plain' },
 };
 
+// Until the report is in there is nothing to accept yet, so a pending job says where the work actually is.
+const STAGE: Record<string, string> = {
+  pending_approval: 'Awaiting approval',
+  approved: 'Approved, not yet assigned',
+  assigned: 'Assigned to a technician',
+  in_progress: 'Work in progress',
+  closure_blocked: 'Closure blocked',
+  reopened: 'Reopened',
+};
+
 const day = (v?: string) => v ? new Date(v).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', timeZone: 'Asia/Kolkata' }) : '—';
 const words = (v: string) => v.replaceAll('_', ' ').replace(/^./, c => c.toUpperCase());
 const download = (value: unknown, name: string) => {
@@ -31,6 +41,7 @@ export default function Passport() {
   const [machine, setMachine] = useState('M-104');
   const [data, setData] = useState<any>(null);
   const [message, setMessage] = useState('');
+  const [copied, setCopied] = useState('');
 
   useEffect(() => {
     const linked = new URLSearchParams(window.location.search).get('machine');
@@ -79,6 +90,7 @@ export default function Passport() {
       )}
 
       {message && <p role="alert" className={s.error}>{message}</p>}
+      {copied && <p role="status" className={s.ok}>{copied}</p>}
 
       {data && (
         <>
@@ -109,7 +121,8 @@ export default function Passport() {
             <h2>Service history timeline</h2>
             <ol className={s.entries}>
               {jobs.map((j: any) => {
-                const st = STATE[j.acceptance] || { label: j.acceptance, note: '', tone: 'plain' };
+                const base = STATE[j.acceptance] || { label: j.acceptance, note: '', tone: 'plain' };
+                const st = j.acceptance === 'Pending' && STAGE[j.state] ? { ...base, label: STAGE[j.state] } : base;
                 const recon = j.reconciliation?.outcome;
                 return (
                   <li key={j.id}>
@@ -149,7 +162,7 @@ export default function Passport() {
               <button
                 className="secondary-button"
                 onClick={() => {
-                  navigator.clipboard?.writeText(`${location.origin}/passport?machine=${machine}`).then(() => setMessage('Passport link copied. The recipient still needs access to see it.'));
+                  navigator.clipboard?.writeText(`${location.origin}/passport?machine=${machine}`).then(() => { setCopied('Passport link copied. The recipient still needs access to see it.'); setTimeout(() => setCopied(''), 5000); });
                 }}
               >
                 <Share2 size={15} /> Share passport

@@ -150,3 +150,11 @@ def test_issued_but_unreported_part_can_be_closed_with_manager_signoff():
     assert v['requires_manager'] and not v['approved'] and s.jobs['J-2240']['reconciliation']['outcome']=='Unexplained'
     v=d.explain_variance(s,'J-2240',{'part':'HS-40','reason':'Issued part returned to store'},'manager',manager=True)
     assert v['approved'] and s.jobs['J-2240']['reconciliation']['outcome']=='Explained variance'
+
+
+def test_a_running_reading_before_checkout_does_not_change_the_machine_status():
+    s=state(); machine=s.machines[s.jobs['J-2240']['machine_id']]; machine['status']='Fault detected'
+    d.machine_running(s,'J-2240','simulated telemetry','system')
+    assert machine['status']=='Fault detected'  # the repair has not finished, so the machine is not 'Running' yet
+    d.check_out(s,'J-2240',{},'priya'); d.machine_running(s,'J-2240','simulated telemetry','system')
+    assert machine['status']=='Running'

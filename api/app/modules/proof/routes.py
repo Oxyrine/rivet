@@ -57,7 +57,10 @@ def accept_alternative(job_id:str,body:dict,request:Request,p=Depends(customer))
 
 @router.post('/jobs/{job_id}/machine-running')
 def running(job_id:str,request:Request,p=Depends(customer)):
-    return mutate(job_id,p,lambda s:domain.machine_running(s,job_id,'customer confirmation',p['user_id']),request,{})
+    def confirm(s):
+        if not s.jobs[job_id].get('checkout_at'):raise DomainError('NOTHING_TO_CONFIRM','The technician has not finished this job yet, so there is nothing to confirm.',status=409)
+        return domain.machine_running(s,job_id,'customer confirmation',p['user_id'])
+    return mutate(job_id,p,confirm,request,{})
 
 @router.post('/jobs/{job_id}/dispute')
 def dispute(job_id:str,body:dict,request:Request,p=Depends(customer)):

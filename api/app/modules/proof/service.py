@@ -126,7 +126,8 @@ def machine_running(s,job_id,source,actor):
     j=s.jobs[job_id]
     if j.get('state')=='closed':return j
     j.update(machine_running_at=s.now,fix_source=source)
-    s.machines[j['machine_id']]['status']='Running'
+    # A reading before the technician has finished says nothing about the repair, so the machine keeps its fault status until then.
+    if j.get('checkout_at'): s.machines[j['machine_id']]['status']='Running'
     job_event(s,j,'MachineRunning',{'source':source},actor)
     if j.get('checkout_at'): service_restored(s,j,actor)
     return j

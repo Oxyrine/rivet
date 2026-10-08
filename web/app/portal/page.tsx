@@ -163,11 +163,11 @@ export default function Portal() {
             ))}
             <div className="toolbar" style={{ marginTop: '16px' }}>
               <button className="secondary-button" disabled={busy} onClick={() => act(`/pauses/pause:${selected}/confirm`, {}, 'Permit pause confirmed.', 'No permit pause is recorded yet. One starts when the technician waits on the permit.')}>Confirm recorded permit pause</button>
-              <button className="secondary-button" disabled={busy || !canSignOff || !!j.machine_running_at} title={canSignOff ? undefined : supervisorOnly} onClick={() => act(`/jobs/${selected}/machine-running`, {}, 'Machine running confirmed.')}>Confirm machine running</button>
+              <button className="secondary-button" disabled={busy || !canSignOff || !j.checkout_at || !!j.machine_running_at} title={!canSignOff ? supervisorOnly : !j.checkout_at ? 'Available once the technician has finished and checked out' : undefined} onClick={() => act(`/jobs/${selected}/machine-running`, {}, 'Machine running confirmed.')}>Confirm machine running</button>
             </div>
             <p className="muted" style={{ fontSize: '13px', marginTop: '12px' }}>
               Machine running: {j.machine_running_at ? `confirmed ${new Date(j.machine_running_at).toLocaleString()}` : 'not confirmed yet'}
-              {!canSignOff && !j.machine_running_at && ' · the site supervisor confirms this'}
+              {!j.machine_running_at && (canSignOff ? (j.checkout_at ? '' : ' · available once the technician has finished') : ' · the site supervisor confirms this')}
             </p>
           </section>
 
