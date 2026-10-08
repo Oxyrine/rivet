@@ -17,9 +17,9 @@ async function tryProxy(request: NextRequest, path: string): Promise<Response | 
 
   try {
     const controller = new AbortController();
-    // Reads may fall back to the demo engine quickly; a write must be given time (the free API takes a while to wake) because aborting it
-    // can still complete on the server while the caller is told it failed.
-    const timeout = setTimeout(() => controller.abort(), isRead ? 2500 : 25000);
+    // Give both reads and writes sufficient time (Render free instances take time to respond/wake).
+    // Premature timeouts cause reads to abort and flip-flop between real database and mock demo engine.
+    const timeout = setTimeout(() => controller.abort(), 20000);
 
     const headers = new Headers(request.headers);
     headers.delete('host');
@@ -36,8 +36,8 @@ async function tryProxy(request: NextRequest, path: string): Promise<Response | 
     });
 
     clearTimeout(timeout);
-    // A real refusal to a write (400, 404, 409...) is the answer; only an unreachable or failing API may fall back to the demo engine.
-    if (response.ok || response.status === 401 || response.status === 403 || response.status === 422 || (!isRead && response.status < 500)) {
+    // Any valid response from the configured backend should be returned
+    if (response.ok || response.status < 500) {
       const respData = await response.text();
       return new Response(respData, {
         status: response.status,
@@ -61,9 +61,10 @@ async function handle(request: NextRequest, { params }: { params: Promise<{ slug
   const proxied = await tryProxy(request, path);
   if (proxied) return proxied;
 
-  // A write must never be answered by the in-memory demo engine when a real API is configured: report it as unavailable so the caller retries.
-  if (realApiUrl() && !['GET', 'HEAD'].includes(method)) {
-    return NextResponse.json({ code: 'API_UNAVAILABLE', message: 'The server is not answering yet. Nothing was lost; try again in a moment.' }, { status: 503 });
+  // When a real API is configured, never fall back to the in-memory demo engine.
+  // Falling back creates split-brain flickering between real DB data and in-memory mock data.
+  if (realApiUrl()) {
+    return NextResponse.json({ code: 'API_UNAVAILABLE', message: 'The server is taking longer to respond. Retrying in a moment.' }, { status: 503 });
   }
 
   // 2. Local high-fidelity Demo Engine fallback
