@@ -126,8 +126,9 @@ def resume(s, job_id, body, actor):
     return {'job_id': job['id'], 'state': job['state'], 'version': job['version']}
 
 
-def complete_stage(s, job_id, stage, actor):
+def complete_stage(s, job_id, stage, body, actor):
     _, job = _job(s, job_id)
+    engine.check_version(job, (body or {}).get('expected_version'))
     gates = engine.job_definition(s, job)['required_stages']
     if stage not in gates: raise DomainError('UNKNOWN_STAGE', 'This workflow has no such stage', {'stages': gates})
     done = job.setdefault('stages_done', [])

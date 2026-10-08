@@ -69,6 +69,27 @@ def test_close_then_reopen_has_an_auditable_path():
     assert [event['type'] for event in state.events][-2:] == ['JobClosed', 'JobReopened']
 
 
+def test_stage_gate_is_pinned_to_the_job_workflow_version():
+    state = fixture()
+    current = engine.definition(state, 'repair')
+    state.metadata['workflows'] = {'repair': {'current': 2, 'versions': {
+        '1': {key: current[key] for key in ('service_type', 'edges', 'required_stages', 'rules', 'locked')},
+        '2': {**{key: current[key] for key in ('service_type', 'edges', 'rules', 'locked')}, 'required_stages': ['safety_check']},
+    }}}
+    request = create_request(state, {'machine_id': 'M-104', 'actor': 'coordinator'})
+    approve(state, request['id'], 'coordinator')
+    job = assign(state, request['job_id'], 'ravi', 'coordinator')
+    assert job['workflow_version'] == 2
+    assert commands.pending_stages(state, job) == ['safety_check']
+    commands.complete_stage(state, job['id'], 'safety_check', {'expected_version': job['version']}, 'ravi')
+    assert commands.pending_stages(state, job) == []
+
+    # Editing the definition again cannot add a stage to a job already in progress.
+    state.metadata['workflows']['repair']['current'] = 3
+    state.metadata['workflows']['repair']['versions']['3'] = {**state.metadata['workflows']['repair']['versions']['2'], 'required_stages': ['safety_check', 'permit_review']}
+    assert commands.pending_stages(state, job) == []
+
+
 def token(client, user):
     response = client.post('/auth/token', json={'user_id': user, 'otp': '246810'})
     assert response.status_code == 200, response.text
@@ -99,4 +120,7 @@ def test_lifecycle_routes_timeline_and_versioned_workflow_editor(client):
     assert updated.status_code == 200, updated.text
     assert updated.json()['version'] == definition['version'] + 1
     retry = client.put('/admin/workflows/repair', json={'locked': {'role_checks': False}}, headers=token(client, 'admin'))
-    assert retry.status_code == 422
+    assert retry.status_code == 422 and retry.json()['code'] == 'CONFIG_LOCKED'
+
+    staged = client.post(f"/jobs/{created['job_id']}/stages/safety_check/complete", json={'expected_version': 2}, headers=token(client, 'coordinator'))
+    assert staged.status_code == 409  # that job is rejected and cannot complete a workflow stage

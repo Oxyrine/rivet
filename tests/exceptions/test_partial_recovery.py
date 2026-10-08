@@ -97,3 +97,13 @@ def test_reporting_a_dropout_twice_keeps_plans_that_can_still_be_approved():
     assert events == [] and result['plans'] and all(p['id'] in second.plans for p in result['plans'])
     applied, _, _ = approve_plan(second, result['plans'][0]['id'], 'coordinator', 'coordinator')
     assert applied.jobs['J-2231']['technician_id'] != 'ravi'
+
+
+def test_recovery_plan_can_be_decided_only_once():
+    state, _, result = dropout(scenario(), 'ravi')
+    plan_id = result['plans'][0]['id']
+    applied, _, _ = approve_plan(state, plan_id, 'coordinator', 'coordinator')
+    with pytest.raises(DomainError) as error:
+        approve_plan(applied, plan_id, 'coordinator', 'manager')
+    assert error.value.code == 'PLAN_ALREADY_DECIDED'
+    assert error.value.details['by'] == 'coordinator'

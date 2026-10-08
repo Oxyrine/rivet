@@ -290,6 +290,10 @@ def dropout(state, technician_id, reason='Reported unavailable', actor='coordina
 def approve_plan(state, plan_id, role, actor):
     plan = state.plans.get(plan_id)
     if not plan: raise DomainError('PLAN_NOT_FOUND', 'Generate a recovery plan before approval', status=404)
+    deciding_breach = next((b for b in state.breaches.values() if b.get('technician_id') == plan.get('technician_id') and b.get('decided')), None)
+    if deciding_breach and deciding_breach.get('decided'):
+        decided = deciding_breach['decided']
+        raise DomainError('PLAN_ALREADY_DECIDED', f"Plan {decided['plan_id']} was approved by {decided['by']} at {decided['at']}", decided)
     if plan.get('needs_manager') and role not in {'manager', 'admin'}:
         raise DomainError('MANAGER_REQUIRED', 'Contractor recovery requires service-manager approval', status=403)
     if plan['state_version'] != fingerprint(state): raise DomainError('STALE_PLAN', 'Availability or reservations changed. Refresh the recovery plans.')
@@ -346,6 +350,7 @@ def approve_plan(state, plan_id, role, actor):
     for breach in new.breaches.values():
         if breach.get('technician_id') == plan['technician_id'] and breach.get('state') in ('OPEN', 'PARTIALLY_RECOVERED'):
             breach['state'] = 'PARTIALLY_RECOVERED' if left else 'RECOVERED'
+            breach['decided'] = {'plan_id': plan_id, 'by': actor, 'at': new.now}
             if left: breach['affected_jobs'] = left
     new.plans[plan_id]['approved_by'] = actor
     return new, new.events[before:], {'approved': True, 'plan_id': plan_id, 'assignments': plan['assignments'], 'unplaced': plan.get('unplaced', [])}
