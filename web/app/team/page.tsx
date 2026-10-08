@@ -16,6 +16,7 @@ type Person = {
 };
 
 type DemoAccount = { user_id: string; role: string; email: string; password?: string; error?: string };
+type Workflow = { service_type: string; version: number; required_stages: string[]; rules: { hold_expiry_hours?: number } };
 
 const ist = (iso: string) =>
   new Date(iso).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'medium', timeZone: 'Asia/Kolkata' });
@@ -35,18 +36,37 @@ export default function Team() {
   const [skipped, setSkipped] = useState<string[]>([]);
   const [showPasswords, setShowPasswords] = useState(false);
   const [removeArmed, setRemoveArmed] = useState(false);
+  const [workflows, setWorkflows] = useState<Workflow[]>([]);
+  const [serviceType, setServiceType] = useState('repair');
+  const [workflowDraft, setWorkflowDraft] = useState({ stages: '', holdExpiry: '' });
 
   const isAdmin = session?.role === 'admin';
 
   const load = useCallback(async () => {
     try {
-      setPeople(await api<Person[]>('/admin/users'));
-      setClock((await api<{ now: string }>('/admin/clock')).now);
+      const [people, clock, definitions] = await Promise.all([
+        api<Person[]>('/admin/users'),
+        api<{ now: string }>('/admin/clock'),
+        api<{ items: Workflow[] }>('/admin/workflows'),
+      ]);
+      setPeople(people);
+      setClock(clock.now);
+      setWorkflows(definitions.items || []);
       setError('');
     } catch (e) {
       setError((e as Error).message);
     }
   }, []);
+
+  const selectedWorkflow = workflows.find(workflow => workflow.service_type === serviceType);
+
+  useEffect(() => {
+    if (!selectedWorkflow) return;
+    setWorkflowDraft({
+      stages: selectedWorkflow.required_stages.join(', '),
+      holdExpiry: String(selectedWorkflow.rules.hold_expiry_hours ?? ''),
+    });
+  }, [selectedWorkflow?.version, serviceType]);
 
   useEffect(() => {
     if (isAdmin) void load();
@@ -113,6 +133,19 @@ export default function Team() {
       setSkipped([]);
       setRemoveArmed(false);
       return `Removed ${r.removed.length} demo logins.${r.kept.length ? ` ${r.kept.length} could not be removed.` : ''}`;
+    });
+
+  const saveWorkflow = () =>
+    act('workflow', async () => {
+      const required_stages = workflowDraft.stages.split(',').map(stage => stage.trim()).filter(Boolean);
+      const hold_expiry_hours = Number(workflowDraft.holdExpiry);
+      if (!Number.isFinite(hold_expiry_hours) || hold_expiry_hours <= 0) throw new Error('Hold expiry must be a positive number of hours.');
+      const saved = await api<Workflow>(`/admin/workflows/${serviceType}`, {
+        method: 'PUT',
+        body: JSON.stringify({ required_stages, rules: { hold_expiry_hours } }),
+      });
+      setWorkflows(current => current.map(workflow => workflow.service_type === saved.service_type ? saved : workflow));
+      return `${saved.service_type.replaceAll('_', ' ')} workflow saved as version ${saved.version}. Open jobs keep their existing workflow version.`;
     });
 
   const copy = async (text: string) => {
@@ -226,6 +259,33 @@ export default function Team() {
         <p className="muted" style={{ fontSize: '13px' }}>
           Create the person's sign-in in Supabase first (Authentication → Users → Add user), then link the same email here.
         </p>
+      </section>
+
+      <section className="panel">
+        <h2>Service workflow</h2>
+        <p className="muted" style={{ marginBottom: '16px' }}>
+          New jobs pin the version shown here. Existing work keeps the rules it started with, including the audit and role protections.
+        </p>
+        <div className="toolbar" style={{ alignItems: 'end' }}>
+          <label>
+            Service type
+            <select value={serviceType} onChange={e => setServiceType(e.target.value)}>
+              {workflows.map(workflow => <option key={workflow.service_type} value={workflow.service_type}>{workflow.service_type.replaceAll('_', ' ')}</option>)}
+            </select>
+          </label>
+          <label>
+            Required checks before work
+            <input value={workflowDraft.stages} onChange={e => setWorkflowDraft(draft => ({ ...draft, stages: e.target.value }))} placeholder="safety_check, permit_review" />
+          </label>
+          <label>
+            Hold expiry (hours)
+            <input type="number" min="1" value={workflowDraft.holdExpiry} onChange={e => setWorkflowDraft(draft => ({ ...draft, holdExpiry: e.target.value }))} />
+          </label>
+          <button className="primary-button" disabled={!!busy || !selectedWorkflow} onClick={saveWorkflow}>
+            {busy === 'workflow' ? 'Saving…' : `Save version ${(selectedWorkflow?.version ?? 0) + 1}`}
+          </button>
+        </div>
+        {selectedWorkflow && <p className="muted" style={{ fontSize: '13px', marginTop: '12px' }}>Current version: {selectedWorkflow.version}. Lifecycle state transitions, ledger invariants, role checks, and append-only history stay locked.</p>}
       </section>
 
       <section className="panel">
