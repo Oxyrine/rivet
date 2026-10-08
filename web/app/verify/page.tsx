@@ -6,6 +6,16 @@ import { api } from '@/lib/api';
 // @ts-ignore JavaScript module shared with the standalone offline verifier.
 import { verifyPackage } from '@/lib/proof-verifier';
 
+/** SHA-256 of the raw public key, the same fingerprint the server publishes beside the key. */
+async function fingerprintOf(key: string) {
+  try {
+    const raw = Uint8Array.from(atob(key), c => c.charCodeAt(0));
+    return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', raw)), b => b.toString(16).padStart(2, '0')).join('');
+  } catch {
+    return '';
+  }
+}
+
 export default function Verify() {
   const [job, setJob] = useState('J-2231');
   const [key, setKey] = useState('');
@@ -13,11 +23,16 @@ export default function Verify() {
   const [result, setResult] = useState<any>(null);
   const [message, setMessage] = useState('');
   const [needKey, setNeedKey] = useState(false);
+  // Feedback for step 1 shows beside its buttons; the page-level message sits at the bottom, out of sight.
+  const [pinNote, setPinNote] = useState<{ ok: boolean; text: string } | null>(null);
+  const [pinned, setPinned] = useState('');
 
   useEffect(() => {
     const linked = new URLSearchParams(window.location.search).get('job');
     if (linked) setJob(linked);
-    setKey(localStorage.getItem('hep-pinned-key') || '');
+    const saved = localStorage.getItem('hep-pinned-key') || '';
+    setKey(saved);
+    if (saved) void fingerprintOf(saved).then(setPinned);
   }, []);
 
   const check = async (p: any) => {
@@ -74,10 +89,22 @@ export default function Verify() {
         <div className="toolbar" style={{ marginTop: '12px' }}>
           <button
             className="primary-button"
-            onClick={() => {
-              localStorage.setItem('hep-pinned-key', key.trim());
+            onClick={async () => {
+              const value = key.trim();
+              if (!value) {
+                setPinNote({ ok: false, text: 'Paste a key first, or click Show published key.' });
+                return;
+              }
+              const fp = await fingerprintOf(value);
+              if (!fp) {
+                setPinNote({ ok: false, text: 'That is not a valid base64 key, so it was not pinned.' });
+                return;
+              }
+              localStorage.setItem('hep-pinned-key', value);
+              setPinned(fp);
               setNeedKey(false);
-              setMessage('Onboarding key pinned to this browser.');
+              setPinNote({ ok: true, text: 'Key pinned to this browser.' });
+              if (pkg) void check(pkg);
             }}
           >
             <Key size={15} /> Pin key
@@ -88,15 +115,25 @@ export default function Verify() {
               try {
                 const x = await api<any>('/.well-known/rivet-keys.json');
                 setKey(x.keys[0].public_key);
-                setMessage('Published fingerprint: ' + x.keys[0].fingerprint + '. Compare with your contract before pinning.');
+                setPinNote({ ok: true, text: 'Published fingerprint: ' + x.keys[0].fingerprint + '. Compare it with your contract, then click Pin key.' });
               } catch (e: any) {
-                setMessage(e.message);
+                setPinNote({ ok: false, text: e.message });
               }
             }}
           >
             Show published key
           </button>
         </div>
+        {pinNote && (
+          <p role={pinNote.ok ? 'status' : 'alert'} data-testid="pin-note" className={pinNote.ok ? 'notice' : 'error-banner'} style={{ marginTop: '12px' }}>
+            {pinNote.text}
+          </p>
+        )}
+        {pinned && (
+          <p data-testid="pinned-fingerprint" className="muted" style={{ marginTop: '12px', fontSize: '13px' }}>
+            Pinned key fingerprint: <code style={{ wordBreak: 'break-all' }}>{pinned}</code>
+          </p>
+        )}
       </section>
 
       <section className="panel">

@@ -4,7 +4,10 @@
 <label>Pinned public key (Base64)<textarea id="key"></textarea></label><button id="pin">Save onboarding key</button><p>Service package <input type="file" id="package" accept=".json"></p><p>Import remembered history <input type="file" id="import" accept=".json"></p><button id="export">Export remembered history</button><button id="remember">Remember verified head</button><pre id="result">Choose a signed package.</pre>
 <script type="module">
 import {verifyPackage} from './verify.js'; let pkg,result;const field=document.querySelector('#key');field.value=localStorage.getItem('hep-pinned-key')||'';let anchors=JSON.parse(localStorage.getItem('hep-anchors')||'[]');
-document.querySelector('#pin').onclick=()=>{localStorage.setItem('hep-pinned-key',field.value.trim());document.querySelector('#result').textContent='Onboarding key pinned. Verify the fingerprint through your service contract.'};
+document.querySelector('#pin').onclick=async()=>{const out=document.querySelector('#result'),v=field.value.trim();
+if(!v){out.textContent='Paste a key first, then click "Save onboarding key".';return}
+let fp;try{fp=[...new Uint8Array(await crypto.subtle.digest('SHA-256',Uint8Array.from(atob(v),c=>c.charCodeAt(0))))].map(b=>b.toString(16).padStart(2,'0')).join('')}catch{out.textContent='That is not a valid base64 key, so it was not saved.';return}
+localStorage.setItem('hep-pinned-key',v);out.textContent='Onboarding key saved in this browser.\nFingerprint: '+fp+'\nCompare it with your service contract.'};
 document.querySelector('#package').onchange=async e=>{const out=document.querySelector('#result');try{pkg=JSON.parse(await e.target.files[0].text());result=undefined;
 if(!field.value.trim()){out.textContent='No key is pinned yet, so the signature cannot be checked.\nPaste the key from your service contract above, click "Save onboarding key", then choose the package again.';return}
 result=await verifyPackage(pkg,field.value.trim(),anchors);
