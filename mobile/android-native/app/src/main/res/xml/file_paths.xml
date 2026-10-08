@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
     <cache-path name="evidence_photos" path="." />
+    <external-cache-path name="external_evidence_photos" path="." />
+    <files-path name="evidence_files" path="." />
+    <external-files-path name="external_evidence_files" path="." />
 </paths>

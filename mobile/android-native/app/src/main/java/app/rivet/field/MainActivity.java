@@ -6,14 +6,15 @@ import android.app.Activity;
 import android.content.ClipData;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.MediaStore;
 import android.view.Gravity;
-import android.view.View;
 import android.webkit.PermissionRequest;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -27,9 +28,13 @@ import android.widget.TextView;
 import androidx.core.content.FileProvider;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Arrays;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 
 public class MainActivity extends Activity {
     private static final String RIVET_HOST = "rivet-lyart.vercel.app";
@@ -41,7 +46,8 @@ public class MainActivity extends Activity {
     private WebView workspace;
     private PermissionRequest pendingWebPermissionRequest;
     private ValueCallback<Uri[]> filePathCallback;
-    private Uri pendingCameraPhoto;
+    private File pendingCameraFile;
+    private Uri pendingCameraUri;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -83,6 +89,10 @@ public class MainActivity extends Activity {
         workspace = new WebView(this);
         workspace.getSettings().setJavaScriptEnabled(true);
         workspace.getSettings().setDomStorageEnabled(true);
+        workspace.getSettings().setDatabaseEnabled(true);
+        workspace.getSettings().setAllowFileAccess(true);
+        workspace.getSettings().setAllowContentAccess(true);
+        workspace.getSettings().setMediaPlaybackRequiresUserGesture(false);
         workspace.getSettings().setLoadWithOverviewMode(true);
         workspace.getSettings().setUseWideViewPort(true);
         workspace.setWebViewClient(new FieldWebClient());
@@ -106,15 +116,29 @@ public class MainActivity extends Activity {
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode != CAMERA_PERMISSION_REQUEST || pendingWebPermissionRequest == null) return;
-        PermissionRequest request = pendingWebPermissionRequest;
-        pendingWebPermissionRequest = null;
-        boolean granted = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
-        if (granted && isTrustedRivetOrigin(request.getOrigin())) {
-            request.grant(new String[]{PermissionRequest.RESOURCE_VIDEO_CAPTURE});
-        } else {
-            request.deny();
+        if (requestCode == CAMERA_PERMISSION_REQUEST && pendingWebPermissionRequest != null) {
+            boolean granted = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
+            if (granted) {
+                pendingWebPermissionRequest.grant(new String[]{PermissionRequest.RESOURCE_VIDEO_CAPTURE});
+            } else {
+                pendingWebPermissionRequest.deny();
+            }
+            pendingWebPermissionRequest = null;
         }
+    }
+
+    private File createImageFile() throws IOException {
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
+        String imageFileName = "RIVET_EVIDENCE_" + timeStamp + "_";
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        if (storageDir == null || !storageDir.exists()) {
+            storageDir = getCacheDir();
+        }
+        return File.createTempFile(
+                imageFileName,
+                ".jpg",
+                storageDir
+        );
     }
 
     @Override
@@ -122,22 +146,43 @@ public class MainActivity extends Activity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode != FILE_CHOOSER_REQUEST || filePathCallback == null) return;
-        Uri[] result = WebChromeClient.FileChooserParams.parseResult(resultCode, data);
-        if ((result == null || result.length == 0) && resultCode == RESULT_OK && pendingCameraPhoto != null) {
-            result = new Uri[]{pendingCameraPhoto};
-        }
-        filePathCallback.onReceiveValue(result);
-        filePathCallback = null;
-        pendingCameraPhoto = null;
-    }
 
-    private boolean isTrustedRivetOrigin(Uri origin) {
-        return origin != null && "https".equals(origin.getScheme()) && RIVET_HOST.equals(origin.getHost());
+        Uri[] results = null;
+        if (resultCode == RESULT_OK) {
+            if (data != null && data.getData() != null) {
+                // File picked from gallery or document provider
+                results = new Uri[]{data.getData()};
+            } else if (data != null && data.getClipData() != null) {
+                // Multiple files picked
+                ClipData clipData = data.getClipData();
+                results = new Uri[clipData.getItemCount()];
+                for (int i = 0; i < clipData.getItemCount(); i++) {
+                    results[i] = clipData.getItemAt(i).getUri();
+                }
+            } else if (pendingCameraFile != null && pendingCameraFile.exists() && pendingCameraFile.length() > 0) {
+                // Direct camera photo was taken and written to file
+                results = new Uri[]{pendingCameraUri};
+            } else if (pendingCameraUri != null) {
+                results = new Uri[]{pendingCameraUri};
+            }
+        }
+
+        if (pendingCameraUri != null) {
+            try {
+                revokeUriPermission(pendingCameraUri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            } catch (Exception ignored) {}
+        }
+
+        filePathCallback.onReceiveValue(results);
+        filePathCallback = null;
+        pendingCameraFile = null;
+        pendingCameraUri = null;
     }
 
     private boolean hasCameraPermission() {
         return checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
     }
+
     private void checkConnection() {
         new Thread(() -> {
             String result = "Offline — open the browser once you reconnect";
@@ -168,11 +213,20 @@ public class MainActivity extends Activity {
             return true;
         }
     }
+
     private class FieldChromeClient extends WebChromeClient {
         @Override
         public void onPermissionRequest(PermissionRequest request) {
-            boolean asksForVideo = Arrays.asList(request.getResources()).contains(PermissionRequest.RESOURCE_VIDEO_CAPTURE);
-            if (!isTrustedRivetOrigin(request.getOrigin()) || !asksForVideo) {
+            boolean asksForVideo = false;
+            if (request.getResources() != null) {
+                for (String resource : request.getResources()) {
+                    if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(resource)) {
+                        asksForVideo = true;
+                        break;
+                    }
+                }
+            }
+            if (!asksForVideo) {
                 request.deny();
                 return;
             }
@@ -180,7 +234,9 @@ public class MainActivity extends Activity {
                 request.grant(new String[]{PermissionRequest.RESOURCE_VIDEO_CAPTURE});
                 return;
             }
-            if (pendingWebPermissionRequest != null) pendingWebPermissionRequest.deny();
+            if (pendingWebPermissionRequest != null) {
+                pendingWebPermissionRequest.deny();
+            }
             pendingWebPermissionRequest = request;
             requestPermissions(new String[]{Manifest.permission.CAMERA}, CAMERA_PERMISSION_REQUEST);
         }
@@ -193,25 +249,71 @@ public class MainActivity extends Activity {
 
         @Override
         public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> callback, FileChooserParams params) {
-            if (filePathCallback != null) filePathCallback.onReceiveValue(null);
-            filePathCallback = callback;
-            Intent selectImage = new Intent(Intent.ACTION_GET_CONTENT)
-                    .addCategory(Intent.CATEGORY_OPENABLE)
-                    .setType("image/*");
-            Intent camera = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-            File target = new File(getCacheDir(), "rivet-evidence-" + System.currentTimeMillis() + ".jpg");
-            pendingCameraPhoto = FileProvider.getUriForFile(MainActivity.this, getPackageName() + ".fileprovider", target);
-            camera.putExtra(MediaStore.EXTRA_OUTPUT, pendingCameraPhoto);
-            camera.setClipData(ClipData.newRawUri("Rivet evidence", pendingCameraPhoto));
-            camera.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-            Intent chooser = Intent.createChooser(selectImage, "Add service evidence");
-            chooser.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Intent[]{camera});
-            try {
-                startActivityForResult(chooser, FILE_CHOOSER_REQUEST);
-            } catch (Exception error) {
+            if (filePathCallback != null) {
                 filePathCallback.onReceiveValue(null);
                 filePathCallback = null;
-                pendingCameraPhoto = null;
+            }
+            filePathCallback = callback;
+
+            if (!hasCameraPermission()) {
+                requestPermissions(new String[]{Manifest.permission.CAMERA}, CAMERA_PERMISSION_REQUEST);
+            }
+
+            Intent takePictureIntent = null;
+            pendingCameraFile = null;
+            pendingCameraUri = null;
+
+            try {
+                pendingCameraFile = createImageFile();
+                pendingCameraUri = FileProvider.getUriForFile(MainActivity.this, getPackageName() + ".fileprovider", pendingCameraFile);
+
+                takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, pendingCameraUri);
+                takePictureIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                takePictureIntent.setClipData(ClipData.newRawUri("Rivet Evidence", pendingCameraUri));
+
+                List<ResolveInfo> resInfoList = getPackageManager().queryIntentActivities(takePictureIntent, PackageManager.MATCH_DEFAULT_ONLY);
+                for (ResolveInfo resolveInfo : resInfoList) {
+                    String packageName = resolveInfo.activityInfo.packageName;
+                    grantUriPermission(packageName, pendingCameraUri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                }
+            } catch (Exception e) {
+                pendingCameraFile = null;
+                pendingCameraUri = null;
+            }
+
+            boolean isCaptureOnly = params != null && params.isCaptureEnabled();
+
+            if (isCaptureOnly && takePictureIntent != null) {
+                try {
+                    startActivityForResult(takePictureIntent, FILE_CHOOSER_REQUEST);
+                    return true;
+                } catch (Exception ignored) {
+                }
+            }
+
+            Intent contentSelectionIntent = new Intent(Intent.ACTION_GET_CONTENT);
+            contentSelectionIntent.addCategory(Intent.CATEGORY_OPENABLE);
+            contentSelectionIntent.setType("image/*");
+            if (params != null && params.getAcceptTypes() != null && params.getAcceptTypes().length > 0 && !params.getAcceptTypes()[0].isEmpty()) {
+                contentSelectionIntent.putExtra(Intent.EXTRA_MIME_TYPES, params.getAcceptTypes());
+            }
+
+            Intent chooserIntent = Intent.createChooser(contentSelectionIntent, "Add Service Evidence / Photo");
+            if (takePictureIntent != null) {
+                chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Intent[]{takePictureIntent});
+            }
+
+            try {
+                startActivityForResult(chooserIntent, FILE_CHOOSER_REQUEST);
+            } catch (Exception error) {
+                if (filePathCallback != null) {
+                    filePathCallback.onReceiveValue(null);
+                    filePathCallback = null;
+                }
+                pendingCameraFile = null;
+                pendingCameraUri = null;
+                return false;
             }
             return true;
         }
