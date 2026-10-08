@@ -96,6 +96,11 @@ export default function TechnicianFieldPage() {
     const handleSyncCompleted = (e: any) => {
       setSyncResult(e.detail);
       setSyncStatus(`Sync Complete · ${e.detail.accepted} accepted · ${e.detail.duplicates} duplicates`);
+      const refused = (e.detail.results || []).find((r: any) => r.status === 'rejected');
+      if (refused) setActionNotice(`Not accepted: ${refused.message || refused.code || 'the server refused this action'}`);
+      else if (e.detail.accepted > 0) setActionNotice(`Sent to the server (${e.detail.accepted} accepted)`);
+      else return;
+      setTimeout(() => setActionNotice(''), 6000);
     };
 
     const handleAuthRequired = (e: any) => setSignInPending(e.detail?.pending ?? 0);
@@ -243,12 +248,8 @@ export default function TechnicianFieldPage() {
     } else if (result.type === 'part' && result.partResource) {
       setActionNotice(`Scanned Part: ${result.partResource}`);
       setTimeout(() => setActionNotice(''), 4000);
-      const jobId = selectedJob ? selectedJob.id : (currentJobs[0]?.id || 'GENERAL');
-      await performAction('PartScanned', {
-        resource: result.partResource,
-        quantity: 1,
-        source: `job:${jobId}:reserved`,
-      });
+      // No source: the server takes the store-issued stock first and falls back to what is reserved for the job.
+      await performAction('PartScanned', { resource: result.partResource, quantity: 1 });
     }
   };
 
@@ -572,8 +573,16 @@ export default function TechnicianFieldPage() {
         </div>
 
         {actionNotice && (
-          <div data-testid="action-notice" style={{ marginTop: '10px', fontSize: '12px', color: 'var(--accent)', fontWeight: 500 }}>
-            &check; {actionNotice}
+          <div
+            data-testid="action-notice"
+            role="status"
+            style={{
+              position: 'fixed', left: 12, right: 12, bottom: 12, zIndex: 2000, padding: '12px 14px', borderRadius: 8,
+              fontSize: 14, fontWeight: 600, color: '#fff', boxShadow: '0 6px 24px rgba(0,0,0,.3)',
+              background: /^Not accepted|error|No part/i.test(actionNotice) ? '#b3261e' : '#1b6b3a',
+            }}
+          >
+            {/^Not accepted|error|No part/i.test(actionNotice) ? '✕' : '✓'} {actionNotice}
           </div>
         )}
       </div>
@@ -926,7 +935,17 @@ export default function TechnicianFieldPage() {
                 type="button"
                 data-testid="action-scanpart"
                 className="secondary-button"
-                onClick={() => performAction('PartScanned', { resource: 'HS-40', quantity: 1, source: `job:${selectedJob.id}:reserved` })}
+                onClick={() => {
+                  // Scan the part this job really has: issued by the store first, otherwise the one reserved for it.
+                  const job = selectedJob as any;
+                  const resource = Object.keys(job.issued_parts || {})[0] || Object.keys(job.planned_parts || {})[0];
+                  if (!resource) {
+                    setActionNotice('No part is reserved for this job yet.');
+                    setTimeout(() => setActionNotice(''), 5000);
+                    return;
+                  }
+                  void performAction('PartScanned', { resource, quantity: 1 });
+                }}
               >
                 <Barcode size={14} /> 3. Scan Part
               </button>
