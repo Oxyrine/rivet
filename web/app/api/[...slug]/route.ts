@@ -10,21 +10,28 @@ function realApiUrl(): string | null {
   return apiUrl;
 }
 
+let backendOfflineUntil = 0;
+
 async function tryProxy(request: NextRequest, path: string): Promise<Response | null> {
   const apiUrl = realApiUrl();
   if (!apiUrl) return null;
+
+  // If backend was recently unreachable/sleeping, bypass proxy to serve demo engine without lag
+  if (Date.now() < backendOfflineUntil) {
+    return null;
+  }
+
   const isRead = ['GET', 'HEAD'].includes(request.method.toUpperCase());
 
   try {
     const controller = new AbortController();
-    // Give both reads and writes sufficient time (Render free instances take time to respond/wake).
-    // Premature timeouts cause reads to abort and flip-flop between real database and mock demo engine.
-    const timeout = setTimeout(() => controller.abort(), 20000);
+    // 6 second timeout prevents requests from hanging when Render backend is cold or asleep
+    const timeout = setTimeout(() => controller.abort(), 6000);
 
     const headers = new Headers(request.headers);
     headers.delete('host');
 
-    const body = ['GET', 'HEAD'].includes(request.method.toUpperCase()) ? undefined : await request.text();
+    const body = isRead ? undefined : await request.text();
 
     const targetUrl = `${apiUrl.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}${request.nextUrl.search}`;
     const response = await fetch(targetUrl, {
@@ -36,7 +43,6 @@ async function tryProxy(request: NextRequest, path: string): Promise<Response | 
     });
 
     clearTimeout(timeout);
-    // Any valid response from the configured backend should be returned
     if (response.ok || response.status < 500) {
       const respData = await response.text();
       return new Response(respData, {
@@ -46,8 +52,13 @@ async function tryProxy(request: NextRequest, path: string): Promise<Response | 
         },
       });
     }
+
+    // Backend returned 502/503/504 (sleeping/waking) -> mark offline for 30s
+    backendOfflineUntil = Date.now() + 30000;
     return null;
   } catch {
+    // Network failure, connection refused, or timeout -> mark offline for 30s
+    backendOfflineUntil = Date.now() + 30000;
     return null;
   }
 }
@@ -61,11 +72,7 @@ async function handle(request: NextRequest, { params }: { params: Promise<{ slug
   const proxied = await tryProxy(request, path);
   if (proxied) return proxied;
 
-  // When a real API is configured, never fall back to the in-memory demo engine.
-  // Falling back creates split-brain flickering between real DB data and in-memory mock data.
-  if (realApiUrl()) {
-    return NextResponse.json({ code: 'API_UNAVAILABLE', message: 'The server is taking longer to respond. Retrying in a moment.' }, { status: 503 });
-  }
+  // 2. Seamless local fallback to Demo Engine when remote backend is sleeping or unreachable
 
   // 2. Local high-fidelity Demo Engine fallback
   let body: any = {};
