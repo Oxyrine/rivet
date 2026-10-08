@@ -55,7 +55,10 @@ export function AdapterPanel() {
   const loadInvoices = useCallback(async () => {
     if (!localFeed.current) return;
     try {
-      const data = await api<{ invoices?: DraftInvoice[] }>('/adapters/billing/invoices');
+      const data = await api<{ invoices?: DraftInvoice[]; disabled?: boolean }>('/adapters/billing/invoices');
+      if (data?.disabled) {
+        localFeed.current = false;
+      }
       if (Array.isArray(data.invoices)) {
         setInvoices(data.invoices);
       }

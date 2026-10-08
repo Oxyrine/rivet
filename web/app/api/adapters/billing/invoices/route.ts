@@ -33,7 +33,7 @@ async function authorised(request: NextRequest): Promise<boolean> {
 
 async function guard(request: NextRequest): Promise<NextResponse | null> {
   if (process.env.NODE_ENV === 'production' && process.env.LOCAL_BILLING_ADAPTER !== '1') {
-    return NextResponse.json({ invoices: [], error: 'Billing adapter runs locally only' }, { status: 404 });
+    return NextResponse.json({ invoices: [], disabled: true, message: 'Billing adapter runs locally only' }, { status: 200 });
   }
   if (!(await authorised(request))) {
     return NextResponse.json({ invoices: [], error: 'Sign in as a coordinator or manager' }, { status: 401 });
