@@ -70,7 +70,7 @@ export default function Passport() {
       <div className="page-heading">
         <div>
           <span className="eyebrow">MACHINE SERVICE PASSPORT</span>
-          <h1>{data ? `${data.machine.id} · ${data.machine.name || data.machine.type || 'Equipment'}` : machine}</h1>
+          <h1>{data?.machine ? `${data.machine.id} · ${data.machine.name || data.machine.type || 'Equipment'}` : machine}</h1>
           <p className="muted">Every entry shows how it was accepted. Only a PIN on the registered phone counts as verified.</p>
         </div>
         <label className={s.picker}>
@@ -96,7 +96,7 @@ export default function Passport() {
         <>
           <section className={s.summary} aria-label="Service summary">
             <div>
-              <strong>{sealed.filter((j: any) => j.sla.met).length}<small> of {sealed.length}</small></strong>
+              <strong>{sealed.filter((j: any) => j.sla?.met).length}<small> of {sealed.length}</small></strong>
               <span>SLA met</span>
             </div>
             <div>
@@ -112,7 +112,7 @@ export default function Passport() {
               <span>Disputed</span>
             </div>
             <div>
-              <strong>{data.machine.status}</strong>
+              <strong>{data.machine?.status || 'Running'}</strong>
               <span>Status now</span>
             </div>
           </section>

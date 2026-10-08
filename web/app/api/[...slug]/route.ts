@@ -249,18 +249,17 @@ async function handle(request: NextRequest, { params }: { params: Promise<{ slug
 
   if (path.startsWith('machines/') && path.endsWith('/passport')) {
     const machineId = path.split('/')[1];
-    const machine = demoEngine.machines[machineId] || { id: machineId, name: 'Equipment' };
-    return NextResponse.json({
-      machine_id: machineId,
-      name: machine.name,
-      site_id: machine.site_id || 'site-a',
-      serial_number: `SN-${machineId}-2026-X`,
-      contract_tier: machine.contract_id || 'P1',
-      total_operations: 18,
-      verified_events: 42,
-      last_service: new Date(Date.now() - 86400000 * 5).toISOString(),
-      health_index: 98.4,
-    });
+    return NextResponse.json(demoEngine.getPassport(machineId));
+  }
+
+  if (path.startsWith('machines/') && path.endsWith('/package')) {
+    const machineId = path.split('/')[1];
+    return NextResponse.json(demoEngine.getPackage(machineId));
+  }
+
+  if (path.startsWith('jobs/') && path.endsWith('/package')) {
+    const jobId = path.split('/')[1];
+    return NextResponse.json(demoEngine.getPackage(jobId));
   }
 
   if (path === '.well-known/rivet-keys.json') {

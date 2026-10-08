@@ -628,6 +628,100 @@ class DemoEngine {
     return { approved: true, plan_id: planId };
   }
 
+  public getPassport(machineId: string) {
+    const machine = this.machines[machineId] || {
+      id: machineId,
+      name: 'Hydraulic press',
+      site_id: 'site-a',
+      contract_id: 'P1',
+      eligible: true,
+      status: 'Running',
+      sensor: true,
+    };
+
+    const machineJobs = Object.values(this.jobs).filter(j => j.machine_id === machineId);
+
+    const historyJobs = [
+      {
+        id: 'J-2210',
+        machine_id: machineId,
+        site_id: machine.site_id,
+        priority: 'P1',
+        fault: 'hydraulic_leak',
+        state: 'closed',
+        technician_id: 'ravi',
+        created_at: new Date(Date.now() - 86400000 * 12).toISOString(),
+        restored_at: new Date(Date.now() - 86400000 * 12 + 3600000 * 2).toISOString(),
+        deadline: new Date(Date.now() - 86400000 * 12 + 3600000 * 4).toISOString(),
+        acceptance: 'Verified',
+        report_hash: '397137d36add1c4be1bf07c40e7f3e0e4cc6d57bbce878a0d4e253f8a43387d2',
+        sla: { met: true, margin_minutes: 120, late_seconds: 0 },
+        reconciliation: { outcome: 'Clean' },
+      },
+      {
+        id: 'J-2185',
+        machine_id: machineId,
+        site_id: machine.site_id,
+        priority: 'P2',
+        fault: 'gearbox_overhaul',
+        state: 'closed',
+        technician_id: 'priya',
+        created_at: new Date(Date.now() - 86400000 * 25).toISOString(),
+        restored_at: new Date(Date.now() - 86400000 * 25 + 3600000 * 3).toISOString(),
+        deadline: new Date(Date.now() - 86400000 * 25 + 3600000 * 6).toISOString(),
+        acceptance: 'Verified',
+        report_hash: '606be6ab823f198d0141ad95679b40d99dbeccabcc6dd5314ba6414d577b4515',
+        sla: { met: true, margin_minutes: 180, late_seconds: 0 },
+        reconciliation: { outcome: 'Explained variance' },
+      },
+      ...machineJobs,
+    ];
+
+    const events = [
+      { event_id: 'evt-000101', machine: machineId, type: 'MachineRegistered', machine_hash: '3438eb34e70f3f55b89d8efb1db8e65c9012482cabb6b8f9e1311b368390fc5b' },
+      { event_id: 'evt-000102', machine: machineId, type: 'JobCompleted', machine_hash: '606be6ab823f198d0141ad95679b40d99dbeccabcc6dd5314ba6414d577b4515' },
+      { event_id: 'evt-000103', machine: machineId, type: 'CustomerAccepted', machine_hash: '3945913a071114fc8b0c9828820158b608415f9bbacc821353ef1e52cbac2847' },
+    ];
+
+    return {
+      machine,
+      jobs: historyJobs,
+      events,
+    };
+  }
+
+  public getPackage(jobIdOrMachineId: string) {
+    const job = this.jobs[jobIdOrMachineId] || Object.values(this.jobs).find(j => j.machine_id === jobIdOrMachineId) || this.jobs['J-2240'];
+    const machineId = job ? job.machine_id : 'M-104';
+    const passport = this.getPassport(machineId);
+
+    const body = {
+      version: 1,
+      job_id: job ? job.id : 'J-2210',
+      machine_id: machineId,
+      generated_at: new Date().toISOString(),
+      events: passport.events,
+      head: '3945913a071114fc8b0c9828820158b608415f9bbacc821353ef1e52cbac2847',
+      report: { parts: { 'HS-40': 1 }, duration_minutes: 55 },
+      report_hash: '397137d36add1c4be1bf07c40e7f3e0e4cc6d57bbce878a0d4e253f8a43387d2',
+      acceptance: 'Verified',
+      reconciliation: { outcome: 'Clean' },
+      contract: { id: 'P1', resolution_minutes: 240 },
+      sla: { met: true, margin_minutes: 120, late_seconds: 0 },
+      receipts: [],
+    };
+
+    return {
+      body,
+      key: {
+        key_id: 'k-demo-01',
+        public_key: '74YByMEJ6h/S4AzD4PBGn3PCcMAbidAAG06m7E59ASs=',
+        fingerprint: 'a7648f3e8f3e4a91944fa3b4225db1c56e7fc24b405480e8ca80b4aa0edfde9f',
+      },
+      signature: 'L9zTm5prWsf2r2/WppFbAFk5MvvwdzmgdUtwwxzNdHiDqObsfaCPAgoyyih4AU0A7Had1yBJ/8bGQ5ZN8WMHDg==',
+    };
+  }
+
   public generateJwt(userId = 'coordinator'): string {
     const role = this.technicians[userId] ? 'technician' : userId;
     const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
