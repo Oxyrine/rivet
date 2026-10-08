@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ClipboardCheck, Fingerprint, ScanLine, BadgeCheck, UsersRound, Wrench, Boxes } from 'lucide-react';
+import { LayoutDashboard, ClipboardCheck, Fingerprint, ScanLine, BadgeCheck, UsersRound, Wrench, Boxes, Smartphone } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useSession } from '../lib/api';
 import { destinationsFor } from '../lib/roles';
@@ -21,10 +21,14 @@ const adminOnly = [
   { href: '/team', label: 'Team access', Icon: UsersRound }
 ];
 
+const fieldApp = { href: '/field-app', label: 'Get the Android app', Icon: Smartphone };
+
 export function Navigation() {
   const pathname = usePathname();
   const { session } = useSession();
   const destinations = destinationsFor(session?.role).map(d => ({ ...d, Icon: icons[d.href] }));
+  const fieldAppActive = pathname === fieldApp.href;
+  const FieldAppIcon = fieldApp.Icon;
   
   return (
     <nav aria-label="Workspace" className={s.nav}>
@@ -42,6 +46,18 @@ export function Navigation() {
           </Link>
         );
       })}
+
+      <div className={s.navGroup}>
+        <div className={s.navGroupTitle}>Field tools</div>
+        <Link
+          href={fieldApp.href}
+          className={`${s.navLink} ${fieldAppActive ? s.navLinkActive : ''}`}
+          aria-current={fieldAppActive ? 'page' : undefined}
+        >
+          <FieldAppIcon aria-hidden="true" size={18} strokeWidth={1.5} />
+          <span>{fieldApp.label}</span>
+        </Link>
+      </div>
 
       {session?.role === 'admin' && (
         <div className={s.navGroup}>

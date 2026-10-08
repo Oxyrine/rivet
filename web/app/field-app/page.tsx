@@ -7,9 +7,9 @@ export const metadata: Metadata = {
   description: 'Install the Rivet Field companion app for Android.',
 };
 
-const downloadUrl = 'https://github.com/Oxyrine/rivet/releases/download/rivet-field-v1.0.0/rivet-field-v1.0.0-debug.apk';
-const releaseUrl = 'https://github.com/Oxyrine/rivet/releases/tag/rivet-field-v1.0.0';
-const checksum = '56C72FE870229F3D3E1282F57166D477B4C1A5D47FF3ED29D2C220CE309BAF12';
+const downloadUrl = 'https://github.com/Oxyrine/rivet/releases/download/rivet-field-v1.0.1/rivet-field-v1.0.1-debug.apk';
+const releaseUrl = 'https://github.com/Oxyrine/rivet/releases/tag/rivet-field-v1.0.1';
+const checksum = 'A6231E45639485F648FBCBB15F2DBA76FC4B21BC1F8552D23C9FF02BBF0400FA';
 
 export default function FieldAppPage() {
   return (
@@ -30,7 +30,7 @@ export default function FieldAppPage() {
                 Release notes <ExternalLink size={14} aria-hidden="true" />
               </a>
             </div>
-            <p className={s.meta}>Version 1.0.0 · Android 7.0 or newer · 9.9 KB</p>
+            <p className={s.meta}>Version 1.0.1 · Android 7.0 or newer · 1.9 MB</p>
           </div>
           <div className={s.device} aria-hidden="true">
             <div className={s.deviceTop} />

@@ -33,14 +33,13 @@ export function BarcodeScannerModal({
   const streamRef = useRef<MediaStream | null>(null);
   const animFrameRef = useRef<number | null>(null);
 
-  // Initialize camera when activeTab === 'camera' and isOpen
+  // Stop an active stream whenever this modal or camera tab is left. Camera access
+  // itself starts from the explicit button below, preserving the user's gesture for
+  // browser and Android WebView permission prompts.
   useEffect(() => {
     if (!isOpen || activeTab !== 'camera') {
       stopCamera();
-      return;
     }
-
-    startCamera();
     return () => {
       stopCamera();
     };
@@ -55,19 +54,23 @@ export function BarcodeScannerModal({
         return;
       }
 
+      stopCamera();
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
       });
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+        await videoRef.current.play();
         setScanning(true);
         startScanLoop();
       }
     } catch (err: any) {
       setHasCamera(false);
-      setCameraError(err.message || 'Camera permission denied or camera unavailable');
+      const reason = err?.name === 'NotAllowedError'
+        ? 'Camera permission was denied. Allow Camera for Rivet in this browser or Android app, then try again.'
+        : err?.message || 'Camera is unavailable on this device.';
+      setCameraError(reason);
     }
   };
 
@@ -186,7 +189,12 @@ export function BarcodeScannerModal({
             data-testid="scanner-tab-camera"
             className={activeTab === 'camera' ? 'primary-button' : 'secondary-button'}
             style={{ fontSize: '12px', padding: '6px 12px' }}
-            onClick={() => setActiveTab('camera')}
+            onClick={() => {
+              stopCamera();
+              setCameraError('');
+              setHasCamera(true);
+              setActiveTab('camera');
+            }}
           >
             <Camera size={14} /> Live Viewfinder
           </button>
@@ -223,12 +231,23 @@ export function BarcodeScannerModal({
                 <p style={{ color: 'var(--accent)', marginBottom: '12px', fontSize: '13px' }}>
                   {cameraError}
                 </p>
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={() => setActiveTab('simulate')}
-                >
-                  Use Direct Input Mode Instead
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <button type="button" className="primary-button" onClick={() => void startCamera()}>
+                    Try camera again
+                  </button>
+                  <button type="button" className="secondary-button" onClick={() => setActiveTab('simulate')}>
+                    Use Direct Input Mode Instead
+                  </button>
+                </div>
+              </div>
+            ) : !scanning ? (
+              <div style={{ padding: '34px 24px', background: 'var(--panel-alt)', textAlign: 'center', marginBottom: '14px' }}>
+                <Camera size={28} style={{ marginBottom: '12px', color: 'var(--accent)' }} />
+                <p style={{ marginBottom: '16px', fontSize: '13px' }}>
+                  Start the viewfinder when you are ready to scan. Rivet will then ask for camera access.
+                </p>
+                <button type="button" data-testid="scanner-start-camera" className="primary-button" onClick={() => void startCamera()}>
+                  <Video size={14} /> Start camera
                 </button>
               </div>
             ) : (

@@ -31,7 +31,7 @@ export const ADMIN_ONLY = ['team'];
 export const DISPATCHERS = ['admin', 'coordinator', 'manager'];
 
 /** Pages anyone may open, signed in or not: the customer-held record verifier. */
-const PUBLIC = ['/verify'];
+const PUBLIC = ['/verify', '/field-app'];
 
 export function destinationsFor(role?: string): Destination[] {
   if (!role) return [DESTINATIONS.verify];
