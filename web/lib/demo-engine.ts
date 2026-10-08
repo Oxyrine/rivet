@@ -722,6 +722,109 @@ class DemoEngine {
     };
   }
 
+  public storeStock: Record<string, Record<string, number>> = {
+    'site-a': { 'HS-40': 8, 'O-RING': 12, 'JACK': 3, 'VALVE-9': 4 },
+    'site-b': { 'HS-40': 15, 'O-RING': 20, 'JACK': 2, 'SEAL-2': 5 },
+    'site-c': { 'HS-40': 6, 'O-RING': 10, 'JACK': 1, 'BEARING-1': 2 },
+  };
+
+  public vanStock: Record<string, Record<string, number>> = {
+    'ravi': { 'HS-40': 2, 'O-RING': 3 },
+    'priya': { 'HS-40': 1, 'O-RING': 2, 'JACK': 1 },
+  };
+
+  public getStoresOverview() {
+    const NAMES: Record<string, string> = {
+      'HS-40': 'Hydraulic seal kit',
+      'O-RING': 'O-ring set',
+      'JACK': 'Hydraulic jack',
+      'VALVE-9': 'Pressure control valve',
+      'SEAL-2': 'Rotary shaft seal',
+      'BEARING-1': 'Roller bearing assembly',
+    };
+
+    const stores = Object.entries(this.storeStock).map(([siteId, stockMap]) => ({
+      site_id: siteId,
+      name: this.sites[siteId]?.name || siteId.toUpperCase(),
+      stock: Object.entries(stockMap).map(([resource, qty]) => ({
+        resource,
+        name: NAMES[resource] || resource,
+        available: qty,
+        held: 1,
+        low: qty <= 2,
+      })),
+    }));
+
+    const needs = Object.values(this.jobs).flatMap((job) => {
+      const parts = job.planned_parts || {};
+      const issued = job.issued_parts || {};
+      return Object.entries(parts).map(([resource, needed]) => {
+        const isIssued = (issued[resource] || 0) >= needed;
+        return {
+          job_id: job.id,
+          machine_id: job.machine_id,
+          site_id: job.site_id,
+          priority: job.priority,
+          job_state: job.state,
+          technician_id: job.technician_id || null,
+          technician: job.technician_id ? this.technicians[job.technician_id]?.name || job.technician_id : null,
+          planned_start: job.planned_start,
+          kind: 'part' as const,
+          resource,
+          name: NAMES[resource] || resource,
+          needed,
+          issued: issued[resource] || 0,
+          outstanding: Math.max(0, needed - (issued[resource] || 0)),
+          status: isIssued ? ('issued' as const) : job.technician_id ? ('ready' as const) : ('waiting' as const),
+          store_site: job.site_id,
+        };
+      });
+    });
+
+    const vans = Object.entries(this.vanStock).map(([tid, stockMap]) => ({
+      technician_id: tid,
+      technician: this.technicians[tid]?.name || tid,
+      stock: Object.entries(stockMap).map(([resource, qty]) => ({
+        resource,
+        name: NAMES[resource] || resource,
+        quantity: qty,
+      })),
+    }));
+
+    const technicians = Object.values(this.technicians).map((t) => ({
+      id: t.id,
+      name: t.name,
+    }));
+
+    return { stores, needs, vans, technicians };
+  }
+
+  public receiveStock(resource: string, quantity: number, reference?: string, siteId = 'site-a') {
+    const upper = (resource || '').trim().toUpperCase();
+    if (!this.storeStock[siteId]) this.storeStock[siteId] = {};
+    this.storeStock[siteId][upper] = (this.storeStock[siteId][upper] || 0) + quantity;
+    return { resource: upper, quantity, store_site: siteId, available: this.storeStock[siteId][upper] };
+  }
+
+  public vanIssue(technicianId: string, resource: string, quantity: number, siteId = 'site-a') {
+    const upper = (resource || '').trim().toUpperCase();
+    if (this.storeStock[siteId] && this.storeStock[siteId][upper]) {
+      this.storeStock[siteId][upper] = Math.max(0, this.storeStock[siteId][upper] - quantity);
+    }
+    if (!this.vanStock[technicianId]) this.vanStock[technicianId] = {};
+    this.vanStock[technicianId][upper] = (this.vanStock[technicianId][upper] || 0) + quantity;
+    return { technician_id: technicianId, resource: upper, quantity, van_stock: this.vanStock[technicianId][upper] };
+  }
+
+  public issueStock(jobId: string, resource: string, quantity: number) {
+    const job = this.jobs[jobId];
+    if (job) {
+      if (!job.issued_parts) job.issued_parts = {};
+      job.issued_parts[resource] = (job.issued_parts[resource] || 0) + quantity;
+    }
+    return { job_id: jobId, resource, quantity, issued: true };
+  }
+
   public generateJwt(userId = 'coordinator'): string {
     const role = this.technicians[userId] ? 'technician' : userId;
     const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');

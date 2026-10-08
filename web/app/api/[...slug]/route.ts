@@ -227,9 +227,21 @@ async function handle(request: NextRequest, { params }: { params: Promise<{ slug
     return NextResponse.json(demoEngine.reportDropout(techId));
   }
 
-  if (path.startsWith('plans/') && path.endsWith('/approve')) {
-    const planId = path.split('/')[1];
-    return NextResponse.json(demoEngine.approvePlan(planId));
+  // --- Stores Endpoints ---
+  if (path === 'stores/overview') {
+    return NextResponse.json(demoEngine.getStoresOverview());
+  }
+
+  if (path === 'stores/receive') {
+    return NextResponse.json(demoEngine.receiveStock(body.resource, Number(body.quantity) || 1, body.reference));
+  }
+
+  if (path === 'stores/van-issue') {
+    return NextResponse.json(demoEngine.vanIssue(body.technician_id, body.resource, Number(body.quantity) || 1));
+  }
+
+  if (path === 'stores/issue') {
+    return NextResponse.json(demoEngine.issueStock(body.job_id, body.resource, Number(body.quantity) || 1));
   }
 
   // --- Adapters Endpoints ---
