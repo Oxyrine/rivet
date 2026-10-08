@@ -12,6 +12,7 @@ export default function Verify() {
   const [pkg, setPkg] = useState<any>(null);
   const [result, setResult] = useState<any>(null);
   const [message, setMessage] = useState('');
+  const [needKey, setNeedKey] = useState(false);
 
   useEffect(() => {
     const linked = new URLSearchParams(window.location.search).get('job');
@@ -20,9 +21,16 @@ export default function Verify() {
   }, []);
 
   const check = async (p: any) => {
+    const pinned = key.trim() || localStorage.getItem('hep-pinned-key') || '';
+    // Without a pinned key there is nothing to check the signature against; say that, not "tampered".
+    setNeedKey(!pinned);
+    if (!pinned) {
+      setPkg(null);
+      setResult(null);
+      return;
+    }
     setPkg(p);
     try {
-      const pinned = key || localStorage.getItem('hep-pinned-key') || '';
       setResult(await verifyPackage(p, pinned, JSON.parse(localStorage.getItem('hep-anchors') || '[]')));
     } catch (e: any) {
       setMessage(e.message);
@@ -35,6 +43,9 @@ export default function Verify() {
     a.download = name;
     a.click();
   };
+
+  // 'Pending' means the customer has not accepted (or disputed) yet: the record is genuine but not a finished job.
+  const notFinal = !!pkg && pkg.body.acceptance === 'Pending';
 
   return (
     <div className="verify-page">
@@ -65,6 +76,7 @@ export default function Verify() {
             className="primary-button"
             onClick={() => {
               localStorage.setItem('hep-pinned-key', key.trim());
+              setNeedKey(false);
               setMessage('Onboarding key pinned to this browser.');
             }}
           >
@@ -127,17 +139,29 @@ export default function Verify() {
             style={{ width: 'auto' }}
           />
         </div>
+        {needKey && (
+          <p role="alert" data-testid="need-key" className="error-banner" style={{ marginTop: '12px' }}>
+            No key is pinned yet, so the signature cannot be checked. In step 1, click <b>Show published key</b> and then <b>Pin key</b> (customers paste the key from their contract), then open the record again.
+          </p>
+        )}
       </section>
 
       {result && (
         <section className="panel" style={{ borderLeft: result.valid ? '4px solid var(--positive)' : '4px solid var(--critical)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-            <span className={`badge ${result.valid ? 'success' : 'danger'}`}>
-              {result.valid ? 'SERVICE RECORD VERIFIED' : 'VERIFICATION FAILED'}
+            <span className={`badge ${!result.valid ? 'danger' : notFinal ? 'warn' : 'success'}`}>
+              {!result.valid ? 'VERIFICATION FAILED' : notFinal ? 'SIGNATURE VALID · JOB NOT FINISHED' : 'SERVICE RECORD VERIFIED'}
             </span>
           </div>
 
           <h2>{pkg.body.machine_id} · {pkg.body.job_id}</h2>
+          {result.valid && notFinal && (
+            <p data-testid="not-finished" className="notice" style={{ marginTop: '8px' }}>
+              {pkg.body.report_hash
+                ? 'The technician has reported, but the customer has not accepted yet. The signature and chain are valid for what has happened so far; the outcome is not final.'
+                : 'This job is still in progress: no report has been submitted and nothing has been accepted. The signature and chain below cover only what has happened so far, so there is no final outcome to check yet.'}
+            </p>
+          )}
 
           <div style={{ margin: '16px 0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {result.valid ? (
@@ -160,7 +184,7 @@ export default function Verify() {
               </p>
             )}
             <p>Customer acceptance: <strong>{pkg.body.acceptance}</strong></p>
-            <p>Reconciliation: <strong>{pkg.body.reconciliation?.outcome || 'Clean'}</strong></p>
+            <p>Reconciliation: <strong>{pkg.body.reconciliation?.outcome || (pkg.body.report_hash ? 'Clean' : 'No report yet')}</strong></p>
           </div>
 
           <div style={{ margin: '16px 0' }}>
