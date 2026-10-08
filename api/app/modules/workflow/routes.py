@@ -24,9 +24,11 @@ def _mutate(fn, body, principal, key=None):
 
 def _job_for_request(state, ident, principal):
     request = state.requests.get(ident)
-    if not request:
+    # Jobs that were seeded rather than raised through a request have no request record: their job id stands in for it.
+    record = request or state.jobs.get(ident)
+    if not record:
         raise DomainError('NOT_FOUND', 'Request not found', status=404)
-    scoped_machine(state, request['machine_id'], principal)
+    scoped_machine(state, record['machine_id'], principal)
     return request
 
 

@@ -52,3 +52,12 @@ def test_a_report_sent_before_work_started_is_rejected_with_a_reason_the_field_a
     results = client.post(f'/devices/{device}/commands', json={'commands': batch}, headers=priya).json()['results']
     assert [r['status'] for r in results] == ['accepted', 'rejected'] and results[1]['code'] == 'WORK_NOT_STARTED' and results[1]['message']
     assert not client.get('/jobs/J-2254', headers=supervisor).json().get('report')
+
+
+def test_a_seeded_job_with_no_request_record_can_be_cancelled_by_its_job_id(client):
+    coordinator = sign_in(client, 'coordinator')
+    job = next(j for j in store.read().jobs.values() if not j.get('request_id') and j['state'] in ('approved', 'assigned'))
+    r = client.post(f"/requests/{job['id']}/cancel", json={'reason': 'Customer withdrew'}, headers=coordinator)
+    assert r.status_code == 200 and r.json()['state'] == 'cancelled'
+    assert store.read().jobs[job['id']]['state'] == 'cancelled'
+    assert client.post('/requests/J-0000/cancel', json={'reason': 'x'}, headers=coordinator).status_code == 404
